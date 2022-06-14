@@ -2,10 +2,9 @@
 #include <Path.h>
 #include <algorithm>
 #include <chrono>
-#include "../File.h"
-#include "../Globals.h"
-#include "../StringHelper.h"
-#include "../ZBlob.h"
+#include <cinttypes>
+#include <string_view>
+
 #include "Commands/EndMarker.h"
 #include "Commands/SetActorCutsceneList.h"
 #include "Commands/SetActorList.h"
@@ -39,6 +38,12 @@
 #include "Commands/Unused09.h"
 #include "Commands/Unused1D.h"
 #include "Commands/ZRoomCommandUnk.h"
+#include "Globals.h"
+#include "Utils/File.h"
+#include "Utils/Path.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
+#include "ZBlob.h"
 #include "ZCutscene.h"
 #include "ZFile.h"
 
@@ -113,53 +118,16 @@ void ZRoom::ExtractFromXML(tinyxml2::XMLElement* reader, const std::vector<uint8
 			std::string addressStr = child->Attribute("Offset");
 			int32_t address = strtol(StringHelper::Split(addressStr, "0x")[1].c_str(), NULL, 16);
 
-			ZCutscene* cutscene = new ZCutscene(parent);
-			cutscene->SetInnerNode(true);
-			cutscene->ExtractFromXML(child, rawData, address);
-
-			cutscene->GetSourceOutputCode(name);
-
-			delete cutscene;
-		}
-		else if (std::string(child->Name()) == "AltHeaderHint")
+	if (reader->Attribute("HackMode") != nullptr)
+	{
+		hackMode = std::string(reader->Attribute("HackMode"));
+		if (hackMode != "syotes_room")
 		{
-			std::string addressStr = child->Attribute("Offset");
-			int32_t address = strtol(StringHelper::Split(addressStr, "0x")[1].c_str(), NULL, 16);
-
-			uint32_t commandsCount = UINT32_MAX;
-
-			if (child->FindAttribute("Count") != NULL)
-			{
-				std::string commandCountStr = child->Attribute("Count");
-				commandsCount = strtol(commandCountStr.c_str(), NULL, 10);
-			}
-
-			commandSets.push_back(CommandSet(address, commandsCount));
+			std::string headerError = StringHelper::Sprintf(
+				"invalid value found for 'HackMode' attribute: '%s'", hackMode.c_str());
+			HANDLE_ERROR_RESOURCE(WarningType::InvalidAttributeValue, parent, this, rawDataIndex,
+			                      headerError, "");
 		}
-		else if (std::string(child->Name()) == "PathHint")
-		{
-			std::string addressStr = child->Attribute("Offset");
-			int32_t address = strtol(StringHelper::Split(addressStr, "0x")[1].c_str(), NULL, 16);
-
-			// TODO: add this to command set
-			ZPath* pathway = new ZPath(parent);
-			pathway->SetInnerNode(true);
-			pathway->SetRawDataIndex(address);
-			pathway->ParseRawData();
-			pathway->DeclareReferences(name);
-			pathway->GetSourceOutputCode(name);
-
-			delete pathway;
-		}
-
-#ifndef DEPRECATION_OFF
-		fprintf(stderr,
-		        "ZRoom::ExtractFromXML: Deprecation warning in '%s'.\n"
-		        "\t The resource '%s' is currently deprecated, and will be removed in a future "
-		        "version.\n"
-		        "\t Use the non-hint version instead.\n",
-		        name.c_str(), child->Name());
-#endif
 	}
 
 	commandSets.push_back(CommandSet(rawDataIndex, cmdCount));
@@ -293,9 +261,10 @@ void ZRoom::ParseCommands(std::vector<ZRoomCommand*>& commandList, CommandSet co
 		if (Globals::Instance->profile)
 		{
 			auto end = std::chrono::steady_clock::now();
-			auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+			int64_t diff =
+				std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 			if (diff > 50)
-				printf("OP: %s, TIME: %lims\n", cmd->GetCommandCName().c_str(), diff);
+				printf("OP: %s, TIME: %" PRIi64 "ms\n", cmd->GetCommandCName().c_str(), diff);
 		}
 
 		cmd->cmdIndex = currentIndex;
@@ -421,26 +390,10 @@ size_t ZRoom::GetCommandSizeFromNeighbor(ZRoomCommand* cmd)
 	return 0;
 }
 
-std::string ZRoom::GetSourceOutputHeader(const std::string& prefix)
+void ZRoom::GetSourceOutputCode([[maybe_unused]] const std::string& prefix)
 {
-	return "\n" + extDefines + "\n\n";
-}
-
-std::string ZRoom::GetSourceOutputCode(const std::string& prefix)
-{
-	sourceOutput = "";
-
-	sourceOutput += "#include \"segment_symbols.h\"\n";
-	sourceOutput += "#include \"command_macros_base.h\"\n";
-	sourceOutput += "#include \"z64cutscene_commands.h\"\n";
-	sourceOutput += "#include \"variables.h\"\n";
-
-	if (scene != nullptr)
-		sourceOutput += scene->parent->GetHeaderInclude();
-
-	ProcessCommandSets();
-
-	return sourceOutput;
+	if (hackMode != "syotes_room")
+		DeclareVar(prefix, GetBodySourceCode());
 }
 
 size_t ZRoom::GetRawDataSize() const

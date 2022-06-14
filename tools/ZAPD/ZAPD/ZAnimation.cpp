@@ -3,8 +3,10 @@
 #include "BitConverter.h"
 #include "File.h"
 #include "Globals.h"
-#include "HighLevel/HLAnimationIntermediette.h"
-#include "StringHelper.h"
+#include "Utils/BitConverter.h"
+#include "Utils/File.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
 #include "ZFile.h"
 
 REGISTER_ZFILENODE(Animation, ZNormalAnimation);
@@ -119,7 +121,7 @@ void ZNormalAnimation::ParseRawData()
 {
 	ZAnimation::ParseRawData();
 
-	const uint8_t* data = rawData.data();
+	auto& data = parent->GetRawData();
 
 	rotationValuesSeg = BitConverter::ToInt32BE(data, rawDataIndex + 4) & 0x00FFFFFF;
 	rotationIndicesSeg = BitConverter::ToInt32BE(data, rawDataIndex + 8) & 0x00FFFFFF;
@@ -148,7 +150,45 @@ void ZNormalAnimation::ParseRawData()
 
 ZLinkAnimation::ZLinkAnimation(ZFile* nParent) : ZAnimation(nParent)
 {
-	segmentAddress = 0;
+	std::string defaultPrefix = prefix.c_str();
+	if (name != "")
+		defaultPrefix = name;
+
+	// replace g prefix with s for local variables
+	if (defaultPrefix.at(0) == 'g')
+		defaultPrefix.replace(0, 1, "s");
+
+	std::string indicesStr = "";
+	std::string valuesStr = "    ";
+	const uint8_t lineLength = 14;
+	const uint8_t offset = 0;
+
+	for (size_t i = 0; i < rotationValues.size(); i++)
+	{
+		valuesStr += StringHelper::Sprintf("0x%04X, ", rotationValues[i]);
+
+		if ((i - offset + 1) % lineLength == 0)
+			valuesStr += "\n    ";
+	}
+
+	parent->AddDeclarationArray(rotationValuesOffset, DeclarationAlignment::Align4,
+	                            rotationValues.size() * 2, "s16",
+	                            StringHelper::Sprintf("%sFrameData", defaultPrefix.c_str()),
+	                            rotationValues.size(), valuesStr);
+
+	for (size_t i = 0; i < rotationIndices.size(); i++)
+	{
+		indicesStr += StringHelper::Sprintf("    { 0x%04X, 0x%04X, 0x%04X },", rotationIndices[i].x,
+		                                    rotationIndices[i].y, rotationIndices[i].z);
+
+		if (i != (rotationIndices.size() - 1))
+			indicesStr += "\n";
+	}
+
+	parent->AddDeclarationArray(rotationIndicesOffset, DeclarationAlignment::Align4,
+	                            rotationIndices.size() * 6, "JointIndex",
+	                            StringHelper::Sprintf("%sJointIndices", defaultPrefix.c_str()),
+	                            rotationIndices.size(), indicesStr);
 }
 
 std::string ZLinkAnimation::GetSourceOutputCode(const std::string& prefix)
@@ -236,11 +276,9 @@ void ZCurveAnimation::ParseXML(tinyxml2::XMLElement* reader)
 	std::string skelOffsetXml = registeredAttributes.at("SkelOffset").value;
 	if (skelOffsetXml == "")
 	{
-		throw std::runtime_error(
-			StringHelper::Sprintf("ZCurveAnimation::ParseXML: Fatal error in '%s'.\n"
-		                          "\t Missing 'SkelOffset' attribute in ZCurveAnimation.\n"
-		                          "\t You need to provide the offset of the curve skeleton.",
-		                          name.c_str()));
+		HANDLE_ERROR_RESOURCE(WarningType::MissingAttribute, parent, this, rawDataIndex,
+		                      "missing 'SkelOffset' attribute in <ZCurveAnimation>",
+		                      "You need to provide the offset of the curve skeleton.");
 	}
 	skelOffset = StringHelper::StrToL(skelOffsetXml, 0);
 }
@@ -396,7 +434,12 @@ size_t ZCurveAnimation::GetRawDataSize() const
 	return 0x10;
 }
 
-std::string ZCurveAnimation::GetSourceOutputCode(const std::string& prefix)
+DeclarationAlignment ZCurveAnimation::GetDeclarationAlignment() const
+{
+	return DeclarationAlignment::Align4;
+}
+
+std::string ZCurveAnimation::GetSourceTypeName() const
 {
 	std::string bodyStr = "";
 	uint32_t address = Seg2Filespace(rawDataIndex, parent->baseAddress);

@@ -1,7 +1,8 @@
 #ifndef Z_EN_FU_H
 #define Z_EN_FU_H
 
-#include <global.h>
+#include "global.h"
+#include "overlays/actors/ovl_Bg_Fu_Mizu/z_bg_fu_mizu.h"
 
 struct EnFu;
 

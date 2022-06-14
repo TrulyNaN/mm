@@ -6,8 +6,9 @@
 struct EnSi;
 
 typedef struct EnSi {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x5C];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ EnSiActionFunc actionFunc;
+    /* 0x0148 */ char unk_148[0x58];
 } EnSi; // size = 0x1A0
 
 extern const ActorInit En_Si_InitVars;

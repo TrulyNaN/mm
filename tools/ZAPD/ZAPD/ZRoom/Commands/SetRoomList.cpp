@@ -62,17 +62,38 @@ void SetRoomList::PreGenSourceFiles()
 			if (res->GetResourceType() == ZResourceType::Room && res != zRoom)
 			{
 				std::string roomName = res->GetName();
-				declaration +=
-					StringHelper::Sprintf("\t{ (u32)_%sSegmentRomStart, (u32)_%sSegmentRomEnd },\n",
-				                          roomName.c_str(), roomName.c_str());
+				if (!isFirst)
+					declaration += "\n";
+
+				declaration += StringHelper::Sprintf("\t{ _%sSegmentRomStart, _%sSegmentRomEnd },",
+				                                     roomName.c_str(), roomName.c_str());
+				isFirst = false;
 			}
 		}
 	}
 
-	parent->AddDeclarationArray(
-		segmentOffset, DeclarationAlignment::None, rooms.size() * 8, "RomFile",
-		StringHelper::Sprintf("%sRoomList0x%06X", zRoom->GetName().c_str(), segmentOffset), 0,
-		declaration);
+	return declaration;
+}
+
+void RomFile::GetSourceOutputCode(const std::string& prefix)
+{
+	DeclareVar(prefix, GetBodySourceCode());
+}
+
+std::string RomFile::GetSourceTypeName() const
+{
+	return "RomFile";
+}
+
+ZResourceType RomFile::GetResourceType() const
+{
+	// TODO
+	return ZResourceType::Error;
+}
+
+size_t RomFile::GetRawDataSize() const
+{
+	return 8 * rooms.size();
 }
 
 RoomEntry::RoomEntry(uint32_t nVAS, uint32_t nVAE)

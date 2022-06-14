@@ -14,10 +14,12 @@ enum class VerbosityLevel
 	VERBOSITY_DEBUG
 };
 
-struct TexturePoolEntry
-{
-	fs::path path = "";  // Path to Shared Texture
-};
+typedef void (*ExporterSetFunc)(ZFile*);
+typedef bool (*ExporterSetFuncBool)(ZFileMode fileMode);
+typedef void (*ExporterSetFuncVoid)(int argc, char* argv[], int& i);
+typedef void (*ExporterSetFuncVoid2)(const std::string& buildMode, ZFileMode& fileMode);
+typedef void (*ExporterSetFuncVoid3)();
+typedef void (*ExporterSetResSave)(ZResource* res, BinaryWriter& writer);
 
 class GameConfig
 {
@@ -32,7 +34,15 @@ public:
 	// ZBackground
 	uint32_t bgScreenWidth = 320, bgScreenHeight = 240;
 
-	GameConfig() = default;
+	std::map<ZResourceType, ZResourceExporter*> exporters;
+	ExporterSetFuncVoid parseArgsFunc = nullptr;
+	ExporterSetFuncVoid2 parseFileModeFunc = nullptr;
+	ExporterSetFuncBool processFileModeFunc = nullptr;
+	ExporterSetFunc beginFileFunc = nullptr;
+	ExporterSetFunc endFileFunc = nullptr;
+	ExporterSetFuncVoid3 beginXMLFunc = nullptr;
+	ExporterSetFuncVoid3 endXMLFunc = nullptr;
+	ExporterSetResSave resSaveFunc = nullptr;
 };
 
 class Globals
@@ -52,14 +62,13 @@ public:
 	TextureType texType;
 	ZGame game;
 	GameConfig cfg;
-	bool warnUnaccounted = false;
+	bool verboseUnaccounted = false;
+	bool gccCompat = false;
+	bool forceStatic = false;
+	bool forceUnaccountedStatic = false;
 
 	std::vector<ZFile*> files;
 	std::vector<int32_t> segments;
-	std::map<int32_t, std::string> segmentRefs;
-	std::map<int32_t, ZFile*> segmentRefFiles;
-	ZRoom* lastScene;
-	std::map<uint32_t, std::string> symbolMap;
 
 	Globals();
 	std::string FindSymbolSegRef(int32_t segNumber, uint32_t symbolAddress);

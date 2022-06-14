@@ -16,6 +16,12 @@
 
 #define CMD_W(a) (a)
 
-#define CMD_PTR(a) (u32)(a)
+#ifdef __GNUC__
+#define CMD_F(a) .f = (a)
+#else
+#define CMD_F(a) (a)
+#endif
+
+#define CMD_PTR(a) (uintptr_t)(a)
 
 #endif

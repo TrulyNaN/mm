@@ -1,7 +1,10 @@
 #include "Globals.h"
 #include <algorithm>
-#include "File.h"
-#include "Path.h"
+#include <string_view>
+
+#include "Utils/File.h"
+#include "Utils/Path.h"
+#include "WarningHandler.h"
 #include "tinyxml2.h"
 
 using namespace tinyxml2;
@@ -109,19 +112,11 @@ void Globals::ReadConfigFile(const std::string& configFilePath)
 			std::vector<std::string> lines =
 				File::ReadAllLines(Path::GetDirectoryName(configFilePath) + "/" + fileName);
 
-			for (std::string line : lines)
-				cfg.objectList.push_back(StringHelper::Strip(line, "\r"));
-		}
-		else if (std::string(child->Name()) == "TexturePool")
-		{
-			std::string fileName = std::string(child->Attribute("File"));
-			ReadTexturePool(Path::GetDirectoryName(configFilePath) + "/" + fileName);
-		}
-		else if (std::string(child->Name()) == "BGConfig")
-		{
-			cfg.bgScreenWidth = child->IntAttribute("ScreenWidth", 320);
-			cfg.bgScreenHeight = child->IntAttribute("ScreenHeight", 240);
-		}
+	const auto& symbolFromMap = Globals::Instance->cfg.symbolMap.find(segAddress);
+	if (symbolFromMap != Globals::Instance->cfg.symbolMap.end())
+	{
+		declName = "&" + symbolFromMap->second;
+		return true;
 	}
 }
 

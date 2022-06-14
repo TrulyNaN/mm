@@ -14,8 +14,10 @@ public:
 
 	void ParseXML(tinyxml2::XMLElement* reader) override;
 	void ParseRawData() override;
-	std::string GetSourceOutputCode(const std::string& prefix) override;
-	std::string GetSourceOutputHeader(const std::string& prefix) override;
+
+	Declaration* DeclareVar(const std::string& prefix, const std::string& bodyStr) override;
+	std::string GetBodySourceCode() const override;
+
 	void Save(const fs::path& outFolder) override;
 
 	bool IsExternalResource() const override;

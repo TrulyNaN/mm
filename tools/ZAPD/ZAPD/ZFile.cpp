@@ -7,7 +7,14 @@
 #include "Globals.h"
 #include "HighLevel/HLModelIntermediette.h"
 #include "OutputFormatter.h"
-#include "Path.h"
+#include "Utils/BinaryWriter.h"
+#include "Utils/BitConverter.h"
+#include "Utils/Directory.h"
+#include "Utils/File.h"
+#include "Utils/MemoryStream.h"
+#include "Utils/Path.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
 #include "ZAnimation.h"
 #include "ZArray.h"
 #include "ZBackground.h"
@@ -68,14 +75,13 @@ ZFile::ZFile(ZFileMode mode, tinyxml2::XMLElement* reader, const fs::path& nBase
 ZFile::~ZFile()
 {
 	for (ZResource* res : resources)
-	{
 		delete res;
-	}
 
 	for (auto d : declarations)
-	{
 		delete d.second;
-	}
+
+	for (auto sym : symbolResources)
+		delete sym.second;
 }
 
 void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, bool placeholderMode)
@@ -97,8 +103,11 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 		else if (std::string(gameStr) == "OOT")
 			Globals::Instance->game = ZGame::OOT_RETAIL;
 		else
-			throw std::runtime_error(
-				StringHelper::Sprintf("Error: Game type %s not supported.", gameStr));
+		{
+			std::string errorHeader =
+				StringHelper::Sprintf("'Game' type '%s' is not supported.", gameStr);
+			HANDLE_ERROR_PROCESS(WarningType::InvalidAttributeValue, errorHeader, "");
+		}
 	}
 
 	if (reader->Attribute("BaseAddress") != nullptr)
@@ -110,19 +119,45 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 	if (reader->Attribute("RangeEnd") != nullptr)
 		rangeEnd = StringHelper::StrToL(reader->Attribute("RangeEnd"), 16);
 
-	// Commented until ZArray doesn't use a ZFile to parse it's contents anymore.
-	/*
-	if (reader->Attribute("Segment") == nullptr)
-	    throw std::runtime_error(StringHelper::Sprintf(
-	        "ZFile::ParseXML: Error in '%s'.\n"
-	        "\t Missing 'Segment' attribute in File node. \n",
-	        name.c_str()));
-	*/
+	if (rangeStart > rangeEnd)
+		HANDLE_ERROR_PROCESS(
+			WarningType::Always,
+			StringHelper::Sprintf("'RangeStart' 0x%06X must be before 'RangeEnd' 0x%06X",
+		                          rangeStart, rangeEnd),
+			"");
 
 	if (reader->Attribute("Segment") != nullptr)
 	{
-		segment = StringHelper::StrToL(reader->Attribute("Segment"), 10);
-		Globals::Instance->AddSegment(segment, this);
+		if (!StringHelper::HasOnlyDigits(segmentXml))
+		{
+			HANDLE_ERROR_PROCESS(WarningType::Always,
+			                     StringHelper::Sprintf("error: Invalid segment value '%s': must be "
+			                                           "a decimal between 0 and 15 inclusive",
+			                                           segmentXml),
+			                     "");
+		}
+
+		segment = StringHelper::StrToL(segmentXml, 10);
+		if (segment > 15)
+		{
+			if (segment == 128)
+			{
+#ifdef DEPRECATION_ON
+				HANDLE_WARNING_PROCESS(
+					WarningType::Always, "warning: segment 128 is deprecated.",
+					"Remove 'Segment=\"128\"' from the xml to use virtual addresses\n");
+#endif
+			}
+			else
+			{
+				HANDLE_ERROR_PROCESS(
+					WarningType::Always,
+					StringHelper::Sprintf("error: invalid segment value '%s': must be a decimal "
+				                          "number between 0 and 15 inclusive",
+				                          segmentXml),
+					"");
+			}
+		}
 	}
 
 	std::string folderName = (basePath / Path::GetFileNameWithoutExtension(name)).string();
@@ -130,10 +165,16 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 	if (mode == ZFileMode::Extract)
 	{
 		if (!File::Exists((basePath / name).string()))
-			throw std::runtime_error(
-				StringHelper::Sprintf("Error! File %s does not exist.", (basePath / name).c_str()));
+		{
+			std::string errorHeader = StringHelper::Sprintf("binary file '%s' does not exist.",
+			                                                (basePath / name).c_str());
+			HANDLE_ERROR_PROCESS(WarningType::Always, errorHeader, "");
+		}
 
 		rawData = File::ReadAllBytes((basePath / name).string());
+
+		if (reader->Attribute("RangeEnd") == nullptr)
+			rangeEnd = rawData.size();
 	}
 
 	std::unordered_set<std::string> nameSet;
@@ -160,19 +201,29 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 
 			if (offsetSet.find(offsetXml) != offsetSet.end())
 			{
-				throw std::runtime_error(StringHelper::Sprintf(
-					"ZFile::ParseXML: Error in '%s'.\n\t Repeated 'Offset' attribute: %s \n",
-					name.c_str(), offsetXml));
+				std::string errorHeader =
+					StringHelper::Sprintf("repeated 'Offset' attribute: %s", offsetXml);
+				HANDLE_ERROR_PROCESS(WarningType::InvalidXML, errorHeader, "");
 			}
 			offsetSet.insert(offsetXml);
 		}
+		else
+		{
+			HANDLE_WARNING_RESOURCE(WarningType::MissingOffsets, this, nullptr, rawDataIndex,
+			                        StringHelper::Sprintf("no offset specified for %s.", nameXml),
+			                        "");
+		}
+
+		if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_INFO)
+			printf("%s: 0x%06X\n", nameXml, rawDataIndex);
+
 		if (outNameXml != nullptr)
 		{
 			if (outNameSet.find(outNameXml) != outNameSet.end())
 			{
-				throw std::runtime_error(StringHelper::Sprintf(
-					"ZFile::ParseXML: Error in '%s'.\n\t Repeated 'OutName' attribute: %s \n",
-					name.c_str(), outNameXml));
+				std::string errorHeader =
+					StringHelper::Sprintf("repeated 'OutName' attribute: %s", outNameXml);
+				HANDLE_ERROR_PROCESS(WarningType::InvalidXML, errorHeader, "");
 			}
 			outNameSet.insert(outNameXml);
 		}
@@ -180,9 +231,9 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 		{
 			if (nameSet.find(nameXml) != nameSet.end())
 			{
-				throw std::runtime_error(StringHelper::Sprintf(
-					"ZFile::ParseXML: Error in '%s'.\n\t Repeated 'Name' attribute: %s \n",
-					name.c_str(), nameXml));
+				std::string errorHeader =
+					StringHelper::Sprintf("repeated 'Name' attribute: %s", nameXml);
+				HANDLE_ERROR_PROCESS(WarningType::InvalidXML, errorHeader, "");
 			}
 			nameSet.insert(nameXml);
 		}
@@ -206,16 +257,14 @@ void ZFile::ParseXML(ZFileMode mode, XMLElement* reader, std::string filename, b
 		}
 		else if (std::string(child->Name()) == "File")
 		{
-			throw std::runtime_error(StringHelper::Sprintf(
-				"ZFile::ParseXML: Error in '%s'.\n\t Can't declare a File inside a File.\n",
-				name.c_str()));
+			std::string errorHeader = "Can't declare a <File> inside a <File>";
+			HANDLE_ERROR_PROCESS(WarningType::InvalidXML, errorHeader, "");
 		}
 		else
 		{
-			throw std::runtime_error(
-				StringHelper::Sprintf("ZFile::ParseXML: Error in '%s'.\n\t Unknown element found "
-			                          "inside a File element: '%s'.\n",
-			                          name.c_str(), nodeName.c_str()));
+			std::string errorHeader = StringHelper::Sprintf(
+				"Unknown element found inside a <File> element: %s", nodeName.c_str());
+			HANDLE_ERROR_PROCESS(WarningType::InvalidXML, errorHeader, "");
 		}
 	}
 }
@@ -232,7 +281,7 @@ void ZFile::BuildSourceFile(fs::path outputDir)
 {
 	std::string folderName = Path::GetFileNameWithoutExtension(outputPath.string());
 
-	if (!Directory::Exists(outputPath.string()))
+	if (!Directory::Exists(outputPath))
 		Directory::CreateDirectory(outputPath.string());
 
 	GenerateSourceFiles(outputDir);
@@ -249,7 +298,12 @@ std::string ZFile::GetVarName(uint32_t address)
 	return "";
 }
 
-std::string ZFile::GetName() const
+std::string ZFile::GetOutName() const
+{
+	return outName.string();
+}
+
+ZFileMode ZFile::GetMode() const
 {
 	return name;
 }
@@ -268,28 +322,60 @@ void ZFile::ExtractResources(fs::path outputDir)
 {
 	std::string folderName = Path::GetFileNameWithoutExtension(outputPath.string());
 
-	if (!Directory::Exists(outputPath.string()))
+	if (!Directory::Exists(outputPath))
 		Directory::CreateDirectory(outputPath.string());
 
-	if (!Directory::Exists(Globals::Instance->sourceOutputPath.string()))
-		Directory::CreateDirectory(Globals::Instance->sourceOutputPath.string());
+	if (!Directory::Exists(GetSourceOutputFolderPath()))
+		Directory::CreateDirectory(GetSourceOutputFolderPath().string());
 
 	for (ZResource* res : resources)
 		res->PreGenSourceFiles();
 
 	if (Globals::Instance->genSourceFile)
-		GenerateSourceFiles(outputDir);
+		GenerateSourceFiles();
+
+	auto memStreamFile = std::shared_ptr<MemoryStream>(new MemoryStream());
+	BinaryWriter writerFile = BinaryWriter(memStreamFile);
+
+	ExporterSet* exporterSet = Globals::Instance->GetExporterSet();
+
+	if (exporterSet != nullptr && exporterSet->beginFileFunc != nullptr)
+		exporterSet->beginFileFunc(this);
 
 	for (ZResource* res : resources)
 	{
+		auto memStreamRes = std::shared_ptr<MemoryStream>(new MemoryStream());
+		BinaryWriter writerRes = BinaryWriter(memStreamRes);
+
 		if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_INFO)
 			printf("Saving resource %s\n", res->GetName().c_str());
 
 		res->Save(outputPath);
+
+		// Check if we have an exporter "registered" for this resource type
+		ZResourceExporter* exporter = Globals::Instance->GetExporter(res->GetResourceType());
+		if (exporter != nullptr)
+		{
+			// exporter->Save(res, Globals::Instance->outputPath.string(), &writerFile);
+			exporter->Save(res, Globals::Instance->outputPath.string(), &writerRes);
+		}
+
+		if (exporterSet != nullptr && exporterSet->resSaveFunc != nullptr)
+			exporterSet->resSaveFunc(res, writerRes);
 	}
 
-	if (Globals::Instance->testMode)
-		GenerateHLIntermediette();
+	if (memStreamFile->GetLength() > 0)
+	{
+		File::WriteAllBytes(StringHelper::Sprintf("%s%s.bin",
+		                                          Globals::Instance->outputPath.string().c_str(),
+		                                          GetName().c_str()),
+		                    memStreamFile->ToVector());
+	}
+
+	writerFile.Close();
+
+	if (exporterSet != nullptr && exporterSet->endFileFunc != nullptr)
+		exporterSet->endFileFunc(this);
 }
 
 void ZFile::AddResource(ZResource* res)
@@ -297,7 +383,7 @@ void ZFile::AddResource(ZResource* res)
 	resources.push_back(res);
 }
 
-ZResource* ZFile::FindResource(uint32_t rawDataIndex)
+ZResource* ZFile::FindResource(offset_t rawDataIndex)
 {
 	for (ZResource* res : resources)
 	{
@@ -521,7 +607,7 @@ std::string ZFile::GetDeclarationPtrName(segptr_t segAddress) const
 	return decl->varName;
 }
 
-Declaration* ZFile::GetDeclaration(uint32_t address) const
+Declaration* ZFile::GetDeclaration(offset_t address) const
 {
 	if (declarations.find(address) != declarations.end())
 		return declarations.at(address);
@@ -529,7 +615,7 @@ Declaration* ZFile::GetDeclaration(uint32_t address) const
 	return nullptr;
 }
 
-Declaration* ZFile::GetDeclarationRanged(uint32_t address) const
+Declaration* ZFile::GetDeclarationRanged(offset_t address) const
 {
 	for (const auto decl : declarations)
 	{
@@ -540,18 +626,7 @@ Declaration* ZFile::GetDeclarationRanged(uint32_t address) const
 	return nullptr;
 }
 
-uint32_t ZFile::GetDeclarationRangedAddress(uint32_t address) const
-{
-	for (const auto decl : declarations)
-	{
-		if (address >= decl.first && address < decl.first + decl.second->size)
-			return decl.first;
-	}
-
-	return 0xFFFFFFFF;
-}
-
-bool ZFile::HasDeclaration(uint32_t address)
+bool ZFile::HasDeclaration(offset_t address)
 {
 	return declarations.find(address) != declarations.end();
 }
@@ -639,6 +714,11 @@ void ZFile::GenerateSourceHeaderFiles()
 {
 	OutputFormatter formatter;
 
+	std::string objectNameUpper = StringHelper::ToUpper(GetName());
+
+	formatter.Write(StringHelper::Sprintf("#ifndef %s_H\n#define %s_H 1\n\n",
+	                                      objectNameUpper.c_str(), objectNameUpper.c_str()));
+
 	for (ZResource* res : resources)
 	{
 		std::string resSrc = res->GetSourceOutputHeader("");
@@ -650,8 +730,9 @@ void ZFile::GenerateSourceHeaderFiles()
 
 	formatter.Write(ProcessExterns());
 
-	fs::path headerFilename =
-		Globals::Instance->sourceOutputPath / (Path::GetFileNameWithoutExtension(name) + ".h");
+	formatter.Write("#endif\n");
+
+	fs::path headerFilename = GetSourceOutputFolderPath() / outName.stem().concat(".h");
 
 	File::WriteAllText(headerFilename.string(), formatter.GetOutput());
 }
@@ -727,10 +808,6 @@ std::string ZFile::ProcessDeclarations()
 
 	defines += ProcessTextureIntersections(name);
 
-	// Account for padding/alignment
-	uint32_t lastAddr = 0;
-	uint32_t lastSize = 0;
-
 	// printf("RANGE START: 0x%06X - RANGE END: 0x%06X\n", rangeStart, rangeEnd);
 
 	// Optimization: See if there are any arrays side by side that can be merged...
@@ -777,77 +854,6 @@ std::string ZFile::ProcessDeclarations()
 	{
 		while (item.second->size % 4 != 0)
 			item.second->size++;
-
-		if (lastAddr != 0)
-		{
-			if (item.second->alignment == DeclarationAlignment::Align16)
-			{
-				// int32_t lastAddrSizeTest = declarations[lastAddr]->size;
-				int32_t curPtr = lastAddr + declarations[lastAddr]->size;
-
-				while (curPtr % 4 != 0)
-				{
-					declarations[lastAddr]->size++;
-					// item.second->size++;
-					curPtr++;
-				}
-
-				/*while (curPtr % 16 != 0)
-				{
-				    char buffer[2048];
-
-				    sprintf(buffer, "static u32 align%02X = 0;\n", curPtr);
-				    item.second->text = buffer + item.second->text;
-
-				    declarations[lastAddr]->size += 4;
-				    curPtr += 4;
-				}*/
-			}
-			else if (item.second->alignment == DeclarationAlignment::Align8)
-			{
-				int32_t curPtr = lastAddr + declarations[lastAddr]->size;
-
-				while (curPtr % 4 != 0)
-				{
-					declarations[lastAddr]->size++;
-					// item.second->size++;
-					curPtr++;
-				}
-
-				while (curPtr % 8 != 0)
-				{
-					char buffer[2048];
-
-					sprintf(buffer, "static u32 align%02X = 0;\n", curPtr);
-					item.second->preText = buffer + item.second->preText;
-
-					declarations[lastAddr]->size += 4;
-					// item.second->size += 4;
-					curPtr += 4;
-				}
-			}
-		}
-
-		if (item.second->padding == DeclarationPadding::Pad16)
-		{
-			int32_t curPtr = item.first + item.second->size;
-
-			while (curPtr % 4 != 0)
-			{
-				item.second->size++;
-				curPtr++;
-			}
-
-			while (curPtr % 16 != 0)
-			{
-				item.second->postText += StringHelper::Sprintf("static u32 pad%02X = 0;\n", curPtr);
-
-				item.second->size += 4;
-				curPtr += 4;
-			}
-		}
-
-		lastAddr = item.first;
 	}
 
 	// Handle unaccounted data
@@ -1094,8 +1100,6 @@ std::string ZFile::ProcessDeclarations()
 		}
 	}
 
-	output += "\n";
-
 	return output;
 }
 
@@ -1245,4 +1249,176 @@ std::string ZFile::ProcessTextureIntersections(std::string prefix)
 	}
 
 	return defines;
+}
+
+void ZFile::HandleUnaccountedData()
+{
+	uint32_t lastAddr = 0;
+	uint32_t lastSize = 0;
+	std::vector<offset_t> declsAddresses;
+
+	for (const auto& item : declarations)
+	{
+		declsAddresses.push_back(item.first);
+	}
+
+	bool breakLoop = false;
+	for (offset_t currentAddress : declsAddresses)
+	{
+		if (currentAddress >= rangeEnd)
+		{
+			breakLoop = true;
+			break;
+		}
+
+		if (currentAddress < rangeStart)
+		{
+			lastAddr = currentAddress;
+			continue;
+		}
+
+		breakLoop = HandleUnaccountedAddress(currentAddress, lastAddr, lastSize);
+		if (breakLoop)
+			break;
+
+		lastAddr = currentAddress;
+	}
+
+	if (!breakLoop)
+	{
+		// TODO: change rawData.size() to rangeEnd
+		// HandleUnaccountedAddress(rangeEnd, lastAddr, lastSize);
+		HandleUnaccountedAddress(rawData.size(), lastAddr, lastSize);
+	}
+}
+
+bool ZFile::HandleUnaccountedAddress(offset_t currentAddress, offset_t lastAddr, uint32_t& lastSize)
+{
+	if (currentAddress != lastAddr && declarations.find(lastAddr) != declarations.end())
+	{
+		Declaration* lastDecl = declarations.at(lastAddr);
+		lastSize = lastDecl->size;
+
+		if (lastAddr + lastSize > currentAddress)
+		{
+			Declaration* currentDecl = declarations.at(currentAddress);
+
+			std::string intersectionInfo = StringHelper::Sprintf(
+				"Resource from 0x%06X:0x%06X (%s) conflicts with 0x%06X (%s).", lastAddr,
+				lastAddr + lastSize, lastDecl->varName.c_str(), currentAddress,
+				currentDecl->varName.c_str());
+			HANDLE_WARNING_RESOURCE(WarningType::Intersection, this, nullptr, currentAddress,
+			                        "intersection detected", intersectionInfo);
+		}
+	}
+
+	uint32_t unaccountedAddress = lastAddr + lastSize;
+
+	if (unaccountedAddress != currentAddress && lastAddr >= rangeStart &&
+	    unaccountedAddress < rangeEnd)
+	{
+		int diff = currentAddress - unaccountedAddress;
+		bool nonZeroUnaccounted = false;
+
+		std::string src = "    ";
+
+		if (currentAddress > rawData.size())
+		{
+			throw std::runtime_error(StringHelper::Sprintf(
+				"ZFile::ProcessDeclarations(): Fatal error while processing XML '%s'.\n"
+				"\t Offset '0x%X' is outside of the limits of file '%s', which has a size of "
+				"'0x%X'.\n"
+				"\t Aborting...",
+				xmlFilePath.c_str(), currentAddress, name.c_str(), rawData.size()));
+		}
+
+		// Handle Align8
+		if (currentAddress % 8 == 0 && diff % 8 != 0)
+		{
+			Declaration* currentDecl = GetDeclaration(currentAddress);
+
+			if (currentDecl != nullptr)
+			{
+				if (currentDecl->alignment == DeclarationAlignment::Align8)
+				{
+					// Check removed bytes are zeroes
+					if (BitConverter::ToUInt32BE(rawData, unaccountedAddress + diff - 4) == 0)
+					{
+						diff -= 4;
+					}
+				}
+
+				if (diff == 0)
+				{
+					return false;
+				}
+			}
+		}
+
+		for (int i = 0; i < diff; i++)
+		{
+			uint8_t val = rawData.at(unaccountedAddress + i);
+			src += StringHelper::Sprintf("0x%02X, ", val);
+			if (val != 0x00)
+			{
+				nonZeroUnaccounted = true;
+			}
+
+			if (Globals::Instance->verboseUnaccounted)
+			{
+				if ((i % 4 == 3))
+				{
+					src += StringHelper::Sprintf(" // 0x%06X", unaccountedAddress + i - 3);
+					if (i != (diff - 1))
+					{
+						src += "\n\t";
+					}
+				}
+			}
+			else
+			{
+				if ((i % 16 == 15) && (i != (diff - 1)))
+					src += "\n    ";
+			}
+		}
+
+		if (declarations.find(unaccountedAddress) == declarations.end() && diff > 0)
+		{
+			std::string unaccountedPrefix = "unaccounted";
+
+			if (diff < 16 && !nonZeroUnaccounted)
+			{
+				unaccountedPrefix = "possiblePadding";
+
+				// Strip unnecessary padding at the end of the file.
+				if (unaccountedAddress + diff >= rawData.size())
+					return true;
+			}
+
+			Declaration* decl = AddDeclarationArray(
+				unaccountedAddress, DeclarationAlignment::Align4, diff, "u8",
+				StringHelper::Sprintf("%s_%s_%06X", name.c_str(), unaccountedPrefix.c_str(),
+			                          unaccountedAddress),
+				diff, src);
+
+			decl->isUnaccounted = true;
+			if (Globals::Instance->forceUnaccountedStatic)
+				decl->staticConf = StaticConfig::On;
+
+			if (nonZeroUnaccounted)
+			{
+				HANDLE_WARNING_RESOURCE(WarningType::Unaccounted, this, nullptr, unaccountedAddress,
+				                        "a non-zero unaccounted block was found",
+				                        StringHelper::Sprintf("Block size: '0x%X'", diff));
+			}
+			else if (diff >= 16)
+			{
+				HANDLE_WARNING_RESOURCE(WarningType::Unaccounted, this, nullptr, unaccountedAddress,
+				                        "a big (size>=0x10) zero-only unaccounted block was found",
+				                        StringHelper::Sprintf("Block size: '0x%X'", diff));
+			}
+		}
+	}
+
+	return false;
 }

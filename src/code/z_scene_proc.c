@@ -1,5 +1,4 @@
-#include <ultra64.h>
-#include <global.h>
+#include "global.h"
 
 //! @TODO: Once BSS is supported, remove these from `variables.h` (because they are static), and uncomment these here.
 // static s32 sMatAnimStep;
@@ -116,7 +115,7 @@ void AnimatedMat_DrawTwoTexScroll(GlobalContext* globalCtx, s32 segment, void* p
  * Generates a displaylist that sets the prim and env color, and stores it in the provided segment ID.
  */
 void AnimatedMat_SetColor(GlobalContext* globalCtx, s32 segment, F3DPrimColor* primColorResult, F3DEnvColor* envColor) {
-    Gfx* colorDList = (Gfx*)GRAPH_ALLOC(globalCtx->state.gfxCtx, sizeof(Gfx) * 4);
+    Gfx* colorDList = GRAPH_ALLOC(globalCtx->state.gfxCtx, sizeof(Gfx) * 4);
 
     OPEN_DISPS(globalCtx->state.gfxCtx);
 
@@ -143,13 +142,10 @@ void AnimatedMat_SetColor(GlobalContext* globalCtx, s32 segment, F3DPrimColor* p
  */
 void AnimatedMat_DrawColor(GlobalContext* globalCtx, s32 segment, void* params) {
     AnimatedMatColorParams* colorAnimParams = (AnimatedMatColorParams*)params;
-    F3DPrimColor* primColor;
+    F3DPrimColor* primColor = Lib_SegmentedToVirtual(colorAnimParams->primColors);
     F3DEnvColor* envColor;
-    s32 curFrame;
+    s32 curFrame = sMatAnimStep % colorAnimParams->keyFrameLength;
 
-    primColor = (F3DPrimColor*)Lib_SegmentedToVirtual(colorAnimParams->primColors);
-
-    curFrame = sMatAnimStep % colorAnimParams->keyFrameLength;
     primColor += curFrame;
     envColor = (colorAnimParams->envColors != NULL)
                    ? (F3DEnvColor*)Lib_SegmentedToVirtual(colorAnimParams->envColors) + curFrame
@@ -171,10 +167,10 @@ s32 AnimatedMat_Lerp(s32 min, s32 max, f32 norm) {
  */
 void AnimatedMat_DrawColorLerp(GlobalContext* globalCtx, s32 segment, void* params) {
     AnimatedMatColorParams* colorAnimParams = (AnimatedMatColorParams*)params;
-    F3DPrimColor* primColorMax;
+    F3DPrimColor* primColorMax = Lib_SegmentedToVirtual(colorAnimParams->primColors);
     F3DEnvColor* envColorMax;
-    u16* keyFrames;
-    s32 curFrame;
+    u16* keyFrames = Lib_SegmentedToVirtual(colorAnimParams->keyFrames);
+    s32 curFrame = sMatAnimStep % colorAnimParams->keyFrameLength;
     s32 endFrame;
     s32 relativeFrame; // relative to the start frame
     s32 startFrame;
@@ -185,9 +181,6 @@ void AnimatedMat_DrawColorLerp(GlobalContext* globalCtx, s32 segment, void* para
     F3DEnvColor envColorResult;
     s32 i;
 
-    primColorMax = (F3DPrimColor*)Lib_SegmentedToVirtual(colorAnimParams->primColors);
-    keyFrames = (u16*)Lib_SegmentedToVirtual(colorAnimParams->keyFrames);
-    curFrame = sMatAnimStep % colorAnimParams->keyFrameLength;
     keyFrames++;
     i = 1;
 
@@ -213,7 +206,7 @@ void AnimatedMat_DrawColorLerp(GlobalContext* globalCtx, s32 segment, void* para
     primColorResult.lodFrac = AnimatedMat_Lerp(primColorMin->lodFrac, primColorMax->lodFrac, norm);
 
     if (colorAnimParams->envColors) {
-        envColorMax = (F3DEnvColor*)Lib_SegmentedToVirtual(colorAnimParams->envColors);
+        envColorMax = Lib_SegmentedToVirtual(colorAnimParams->envColors);
         envColorMax += i;
         envColorMin = envColorMax - 1;
         envColorResult.r = AnimatedMat_Lerp(envColorMin->r, envColorMax->r, norm);
@@ -242,7 +235,7 @@ f32 Scene_LagrangeInterp(s32 n, f32 x[], f32 fx[], f32 xp) {
     s32 i;
     s32 j;
 
-    for (i = 0, weightsPtr = weights, xPtr1 = x, fxPtr = fx, weightsPtr = weightsPtr; i < n; i++) {
+    for (i = 0, xPtr1 = x, fxPtr = fx, weightsPtr = weights; i < n; i++) {
         for (xVal = *xPtr1, m = 1.0f, j = 0, xPtr2 = x; j < n; j++) {
             if (j != i) {
                 m *= xVal - (*xPtr2);
@@ -372,8 +365,8 @@ void AnimatedMat_DrawColorNonLinearInterp(GlobalContext* globalCtx, s32 segment,
  */
 void AnimatedMat_DrawTexCycle(GlobalContext* globalCtx, s32 segment, void* params) {
     AnimatedMatTexCycleParams* texAnimParams = params;
-    void** texList = (void**)Lib_SegmentedToVirtual(texAnimParams->textureList);
-    u8* texId = (u8*)Lib_SegmentedToVirtual(texAnimParams->textureIndexList);
+    void** texList = Lib_SegmentedToVirtual(texAnimParams->textureList);
+    u8* texId = Lib_SegmentedToVirtual(texAnimParams->textureIndexList);
     s32 curFrame = sMatAnimStep % texAnimParams->keyFrameLength;
     void* tex = Lib_SegmentedToVirtual(texList[texId[curFrame]]);
 
@@ -410,9 +403,9 @@ void AnimatedMat_DrawMain(GlobalContext* globalCtx, AnimatedMaterial* matAnim, f
         do {
             segment = matAnim->segment;
             segmentAbs = ((segment < 0) ? -segment : segment) + 7;
-            matAnimDrawHandlers[matAnim->type](globalCtx, segmentAbs, (void*)Lib_SegmentedToVirtual(matAnim->params));
+            matAnimDrawHandlers[matAnim->type](globalCtx, segmentAbs, Lib_SegmentedToVirtual(matAnim->params));
             matAnim++;
-        } while (segment > -1);
+        } while (segment >= 0);
     }
 }
 
@@ -728,7 +721,7 @@ void Scene_DrawConfigGreatBayTemple(GlobalContext* globalCtx) {
         func_800C3C14(&globalCtx->colCtx, 1);
     }
 
-    dList = (Gfx*)GRAPH_ALLOC(globalCtx->state.gfxCtx, sizeof(Gfx) * 18);
+    dList = GRAPH_ALLOC(globalCtx->state.gfxCtx, sizeof(Gfx) * 18);
 
     AnimatedMat_Draw(globalCtx, globalCtx->sceneMaterialAnims);
 

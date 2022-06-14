@@ -1,7 +1,10 @@
 #ifndef Z_OBJ_AQUA_H
 #define Z_OBJ_AQUA_H
 
-#include <global.h>
+#include "global.h"
+
+#define AQUA_HOT(thisx) ((thisx)->params & 1)
+#define OBJAQUA_1 1
 
 struct ObjAqua;
 

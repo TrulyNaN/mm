@@ -1,5 +1,8 @@
-#include <ultra64.h>
-#include <global.h>
+#include "global.h"
+
+UNK_TYPE4 D_8009BE30;
+UNK_TYPE4 D_8009BE34;
+FaultClient romInfoFaultClient;
 
 void CIC6105_Nop80081820(void) {
 }

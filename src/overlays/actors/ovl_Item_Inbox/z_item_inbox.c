@@ -1,6 +1,6 @@
 #include "z_item_inbox.h"
 
-#define FLAGS 0x00000009
+#define FLAGS (ACTOR_FLAG_1 | ACTOR_FLAG_8)
 
 #define THIS ((ItemInbox*)thisx)
 
@@ -34,7 +34,7 @@ void ItemInbox_Destroy(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 void ItemInbox_Idle(ItemInbox* this, GlobalContext* globalCtx) {
-    if (Actor_GetChestFlag(globalCtx, (this->actor.params >> 8) & 0x1F)) {
+    if (Flags_GetTreasure(globalCtx, (this->actor.params >> 8) & 0x1F)) {
         Actor_MarkForDeath(&this->actor);
     }
 }

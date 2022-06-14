@@ -71,11 +71,6 @@ std::string ZBlob::GetSourceOutputCode(const std::string& prefix)
 	return sourceOutput;
 }
 
-std::string ZBlob::GetSourceOutputHeader(const std::string& prefix)
-{
-	return StringHelper::Sprintf("extern u8 %s[];\n", name.c_str());
-}
-
 void ZBlob::Save(const fs::path& outFolder)
 {
 	File::WriteAllBytes(outFolder / (name + ".bin"), blobData);

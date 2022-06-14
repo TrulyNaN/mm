@@ -6,8 +6,9 @@
 struct BgFireWall;
 
 typedef struct BgFireWall {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x6C];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ BgFireWallActionFunc actionFunc;
+    /* 0x0148 */ char unk_148[0x68];
 } BgFireWall; // size = 0x1B0
 
 extern const ActorInit Bg_Fire_Wall_InitVars;

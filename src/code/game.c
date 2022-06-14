@@ -1,5 +1,5 @@
-#include <ultra64.h>
-#include <global.h>
+#include "global.h"
+#include "system_malloc.h"
 
 s32 gFramerateDivisor = 1;
 f32 gFramerateDivisorF = 1.0f;
@@ -167,11 +167,11 @@ void Game_ResizeHeap(GameState* gamestate, u32 size) {
     u32 bytesAllocated;
     void* heapStart;
 
-    heapStart = gamestate->heap.bufp;
-    alloc = &gamestate->alloc;
-    THA_Dt(&gamestate->heap);
-    Gamealloc_Free(alloc, heapStart);
-    StartHeap_AnalyzeArena(&systemMaxFree, &bytesFree, &bytesAllocated);
+    heapStart = gameState->heap.bufp;
+    alloc = &gameState->alloc;
+    THA_Dt(&gameState->heap);
+    GameAlloc_Free(alloc, heapStart);
+    SystemArena_GetSizes(&systemMaxFree, &bytesFree, &bytesAllocated);
     size = ((systemMaxFree - (sizeof(ArenaNode))) < size) ? (0) : (size);
     if (!size) {
         size = systemMaxFree - (sizeof(ArenaNode));

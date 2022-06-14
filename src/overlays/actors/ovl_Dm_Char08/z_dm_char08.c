@@ -1,6 +1,6 @@
 #include "z_dm_char08.h"
 
-#define FLAGS 0x02000000
+#define FLAGS (ACTOR_FLAG_2000000)
 
 #define THIS ((DmChar08*)thisx)
 

@@ -3,12 +3,17 @@
 #include <Path.h>
 #include <algorithm>
 #include <chrono>
-#include <math.h>
-#include "BitConverter.h"
+#include <cinttypes>
+#include <cmath>
+
 #include "Globals.h"
 #include "HighLevel/HLModelIntermediette.h"
 #include "OutputFormatter.h"
-#include "StringHelper.h"
+#include "Utils/BitConverter.h"
+#include "Utils/File.h"
+#include "Utils/Path.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
 #include "gfxd.h"
 
 using namespace tinyxml2;
@@ -27,9 +32,8 @@ ZDisplayList::ZDisplayList(ZFile* nParent) : ZResource(nParent)
 	lastTexSizTest = F3DZEXTexSizes::G_IM_SIZ_16b;
 	lastTexLoaded = false;
 	lastTexIsPalette = false;
-	name = "";
-	scene = nullptr;
 	dListType = Globals::Instance->game == ZGame::OOT_SW97 ? DListType::F3DEX : DListType::F3DZEX;
+	RegisterOptionalAttribute("Ucode");
 }
 
 ZDisplayList::~ZDisplayList()
@@ -48,14 +52,32 @@ void ZDisplayList::ExtractFromXML(tinyxml2::XMLElement* reader,
 	rawData.assign(nRawData.begin(), nRawData.end());
 	rawDataIndex = nRawDataIndex;
 	ParseXML(reader);
+	// TODO add error handling here
+	bool ucodeSet = registeredAttributes.at("Ucode").wasSet;
+	std::string ucodeValue = registeredAttributes.at("Ucode").value;
+	if ((Globals::Instance->game == ZGame::OOT_SW97) || (ucodeValue == "f3dex"))
+	{
+		dListType = DListType::F3DEX;
+	}
+	else if (!ucodeSet || ucodeValue == "f3dex2")
+	{
+		dListType = DListType::F3DZEX;
+	}
+	else
+	{
+		HANDLE_ERROR_RESOURCE(
+			WarningType::InvalidAttributeValue, parent, this, rawDataIndex,
+			StringHelper::Sprintf("Invalid ucode type in node: %s\n", reader->Name()), "");
+	}
 
-	fileData = nRawData;
-	int32_t rawDataSize = ZDisplayList::GetDListLength(
-		nRawData, rawDataIndex,
-		Globals::Instance->game == ZGame::OOT_SW97 ? DListType::F3DEX : DListType::F3DZEX);
-	dlistRawData.assign(nRawData.data() + rawDataIndex,
-	                    nRawData.data() + rawDataIndex + rawDataSize);
-	ParseRawData();
+	// Don't parse raw data of external files
+	if (parent->GetMode() != ZFileMode::ExternalFile)
+	{
+		int32_t rawDataSize =
+			ZDisplayList::GetDListLength(parent->GetRawData(), rawDataIndex, dListType);
+		numInstructions = rawDataSize / 8;
+		ParseRawData();
+	}
 
 	DeclareVar("", "");
 }
@@ -95,7 +117,7 @@ void ZDisplayList::ParseF3DZEX(F3DZEXOpcode opcode, uint64_t data, int32_t i, st
 	switch (opcode)
 	{
 	case F3DZEXOpcode::G_NOOP:
-		sprintf(line, "gsDPNoOpTag(0x%08lX),", data & 0xFFFFFFFF);
+		sprintf(line, "gsDPNoOpTag(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 		break;
 	case F3DZEXOpcode::G_DL:
 		Opcode_G_DL(data, prefix, line);
@@ -210,7 +232,7 @@ void ZDisplayList::ParseF3DZEX(F3DZEXOpcode opcode, uint64_t data, int32_t i, st
 	break;
 	case F3DZEXOpcode::G_POPMTX:
 	{
-		sprintf(line, "gsSPPopMatrix(%li),", data);
+		sprintf(line, "gsSPPopMatrix(%" PRIi64 "),", data);
 	}
 	break;
 	case F3DZEXOpcode::G_LOADTLUT:
@@ -286,7 +308,7 @@ void ZDisplayList::ParseF3DEX(F3DEXOpcode opcode, uint64_t data, std::string pre
 	switch (opcode)
 	{
 	case F3DEXOpcode::G_NOOP:
-		sprintf(line, "gsDPNoOpTag(0x%08lX),", data & 0xFFFFFFFF);
+		sprintf(line, "gsDPNoOpTag(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 		break;
 	case F3DEXOpcode::G_VTX:
 		Opcode_G_VTX(data, line);
@@ -425,8 +447,19 @@ int32_t ZDisplayList::GetDListLength(std::vector<uint8_t> rawData, uint32_t rawD
 
 	while (true)
 	{
-		uint8_t opcode = rawData.at(rawDataIndex + (i * 8));
-		i++;
+		if (ptr >= rawDataSize)
+		{
+			std::string errorHeader =
+				StringHelper::Sprintf("reached end of file when trying to find the end of the "
+			                          "DisplayList starting at offset 0x%X",
+			                          rawDataIndex);
+			std::string errorBody = StringHelper::Sprintf("Raw data size: 0x%zX.", rawDataSize);
+			HANDLE_ERROR_PROCESS(WarningType::Always, errorHeader, errorBody);
+		}
+
+		uint8_t opcode = rawData.at(ptr);
+		bool dlNoPush = rawData.at(ptr + 1) == 1;
+		ptr += 8;
 
 		if (opcode == endDLOpcode)
 			return i * 8;
@@ -671,20 +704,22 @@ void ZDisplayList::Opcode_G_DL(uint64_t data, std::string prefix, char* line)
 	if (pp != 0)
 	{
 		if (!Globals::Instance->HasSegment(segNum))
-			sprintf(line, "gsSPBranchList(0x%08lX),", data & 0xFFFFFFFF);
+			sprintf(line, "gsSPBranchList(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 		else if (dListDecl != nullptr)
 			sprintf(line, "gsSPBranchList(%s),", dListDecl->varName.c_str());
 		else
-			sprintf(line, "gsSPBranchList(%sDlist0x%06lX),", prefix.c_str(), GETSEGOFFSET(data));
+			sprintf(line, "gsSPBranchList(%sDlist0x%06" PRIX64 "),", prefix.c_str(),
+			        GETSEGOFFSET(data));
 	}
 	else
 	{
 		if (!Globals::Instance->HasSegment(segNum))
-			sprintf(line, "gsSPDisplayList(0x%08lX),", data & 0xFFFFFFFF);
+			sprintf(line, "gsSPDisplayList(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 		else if (dListDecl != nullptr)
 			sprintf(line, "gsSPDisplayList(%s),", dListDecl->varName.c_str());
 		else
-			sprintf(line, "gsSPDisplayList(%sDlist0x%06lX),", prefix.c_str(), GETSEGOFFSET(data));
+			sprintf(line, "gsSPDisplayList(%sDlist0x%06" PRIX64 "),", prefix.c_str(),
+			        GETSEGOFFSET(data));
 	}
 
 	// if (segNum == 8 || segNum == 9 || segNum == 10 || segNum == 11 || segNum == 12 || segNum ==
@@ -692,9 +727,9 @@ void ZDisplayList::Opcode_G_DL(uint64_t data, std::string prefix, char* line)
 	if (!Globals::Instance->HasSegment(segNum))
 	{
 		if (pp != 0)
-			sprintf(line, "gsSPBranchList(0x%08lX),", data & 0xFFFFFFFF);
+			sprintf(line, "gsSPBranchList(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 		else
-			sprintf(line, "gsSPDisplayList(0x%08lX),", data & 0xFFFFFFFF);
+			sprintf(line, "gsSPDisplayList(0x%08" PRIX64 "),", data & 0xFFFFFFFF);
 	}
 	else
 	{
@@ -822,7 +857,7 @@ void ZDisplayList::Opcode_G_VTX(uint64_t data, char* line)
 	{
 		segptr_t segmented = data & 0xFFFFFFFF;
 		references.push_back(segmented);
-		parent->AddDeclaration(segmented, DeclarationAlignment::Align16, 16, "Vtx",
+		parent->AddDeclaration(segmented, DeclarationAlignment::Align8, 16, "Vtx",
 		                       StringHelper::Sprintf("0x%08X", segmented), "");
 		return;
 	}
@@ -937,7 +972,7 @@ void ZDisplayList::Opcode_G_SETTIMG(uint64_t data, std::string prefix, char* lin
 			sprintf(texStr, "%sTex_%06X", prefix.c_str(), texAddress);
 		else
 		{
-			sprintf(texStr, "0x%08lX", data & 0xFFFFFFFF);
+			sprintf(texStr, "0x%08" PRIX64, data & 0xFFFFFFFF);
 		}
 
 		sprintf(line, "gsDPSetTextureImage(%s, %s, %i, %s),", fmtTbl[fmt].c_str(),
@@ -1533,12 +1568,7 @@ void ZDisplayList::Opcode_G_ENDDL(std::string prefix, char* line)
 	TextureGenCheck(prefix);
 }
 
-std::string ZDisplayList::GetSourceOutputHeader(const std::string& prefix)
-{
-	return "";
-}
-
-static int32_t GfxdCallback_FormatSingleEntry(void)
+static int32_t GfxdCallback_FormatSingleEntry()
 {
 	ZDisplayList* self = static_cast<ZDisplayList*>(gfxd_udata_get());
 	gfxd_puts("\t");
@@ -1784,7 +1814,7 @@ static int32_t GfxdCallback_Matrix(uint32_t seg)
 	return 1;
 }
 
-std::string ZDisplayList::GetSourceOutputCode(const std::string& prefix)
+void ZDisplayList::DeclareReferences(const std::string& prefix)
 {
 	std::string sourceOutput = "";
 
@@ -1830,14 +1860,7 @@ std::string ZDisplayList::GetSourceOutputCode(const std::string& prefix)
 			uint32_t curAddr = item.first;
 
 			for (auto vtx : item.second)
-			{
-				if (curAddr != item.first)
-					declaration += "\n";
-
-				declaration += vtx.GetBodySourceCode();
-
-				curAddr += 16;
-			}
+				declaration += StringHelper::Sprintf("\t%s,\n", vtx.GetBodySourceCode().c_str());
 
 			vtxDeclarations[item.first] = declaration;
 
@@ -1945,11 +1968,6 @@ std::string ZDisplayList::GetSourceOutputCode(const std::string& prefix)
 			}
 		}
 	}
-
-	if (parent != nullptr)
-		return "";
-
-	return sourceOutput;
 }
 
 std::string ZDisplayList::ProcessLegacy(const std::string& prefix)
@@ -1981,10 +1999,10 @@ std::string ZDisplayList::ProcessLegacy(const std::string& prefix)
 		}
 
 		auto end = std::chrono::steady_clock::now();
-		auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+		int64_t diff = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
 		if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_DEBUG && diff > 5)
-			printf("F3DOP: 0x%02X, TIME: %lims\n", opcode, diff);
+			printf("F3DOP: 0x%02X, TIME: %" PRIi64 "ms\n", opcode, diff);
 
 		sourceOutput += line;
 
@@ -2063,7 +2081,13 @@ bool ZDisplayList::TextureGenCheck(std::vector<uint8_t> fileData, ZRoom* scene, 
 	{
 		if (segmentNumber != SEGMENT_SCENE)
 		{
-			if (texAddr < parent->GetRawData().size())
+			auxParent = self->parent;
+		}
+		else
+		{
+			// Try to find a non-external file (i.e., one we are actually extracting)
+			// which has the same segment number we are looking for.
+			for (auto& otherFile : Globals::Instance->cfg.segmentRefFiles[segmentNumber])
 			{
 				ZTexture* tex = parent->GetTextureResource(texAddr);
 				if (tex != nullptr)

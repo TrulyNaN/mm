@@ -1,6 +1,7 @@
 #include "z_obj_lightswitch.h"
+#include "objects/object_lightswitch/object_lightswitch.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((ObjLightswitch*)thisx)
 
@@ -60,10 +61,10 @@ static ColliderJntSphInit sJntSphInit = {
 };
 
 // different face addresses for (sleep -> waking -> awake) of light switch face
-Gfx* lightswitchFaceGfx[] = {
-    D_06000C20,
-    D_06000420,
-    D_06001420,
+static TexturePtr sLightswitchFaceGfx[] = {
+    object_lightswitch_Tex_000C20,
+    object_lightswitch_Tex_000420,
+    object_lightswitch_Tex_001420,
 };
 
 Color_RGBA8 lightswitchEffectPrimColor = {
@@ -91,11 +92,11 @@ void ObjLightswitch_InitCollider(ObjLightswitch* this, GlobalContext* globalCtx)
 
     Collider_InitJntSph(globalCtx, &this->collider);
     Collider_SetJntSph(globalCtx, &this->collider, &this->actor, &sJntSphInit, &this->elements);
-    this->actor.colChkInfo.mass = 0xFF;
-    SysMatrix_SetStateRotationAndTranslation(
-        this->actor.world.pos.x, this->actor.world.pos.y + (this->actor.shape.yOffset * this->actor.scale.y),
-        this->actor.world.pos.z, &this->actor.shape.rot);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, 1);
+    this->actor.colChkInfo.mass = MASS_IMMOVABLE;
+    Matrix_SetTranslateRotateYXZ(this->actor.world.pos.x,
+                                 this->actor.world.pos.y + (this->actor.shape.yOffset * this->actor.scale.y),
+                                 this->actor.world.pos.z, &this->actor.shape.rot);
+    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     Collider_UpdateSpheres(0, &this->collider);
 }
 
@@ -103,9 +104,9 @@ void ObjLightswitch_UpdateSwitchFlags(ObjLightswitch* this, GlobalContext* globa
     if (this) {}
 
     if (set) {
-        Actor_SetSwitchFlag(globalCtx, GET_LIGHTSWITCH_SWITCHFLAG(this));
+        Flags_SetSwitch(globalCtx, GET_LIGHTSWITCH_SWITCHFLAG(this));
     } else {
-        Actor_UnsetSwitchFlag(globalCtx, GET_LIGHTSWITCH_SWITCHFLAG(this));
+        Flags_UnsetSwitch(globalCtx, GET_LIGHTSWITCH_SWITCHFLAG(this));
     }
 }
 
@@ -148,29 +149,15 @@ void ObjLightswitch_SpawnEffects(ObjLightswitch* this, GlobalContext* globalCtx)
             tempResult = sqrtf(tempResult);
         }
 
-        tempResult5 = 2.0f * ((Rand_ZeroOne() - 0.5f) * tempResult);
+        tempResult = 2.0f * ((Rand_ZeroOne() - 0.5f) * tempResult);
+        rand = ((30.0f - fabsf(tempResult)) * 0.5f) + (Rand_ZeroOne() * 10.0f);
 
-        // permuter seems to think something could be added to fix ordering here, but doesn't fix enough
-        // goto dummy_label_809848; dummy_label_809848: ; // minor regalloc fix
-        // if (cosResult){} // minor regalloc fix, but breaks some code
+        effectPos.x = this->actor.world.pos.x + ((rand * sinResult) + (tempResult * cosResult));
+        effectPos.y = this->actor.world.pos.y + tempResultDiff + 10.0f;
+        effectPos.z = this->actor.world.pos.z + ((rand * cosResult) - (tempResult * sinResult));
 
-        // saving fabsf result as a temp might help, but need to reduce temps
-        // fabsResult = fabsf(tempResult5);
-        // randomOutput = (Rand_ZeroOne() * 10.0f) + ((30.0f - fabsResult) * 0.5f);
-        // randomOutput = fabsf(tempResult5);
-        // randomOutput = (Rand_ZeroOne() * 10.0f) + ((30.0f - randomOutput) * 0.5f);
-        randomOutput = (Rand_ZeroOne() * 10.0f) + ((30.0f - fabsf(tempResult5)) * 0.5f);
-
-        effectPos.x = this->actor.world.pos.x + ((randomOutput * sinResult) + (tempResult5 * cosResult));
-        effectPos.y = this->actor.world.pos.y + tempResult_shorter + 10.0f;
-        effectPos.z = this->actor.world.pos.z + ((randomOutput * cosResult) - (tempResult5 * sinResult));
-        // weirdly, using a temp here make a big difference, but.. is that right? just one temp? prob ordering issue
-        // above
-        // tempResult = this->actor.world.pos.z + ((randomOutput * cosResult) - (tempResult5 * sinResult));
-        // effectPos.z = tempResult;
-
-        EffectSsDeadDb_Spawn(globalCtx, &effectPos, &D_801D15B0, &D_801D15B0, &lightswitchEffectPrimColor,
-                             &lightswitchEffectEnvColor, 100, 0, 9);
+        EffectSsDeadDb_Spawn(globalCtx, &effectPos, &gZeroVec3f, &gZeroVec3f, &sLightswitchEffectPrimColor,
+                             &sLightswitchEffectEnvColor, 100, 0, 9);
     }
 }
 #else
@@ -187,7 +174,7 @@ void ObjLightswitch_Init(Actor* thisx, GlobalContext* globalCtx) {
     switchFlagResult = Flags_GetSwitch(globalCtx, GET_LIGHTSWITCH_SWITCHFLAG(this));
     isTriggered = 0;
     Actor_ProcessInitChain(&this->actor, sInitChain);
-    Actor_SetHeight(&this->actor, 0.0f);
+    Actor_SetFocus(&this->actor, 0.0f);
 
     if (switchFlagResult != 0) {
         if (GET_LIGHTSWITCH_TYPE(this) == LIGHTSWITCH_TYPE_FAKE) {
@@ -265,7 +252,7 @@ void ObjLightSwitch_SetupAsleep(ObjLightswitch* this) {
 
 void ObjLightSwitch_Asleep(ObjLightswitch* this, GlobalContext* globalCtx) {
     if (this->colorShiftTimer == 0) {
-        Audio_PlayActorSound2(&this->actor, NA_SE_EV_SUN_MARK_FLASH);
+        Actor_PlaySfxAtPos(&this->actor, NA_SE_EV_SUN_MARK_FLASH);
     }
     this->colorShiftTimer++;
 
@@ -278,7 +265,7 @@ void ObjLightSwitch_Asleep(ObjLightswitch* this, GlobalContext* globalCtx) {
         ObjLightSwitch_SetupEnabled(this);
     } else if (this->colorShiftTimer == 15) {
         this->faceState = LIGHTSWITCH_FACE_WAKING;
-        Audio_PlayActorSound2(&this->actor, NA_SE_EV_FOOT_SWITCH);
+        Actor_PlaySfxAtPos(&this->actor, NA_SE_EV_FOOT_SWITCH);
     }
 }
 
@@ -336,7 +323,7 @@ void ObjLightSwitch_Disabled(ObjLightswitch* this, GlobalContext* globalCtx) {
         ObjLightswitch_SetupIdle(this);
     } else if (this->colorShiftTimer == 15) {
         this->faceState = LIGHTSWITCH_FACE_ASLEEP;
-        Audio_PlayActorSound2(&this->actor, NA_SE_EV_FOOT_SWITCH);
+        Actor_PlaySfxAtPos(&this->actor, NA_SE_EV_FOOT_SWITCH);
     }
 }
 
@@ -421,28 +408,22 @@ void ObjLightSwitch_DrawOpa(ObjLightswitch* this, GlobalContext* globalCtx) {
     tempPos.z = this->actor.world.pos.z;
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(D_80960BC4[this->faceState]));
-
-    gSPDisplayList(POLY_OPA_DISP++, 0x6000260);
+    gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sLightswitchFaceGfx[this->faceState]));
+    gSPDisplayList(POLY_OPA_DISP++, object_lightswitch_DL_000260);
 
     tempRot.x = this->actor.shape.rot.x;
     tempRot.y = this->actor.shape.rot.y;
     tempRot.z = this->actor.shape.rot.z + this->edgeRot;
-    SysMatrix_SetStateRotationAndTranslation(tempPos.z, tempPos.y, tempPos.x, &tempRot);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, 1);
-
+    Matrix_SetTranslateRotateYXZ(tempPos.x, tempPos.y, tempPos.z, &tempRot);
+    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPDisplayList(POLY_OPA_DISP++, 0x6000398);
+    gSPDisplayList(POLY_OPA_DISP++, object_lightswitch_DL_000398);
 
     tempRot.z = this->actor.shape.rot.z - this->edgeRot;
-    SysMatrix_SetStateRotationAndTranslation(tempPos.z, tempPos.y, tempPos.x, &tempRot);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, 1);
-
+    Matrix_SetTranslateRotateYXZ(tempPos.x, tempPos.y, tempPos.z, &tempRot);
+    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPDisplayList(POLY_OPA_DISP++, 0x6000408);
+    gSPDisplayList(POLY_OPA_DISP++, object_lightswitch_DL_000408);
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
 }
@@ -474,28 +455,22 @@ void ObjLightSwitch_DrawXlu(ObjLightswitch* this, GlobalContext* globalCtx) {
     tempPos.z = this->actor.world.pos.z;
 
     gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPSegment(POLY_XLU_DISP++, 0x08, Lib_SegmentedToVirtual(D_80960BC4[this->faceState]));
-
-    gSPDisplayList(POLY_XLU_DISP++, 0x6000260);
+    gSPSegment(POLY_XLU_DISP++, 0x08, Lib_SegmentedToVirtual(sLightswitchFaceGfx[this->faceState]));
+    gSPDisplayList(POLY_XLU_DISP++, object_lightswitch_DL_000260);
 
     tempRot.x = this->actor.shape.rot.x;
     tempRot.y = this->actor.shape.rot.y;
     tempRot.z = this->actor.shape.rot.z + this->edgeRot;
-    SysMatrix_SetStateRotationAndTranslation(tempPos.x, tempPos.y, tempPos.z, &tempRot);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, 1);
-
+    Matrix_SetTranslateRotateYXZ(tempPos.x, tempPos.y, tempPos.z, &tempRot);
+    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPDisplayList(POLY_XLU_DISP++, 0x6000398);
+    gSPDisplayList(POLY_XLU_DISP++, object_lightswitch_DL_000398);
 
     tempRot.z = this->actor.shape.rot.z - this->edgeRot;
-    SysMatrix_SetStateRotationAndTranslation(tempPos.x, tempPos.y, tempPos.z, &tempRot);
-    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, 1);
-
+    Matrix_SetTranslateRotateYXZ(tempPos.x, tempPos.y, tempPos.z, &tempRot);
+    Matrix_Scale(this->actor.scale.x, this->actor.scale.y, this->actor.scale.z, MTXMODE_APPLY);
     gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-
-    gSPDisplayList(POLY_XLU_DISP++, 0x6000408);
+    gSPDisplayList(POLY_XLU_DISP++, object_lightswitch_DL_000408);
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
 }

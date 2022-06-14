@@ -4,10 +4,17 @@
 #include <global.h>
 
 struct ObjGrassCarry;
+struct ObjGrass;
+struct ObjGrassStruct1_1;
 
 typedef struct ObjGrassCarry {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x5C];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ ColliderCylinder collider;
+    /* 0x0190 */ struct ObjGrass* unk_190;
+    /* 0x0194 */ struct ObjGrassStruct1_1* unk_194;
+    /* 0x0198 */ s16 unk_198;
+    /* 0x019A */ s16 unk_19A;
+    /* 0x019C */ ObjGrassCarryActionFunc actionFunc;
 } ObjGrassCarry; // size = 0x1A0
 
 extern const ActorInit Obj_Grass_Carry_InitVars;

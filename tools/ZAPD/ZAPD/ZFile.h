@@ -44,12 +44,14 @@ public:
 
 	std::string GetVarName(uint32_t address);
 	std::string GetName() const;
+	std::string GetOutName() const;
+	ZFileMode GetMode() const;
 	const fs::path& GetXmlFilePath() const;
 	const std::vector<uint8_t>& GetRawData() const;
 	void ExtractResources(fs::path outputDir);
 	void BuildSourceFile(fs::path outputDir);
 	void AddResource(ZResource* res);
-	ZResource* FindResource(uint32_t rawDataIndex);
+	ZResource* FindResource(offset_t rawDataIndex);
 	std::vector<ZResource*> GetResourcesOfType(ZResourceType resType);
 
 	Declaration* AddDeclaration(uint32_t address, DeclarationAlignment alignment, size_t size,
@@ -76,14 +78,21 @@ public:
 	Declaration* AddDeclarationIncludeArray(uint32_t address, std::string includePath, size_t size,
 	                                        std::string varType, std::string varName,
 	                                        size_t arrayItemCnt);
-	std::string GetDeclarationName(uint32_t address) const;
-	std::string GetDeclarationName(uint32_t address, std::string defaultResult) const;
-	std::string GetDeclarationPtrName(segptr_t segAddress) const;
-	Declaration* GetDeclaration(uint32_t address) const;
-	Declaration* GetDeclarationRanged(uint32_t address) const;
-	uint32_t GetDeclarationRangedAddress(uint32_t address) const;
-	bool HasDeclaration(uint32_t address);
-	std::string GetHeaderInclude();
+
+	bool GetDeclarationPtrName(segptr_t segAddress, const std::string& expectedType,
+	                           std::string& declName) const;
+	bool GetDeclarationArrayIndexedName(segptr_t segAddress, size_t elementSize,
+	                                    const std::string& expectedType,
+	                                    std::string& declName) const;
+
+	Declaration* GetDeclaration(offset_t address) const;
+	Declaration* GetDeclarationRanged(offset_t address) const;
+	bool HasDeclaration(offset_t address);
+
+	std::string GetHeaderInclude() const;
+	std::string GetZRoomHeaderInclude() const;
+	std::string GetExternalFileHeaderInclude() const;
+
 	void GeneratePlaceholderDeclarations();
 
 	void AddTextureResource(uint32_t offset, ZTexture* tex);
@@ -115,5 +124,7 @@ protected:
 	void ProcessDeclarationText(Declaration* decl);
 	std::string ProcessExterns();
 
-	std::string ProcessTextureIntersections(std::string prefix);
+	std::string ProcessTextureIntersections(const std::string& prefix);
+	void HandleUnaccountedData();
+	bool HandleUnaccountedAddress(offset_t currentAddress, offset_t lastAddr, uint32_t& lastSize);
 };

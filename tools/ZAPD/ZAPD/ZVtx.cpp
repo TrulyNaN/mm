@@ -83,3 +83,8 @@ std::string ZVtx::GetExternalExtension() const
 {
 	return "vtx";
 }
+
+DeclarationAlignment ZVtx::GetDeclarationAlignment() const
+{
+	return DeclarationAlignment::Align8;
+}

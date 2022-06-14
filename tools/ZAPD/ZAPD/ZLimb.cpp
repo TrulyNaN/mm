@@ -2,7 +2,10 @@
 #include <cassert>
 #include "BitConverter.h"
 #include "Globals.h"
-#include "StringHelper.h"
+#include "Utils/BitConverter.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
+#include "ZSkeleton.h"
 
 REGISTER_ZFILENODE(Limb, ZLimb);
 
@@ -348,8 +351,7 @@ std::string Struct_800A5E28::GetSourceTypeName()
 
 ZLimb::ZLimb(ZFile* nParent) : ZResource(nParent)
 {
-	dListPtr = 0;
-	dList2Ptr = 0;
+	RegisterOptionalAttribute("EnumName");
 	RegisterOptionalAttribute("LimbType");
 	RegisterOptionalAttribute("Type");
 }
@@ -381,6 +383,12 @@ void ZLimb::ParseXML(tinyxml2::XMLElement* reader)
 {
 	ZResource::ParseXML(reader);
 
+	auto& enumNameXml = registeredAttributes.at("EnumName").value;
+	if (enumNameXml != "")
+	{
+		enumName = enumNameXml;
+	}
+
 	// Reading from a <Skeleton/>
 	std::string limbType = registeredAttributes.at("LimbType").value;
 	if (limbType == "")  // Reading from a <Limb/>
@@ -388,40 +396,13 @@ void ZLimb::ParseXML(tinyxml2::XMLElement* reader)
 
 	if (limbType == "")
 	{
-		fprintf(stderr,
-		        "ZLimb::ParseXML: Warning in '%s'.\n"
-		        "\t Missing 'LimbType' attribute in xml.\n"
-		        "\t Defaulting to 'Standard'.\n",
-		        name.c_str());
-		type = ZLimbType::Standard;
+		HANDLE_ERROR_RESOURCE(WarningType::MissingAttribute, parent, this, rawDataIndex,
+		                      "missing 'LimbType' attribute in <Limb>", "");
 	}
 	else
 	{
-		if (limbType == "Standard")
-		{
-			type = ZLimbType::Standard;
-		}
-		else if (limbType == "LOD")
-		{
-			type = ZLimbType::LOD;
-		}
-		else if (limbType == "Skin")
-		{
-			type = ZLimbType::Skin;
-		}
-		else if (limbType == "Curve")
-		{
-			type = ZLimbType::Curve;
-		}
-		else
-		{
-			fprintf(stderr,
-			        "ZLimb::ParseXML: Warning in '%s'.\n"
-			        "\t Invalid LimbType found: '%s'.\n"
-			        "\t Defaulting to 'Standard'.\n",
-			        name.c_str(), limbType.c_str());
-			type = ZLimbType::Standard;
-		}
+		HANDLE_ERROR_RESOURCE(WarningType::InvalidAttributeValue, parent, this, rawDataIndex,
+		                      "invalid value found for 'LimbType' attribute", "");
 	}
 }
 
@@ -465,8 +446,13 @@ void ZLimb::ParseRawData()
 			segmentStruct = Struct_800A5E28(parent, rawData, skinSegmentOffset);
 		}
 		break;
-	default:
-		throw std::runtime_error("Invalid ZLimb type");
+
+	case ZLimbType::Curve:
+	case ZLimbType::Legacy:
+		break;
+
+	case ZLimbType::Invalid:
+		assert(!"whoops");
 		break;
 	}
 }
@@ -496,8 +482,38 @@ std::string ZLimb::GetSourceOutputCode(const std::string& prefix)
 	std::string entryStr = "";
 	if (type != ZLimbType::Curve)
 	{
-		entryStr += StringHelper::Sprintf("\n    { %i, %i, %i },", transX, transY, transZ);
+		std::string childName;
+		std::string siblingName;
+		Globals::Instance->GetSegmentedPtrName(childPtr, parent, "LegacyLimb", childName);
+		Globals::Instance->GetSegmentedPtrName(siblingPtr, parent, "LegacyLimb", siblingName);
+
+		entryStr += StringHelper::Sprintf("%s,\n", dListStr.c_str());
+		entryStr +=
+			StringHelper::Sprintf("\t{ %ff, %ff, %ff },\n", legTransX, legTransY, legTransZ);
+		entryStr += StringHelper::Sprintf("\t{ 0x%04X, 0x%04X, 0x%04X },\n", rotX, rotY, rotZ);
+		entryStr += StringHelper::Sprintf("\t%s,\n", childName.c_str());
+		entryStr += StringHelper::Sprintf("\t%s\n", siblingName.c_str());
 	}
+	else
+	{
+		std::string childStr;
+		std::string siblingStr;
+		if (limbsTable != nullptr)
+		{
+			childStr = limbsTable->GetLimbEnumName(childIndex);
+			siblingStr = limbsTable->GetLimbEnumName(siblingIndex);
+		}
+		else
+		{
+			childStr = StringHelper::Sprintf("0x%02X", childIndex);
+			siblingStr = StringHelper::Sprintf("0x%02X", siblingIndex);
+		}
+
+		if (type != ZLimbType::Curve)
+		{
+			entryStr += StringHelper::Sprintf("{ %i, %i, %i }, ", transX, transY, transZ);
+		}
+		entryStr += StringHelper::Sprintf("%s, %s,\n", childStr.c_str(), siblingStr.c_str());
 
 	entryStr += StringHelper::Sprintf("\n    0x%02X, 0x%02X,\n", childIndex, siblingIndex);
 
@@ -648,7 +664,13 @@ std::string ZLimb::GetSourceOutputCodeSkin_Type_4(const std::string& prefix)
 	return struct_800A5E28_Str;
 }
 
-std::string ZLimb::GetSourceOutputCodeSkin(const std::string& prefix)
+void ZLimb::SetLimbIndex(uint8_t nLimbIndex)
+{
+	limbIndex = nLimbIndex;
+}
+
+void ZLimb::DeclareDList(segptr_t dListSegmentedPtr, const std::string& prefix,
+                         const std::string& limbSuffix)
 {
 	assert(type == ZLimbType::Skin);
 

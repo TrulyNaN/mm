@@ -39,11 +39,21 @@ protected:
 	ZDisplayList* opaDList = nullptr;  // Gfx*
 	ZDisplayList* xluDList = nullptr;  // Gfx*
 
-	std::vector<uint8_t> rawData;
-	uint32_t rawDataIndex;
-	ZFile* parent;
-	ZRoom* zRoom;
-	std::string name;
+	PolygonDlist(ZFile* nParent);
+
+	void ParseRawData() override;
+	void DeclareReferences(const std::string& prefix) override;
+
+	std::string GetBodySourceCode() const override;
+
+	void GetSourceOutputCode(const std::string& prefix) override;
+
+	std::string GetSourceTypeName() const override;
+	ZResourceType GetResourceType() const override;
+
+	size_t GetRawDataSize() const override;
+
+	void SetPolyType(uint8_t nPolyType);
 
 	ZDisplayList* MakeDlist(segptr_t ptr, const std::string& prefix);
 };

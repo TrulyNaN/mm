@@ -1223,9 +1223,9 @@ Gfx* Gfx_PrimColor(GraphicsContext* gfxCtx, s32 lodfrac, s32 r, s32 g, s32 b, s3
     return displayList;
 }
 
-#ifdef NON_MATCHING
-// regalloc, some reorderings
-void func_8012CF0C(GraphicsContext* gfxCtx, s32 iParm2, s32 iParm3, u8 r, u8 g, u8 b) {
+void func_8012CF0C(GraphicsContext* gfxCtx, s32 clearFb, s32 clearZb, u8 r, u8 g, u8 b) {
+    Gfx* masterGfx;
+    void* zbuffer;
     s32 i;
     Gfx* gfx;
 
@@ -1252,14 +1252,14 @@ void func_8012CF0C(GraphicsContext* gfxCtx, s32 iParm2, s32 iParm3, u8 r, u8 g, 
     if (gfxCtx->zbuffer == NULL) {
         gSPEndDisplayList(gfx + 0);
     } else {
-        gDPSetColorImage(gfx + 0, G_IM_FMT_RGBA, G_IM_SIZ_16b, D_801FBBCC, gfxCtx->zbuffer);
-        gDPPipeSync(gfx + 1);
-        gDPSetCycleType(gfx + 2, G_CYC_FILL);
-        gDPSetRenderMode(gfx + 3, G_RM_NOOP, G_RM_NOOP2);
-        gDPSetFillColor(gfx + 4, (GPACK_RGBA5551(0xFF, 0xFF, 0xF0, 0) << 16) | GPACK_RGBA5551(0xFF, 0xFF, 0xF0, 0));
-        gSPDisplayList(gfx + 5, &D_0E0002C8);
-        gDPSetColorImage(gfx + 6, G_IM_FMT_RGBA, G_IM_SIZ_16b, D_801FBBCC, gfxCtx->zbuffer);
-        gSPEndDisplayList(gfx + 7);
+        gDPSetColorImage(&masterGfx[0], G_IM_FMT_RGBA, G_IM_SIZ_16b, D_801FBBCC, zbuffer);
+        gDPPipeSync(&masterGfx[1]);
+        gDPSetCycleType(&masterGfx[2], G_CYC_FILL);
+        gDPSetRenderMode(&masterGfx[3], G_RM_NOOP, G_RM_NOOP2);
+        gDPSetFillColor(&masterGfx[4], (GPACK_RGBA5551(255, 255, 240, 0) << 16) | GPACK_RGBA5551(255, 255, 240, 0));
+        gSPDisplayList(&masterGfx[5], D_0E000000.clearFillRect);
+        gDPSetColorImage(&masterGfx[6], G_IM_FMT_RGBA, G_IM_SIZ_16b, D_801FBBCC, &D_0F000000);
+        gSPEndDisplayList(&masterGfx[7]);
     }
 
     gfx = graphDlEntry + 0x11;
@@ -1301,9 +1301,6 @@ void func_8012CF0C(GraphicsContext* gfxCtx, s32 iParm2, s32 iParm3, u8 r, u8 g, 
         gSPDisplayList(gfxCtx->polyOpa.p++, &D_0E000088);
     }
 }
-#else
-#pragma GLOBAL_ASM("./asm/non_matchings/code/z_rcp/func_8012CF0C.asm")
-#endif
 
 void func_8012D374(GraphicsContext* gfxCtx, u8 r, u8 g, u8 b) {
     if ((R_PAUSE_MENU_MODE < 2) && (D_801F6D10 < 2)) {

@@ -1,33 +1,43 @@
 #include <math.h>
 
+#pragma weak sinf = __sinf
+
+// Coefficients of a degree 9 polynomial approximation of sine. It is not the Maclaurin polynamial, but some as-yet
+// undetermined more uniform approximation.
 static const du P[] = {
-    { 0x3FF00000, 0x00000000 }, { 0xBFC55554, 0xBC83656D }, { 0x3F8110ED, 0x3804C2A0 },
-    { 0xBF29F6FF, 0xEEA56814 }, { 0x3EC5DBDF, 0x0E314BFE },
+    { 1.0 },
+    { -0.16666659550427756 },
+    { 0.008333066246082155 },
+    { -0.0001980960290193795 },
+    { 0.000002605780637968037 },
 };
 
 static const du rpi = { 0x3FD45F30, 0x6DC9C883 };
 
-static const du pihi = { 0x400921FB, 0x50000000 };
+// pihi + pilo is the closest double to pi, this representation allows more precise calculations since pi itself is not
+// an exact float
+static const du pihi = { 3.1415926218032837 };
 
-static const du pilo = { 0x3E6110B4, 0x611A6263 };
+static const du pilo = { 3.178650954705639E-8 };
 
 static const fu zero = { 0x00000000 };
 
-extern float __libm_qnan_f;
+/**
+ * Returns the sine of a float as a float, using the Maclaurin series and shifting.
+ */
+f32 __sinf(f32 x) {
+    f64 dx;         // x promoted to double
+    f64 xSq;        // square of dx
+    f64 polyApprox; // Most of the polynomial approximation to sin(x)
+    f64 dn;         // n promoted to double
+    s32 n;          // number of multiples of pi away from the first half-period
+    f64 result;
+    s32 ix = *(s32*)&x;   // Type-pun x into an s32, i.e. its IEEE-754 hex representation
+    s32 xpt = (ix >> 22); // Obtain the exponent of x (actually 2 * exponent + 127)
 
-float __sinf(float x) {
-    double dx;  // double x
-    double xsq; // x squared
-    double poly;
-    double dn;
-    int n;
-    double result;
-    int ix; // int x
-    int xpt;
+    xpt &= 0x1FF; // Remove the sign bit
 
-    ix = *(int*)&x;
-    xpt = (ix >> 22) & 0x1FF;
-
+    // |x| < 1
     if (xpt < 255) {
         dx = x;
         if (xpt >= 230) {

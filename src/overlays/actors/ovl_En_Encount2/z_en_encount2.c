@@ -1,6 +1,8 @@
 #include "z_en_encount2.h"
+#include "objects/object_fusen/object_fusen.h"
+#include "objects/gameplay_keep/gameplay_keep.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((EnEncount2*)thisx)
 
@@ -66,11 +68,11 @@ void EnEncount2_Init(Actor* thisx, GlobalContext* globalCtx) {
     s32 pad;
     CollisionHeader* colHeader = NULL;
 
-    BcCheck3_BgActorInit(&this->dyna, 0);
-    BgCheck_RelocateMeshHeader(&D_06002420, &colHeader);
-    this->dyna.bgId = BgCheck_AddActorMesh(globalCtx, &globalCtx->colCtx.dyna, &this->dyna, colHeader);
-    ActorShape_Init(&this->dyna.actor.shape, 0.0f, func_800B3FC0, 25.0f);
-    this->dyna.actor.colChkInfo.mass = 0xFF;
+    DynaPolyActor_Init(&this->dyna, 0);
+    CollisionHeader_GetVirtual(&object_fusen_Colheader_002420, &colHeader);
+    this->dyna.bgId = DynaPoly_SetBgActor(globalCtx, &globalCtx->colCtx.dyna, &this->dyna.actor, colHeader);
+    ActorShape_Init(&this->dyna.actor.shape, 0.0f, ActorShadow_DrawCircle, 25.0f);
+    this->dyna.actor.colChkInfo.mass = MASS_IMMOVABLE;
     Collider_InitAndSetJntSph(globalCtx, &this->collider, &this->dyna.actor, &sJntSphInit, &this->colElement);
 
     this->dyna.actor.targetMode = 6;
@@ -132,7 +134,7 @@ void EnEncount2_Popped(EnEncount2* this, GlobalContext* globalCtx) {
         EnEncount2_InitParticles(this, &curPos, 10);
     }
 
-    Audio_PlayActorSound2(&this->dyna.actor, NA_SE_EV_MUJURA_BALLOON_BROKEN);
+    Actor_PlaySfxAtPos(&this->dyna.actor, NA_SE_EV_MUJURA_BALLOON_BROKEN);
     this->deathTimer = 30;
     this->actionFunc = EnEncount2_Die;
 }
@@ -140,7 +142,7 @@ void EnEncount2_Popped(EnEncount2* this, GlobalContext* globalCtx) {
 void EnEncount2_Die(EnEncount2* this, GlobalContext* globalCtx) {
     if (this->deathTimer == 0) {
         if (this->switchFlag >= 0) {
-            Actor_SetSwitchFlag(globalCtx, this->switchFlag);
+            Flags_SetSwitch(globalCtx, this->switchFlag);
         }
         Actor_MarkForDeath(&this->dyna.actor);
     }
@@ -153,10 +155,10 @@ void EnEncount2_Update(Actor* thisx, GlobalContext* globalCtx) {
     DECR(this->deathTimer);
 
     this->dyna.actor.shape.rot.y = this->dyna.actor.world.rot.y;
-    Actor_SetHeight(&this->dyna.actor, 30.0f);
+    Actor_SetFocus(&this->dyna.actor, 30.0f);
     Actor_SetScale(&this->dyna.actor, this->scale);
     this->actionFunc(this, globalCtx);
-    Actor_SetVelocityAndMoveYRotationAndGravity(&this->dyna.actor);
+    Actor_MoveWithGravity(&this->dyna.actor);
     EnEncount2_UpdateParticles(this, globalCtx);
 
     if (!this->isPopped) {
@@ -168,9 +170,9 @@ void EnEncount2_Update(Actor* thisx, GlobalContext* globalCtx) {
 
 void EnEncount2_Draw(Actor* thisx, GlobalContext* globalCtx) {
     EnEncount2* this = THIS;
-    if (this->isPopped != 1) {
-        func_800BDFC0(globalCtx, D_06000A00);
-        func_800BDFC0(globalCtx, D_06000D78);
+    if (this->isPopped != true) {
+        Gfx_DrawDListOpa(globalCtx, object_fusen_DL_000A00);
+        Gfx_DrawDListOpa(globalCtx, object_fusen_DL_000D78);
     }
     EnEncount2_DrawParticles(this, globalCtx);
 }
@@ -225,20 +227,19 @@ void EnEncount2_UpdateParticles(EnEncount2* this, GlobalContext* globalCtx) {
         sPtr++;
 
         if (sPtr->enabled) {
-            sPtr->pos.x += sPtr->vel.x;
-            sPtr->pos.y += sPtr->vel.y;
-            sPtr->pos.z += sPtr->vel.z;
-            sPtr->vel.x += sPtr->accel.x;
-            sPtr->vel.y += sPtr->accel.y;
-            sPtr->vel.z += sPtr->accel.z;
-            if (sPtr->alphaFadeDelay != 0) {
-                sPtr->alphaFadeDelay--;
-            } else {
-                sPtr->alpha -= 10;
-                if (sPtr->alpha < 10) {
-                    sPtr->enabled = 0;
-                }
-            }
+            Matrix_Translate(sPtr->pos.x, sPtr->pos.y, sPtr->pos.z, MTXMODE_NEW);
+            Matrix_Scale(sPtr->scale, sPtr->scale, sPtr->scale, MTXMODE_APPLY);
+            POLY_XLU_DISP = Gfx_CallSetupDL(POLY_XLU_DISP, 20);
+            gSPSegment(POLY_XLU_DISP++, 0x08, Lib_SegmentedToVirtual(gSun1Tex));
+            gSPDisplayList(POLY_XLU_DISP++, gameplay_keep_DL_07AB10);
+            gDPPipeSync(POLY_XLU_DISP++);
+            gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, 255);
+            gDPSetEnvColor(POLY_XLU_DISP++, 250, 180, 255, sPtr->alpha);
+            Matrix_Mult(&globalCtx->billboardMtxF, MTXMODE_APPLY);
+            Matrix_RotateZF(DEGTORAD(globalCtx->state.frames * 20.0f), MTXMODE_APPLY);
+            gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx),
+                      G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gSPDisplayList(POLY_XLU_DISP++, gameplay_keep_DL_07AB58);
         }
         sPtr++;
     }

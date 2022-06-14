@@ -6,8 +6,9 @@
 struct EnHonotrap;
 
 typedef struct EnHonotrap {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x180];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ EnHonotrapActionFunc actionFunc;
+    /* 0x0148 */ char unk_148[0x17C];
 } EnHonotrap; // size = 0x2C4
 
 extern const ActorInit En_Honotrap_InitVars;

@@ -1,8 +1,10 @@
 #include "SetMesh.h"
-#include <Globals.h>
-#include <Path.h>
-#include "BitConverter.h"
-#include "StringHelper.h"
+
+#include "Globals.h"
+#include "Utils/BitConverter.h"
+#include "Utils/Path.h"
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
 #include "ZBackground.h"
 #include "ZFile.h"
 #include "ZRoom/ZRoom.h"
@@ -34,9 +36,8 @@ void SetMesh::ParseRawData()
 		break;
 
 	default:
-		throw std::runtime_error(StringHelper::Sprintf("Error in SetMesh::ParseRawData\n"
-		                                               "\t Unknown meshHeaderType: %i\n",
-		                                               meshHeaderType));
+		HANDLE_ERROR(WarningType::InvalidExtractedData,
+		             StringHelper::Sprintf("unknown meshHeaderType: %i", meshHeaderType), "");
 	}
 
 	polyType->ParseRawData();
@@ -52,15 +53,9 @@ void SetMesh::DeclareReferences(const std::string& prefix)
 void GenDListDeclarations(ZRoom* zRoom, ZFile* parent, ZDisplayList* dList)
 {
 	if (dList == nullptr)
-	{
 		return;
-	}
-	std::string srcVarName =
-		StringHelper::Sprintf("%s%s", zRoom->GetName().c_str(), dList->GetName().c_str());
 
-	dList->SetName(srcVarName);
-	dList->scene = zRoom->scene;
-	std::string sourceOutput = dList->GetSourceOutputCode(zRoom->GetName());
+	dList->DeclareReferences(zRoom->GetName());
 
 	for (ZDisplayList* otherDList : dList->otherDLists)
 		GenDListDeclarations(zRoom, parent, otherDList);
@@ -158,15 +153,21 @@ ZDisplayList* PolygonDlist::MakeDlist(segptr_t ptr, const std::string& prefix)
 		return nullptr;
 	}
 
-	uint32_t dlistAddress = Seg2Filespace(ptr, parent->baseAddress);
+	bodyStr += StringHelper::Sprintf("%s, %s", opaStr.c_str(), xluStr.c_str());
 
-	int32_t dlistLength = ZDisplayList::GetDListLength(
-		rawData, dlistAddress,
-		Globals::Instance->game == ZGame::OOT_SW97 ? DListType::F3DEX : DListType::F3DZEX);
-	ZDisplayList* dlist = new ZDisplayList(rawData, dlistAddress, dlistLength, parent);
-	GenDListDeclarations(zRoom, parent, dlist);
+	return bodyStr;
+}
 
-	return dlist;
+void PolygonDlist::GetSourceOutputCode(const std::string& prefix)
+{
+	std::string bodyStr = StringHelper::Sprintf("\n\t%s\n", GetBodySourceCode().c_str());
+
+	Declaration* decl = parent->GetDeclaration(rawDataIndex);
+
+	if (decl == nullptr)
+		DeclareVar(prefix, bodyStr);
+	else
+		decl->text = bodyStr;
 }
 
 size_t PolygonDlist::GetRawDataSize() const
@@ -537,8 +538,8 @@ void PolygonType1::DeclareReferences(const std::string& prefix)
 		break;
 
 	default:
-		throw std::runtime_error(StringHelper::Sprintf(
-			"Error in PolygonType1::PolygonType1\n\t Unknown format: %i\n", format));
+		HANDLE_ERROR(WarningType::InvalidExtractedData,
+		             StringHelper::Sprintf("unknown format: %i", format), "");
 		break;
 	}
 }
@@ -644,9 +645,11 @@ void PolygonType2::DeclareReferences(const std::string& prefix)
 		polyDListName = StringHelper::Sprintf("%s%s_%06X", prefix.c_str(), polyDlistType.c_str(),
 		                                      GETSEGOFFSET(start));
 
-		parent->AddDeclarationArray(GETSEGOFFSET(start), DeclarationAlignment::Align4,
-		                            polyDLists.size() * polyDLists.at(0).GetRawDataSize(),
-		                            polyDlistType, polyDListName, polyDLists.size(), declaration);
+		Declaration* decl = parent->AddDeclarationArray(
+			GETSEGOFFSET(start), DeclarationAlignment::Align4,
+			polyDLists.size() * polyDLists.at(0).GetRawDataSize(), polyDlistType, polyDListName,
+			polyDLists.size(), declaration);
+		decl->forceArrayCnt = true;
 	}
 
 	parent->AddDeclaration(GETSEGOFFSET(end), DeclarationAlignment::Align4,

@@ -1,13 +1,27 @@
 #ifndef Z_EN_FLOORMAS_H
 #define Z_EN_FLOORMAS_H
 
-#include <global.h>
+#include "global.h"
+#include "objects/object_wallmaster/object_wallmaster.h"
 
 struct EnFloormas;
 
 typedef struct EnFloormas {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x25C];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ SkelAnime skelAnime;
+    /* 0x0188 */ EnFloormasActionFunc actionFunc;
+    /* 0x018C */ u8 drawDmgEffType;
+    /* 0x018E */ s16 unk_18E;
+    /* 0x0190 */ s16 unk_190;
+    /* 0x0192 */ s16 unk_192;
+    /* 0x0194 */ s16 unk_194;
+    /* 0x0196 */ Vec3s jointTable[WALLMASTER_LIMB_MAX];
+    /* 0x022C */ Vec3s morphTable[WALLMASTER_LIMB_MAX];
+    /* 0x02C4 */ f32 drawDmgEffAlpha;
+    /* 0x02C8 */ f32 drawDmgEffScale;
+    /* 0x02CC */ f32 drawDmgEffFrozenSteamScale;
+    /* 0x02D0 */ Vec3f limbPos[11];
+    /* 0x0354 */ ColliderCylinder collider;
 } EnFloormas; // size = 0x3A0
 
 extern const ActorInit En_Floormas_InitVars;

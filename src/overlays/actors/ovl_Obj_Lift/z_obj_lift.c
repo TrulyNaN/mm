@@ -1,6 +1,6 @@
 #include "z_obj_lift.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((ObjLift*)thisx)
 
@@ -23,7 +23,23 @@ const ActorInit Obj_Lift_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lift_0x8093D3C0/func_8093D3C0.asm")
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_8093DD84[] = {
+    ICHAIN_F32_DIV1000(gravity, -600, ICHAIN_CONTINUE),
+    ICHAIN_F32_DIV1000(terminalVelocity, -15000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneForward, 4000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 350, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 350, ICHAIN_STOP),
+};
+
+#endif
+
+extern InitChainEntry D_8093DD84[];
+
+extern UNK_TYPE D_06000D10;
+extern UNK_TYPE D_06000F00;
+
+#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Lift/func_8093D3C0.s")
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lift_0x8093D3C0/ObjLift_Init.asm")
 

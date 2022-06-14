@@ -1,6 +1,7 @@
 #include "z_obj_hariko.h"
+#include "assets/objects/object_hariko/object_hariko.h"
 
-#define FLAGS 0x02000020
+#define FLAGS (ACTOR_FLAG_20 | ACTOR_FLAG_2000000)
 
 #define THIS ((ObjHariko*)thisx)
 
@@ -9,7 +10,12 @@ void ObjHariko_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void ObjHariko_Update(Actor* thisx, GlobalContext* globalCtx);
 void ObjHariko_Draw(Actor* thisx, GlobalContext* globalCtx);
 
-/*
+void ObjHariko_SetupWait(ObjHariko* this);
+void ObjHariko_Wait(ObjHariko* this, GlobalContext* globalCtx);
+void ObjHariko_SetupBobHead(ObjHariko* this);
+void ObjHariko_BobHead(ObjHariko* this, GlobalContext* globalCtx);
+void ObjHariko_CheckForQuakes(ObjHariko* this);
+
 const ActorInit Obj_Hariko_InitVars = {
     ACTOR_OBJ_HARIKO,
     ACTORCAT_PROP,
@@ -23,20 +29,71 @@ const ActorInit Obj_Hariko_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/ObjHariko_Init.asm")
+void ObjHariko_Init(Actor* thisx, GlobalContext* globalCtx) {
+    ObjHariko* this = THIS;
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/ObjHariko_Destroy.asm")
+    Actor_SetScale(&this->actor, 0.1f);
+    this->headRotation.x = 0;
+    this->headRotation.y = 0;
+    this->headRotation.z = 0;
+    this->headOffset = 0;
+    this->bobbleStep = 0.0f;
+    ObjHariko_SetupWait(this);
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/func_80B66A7C.asm")
+void ObjHariko_Destroy(Actor* thisx, GlobalContext* globalCtx) {
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/func_80B66A90.asm")
+void ObjHariko_SetupWait(ObjHariko* this) {
+    this->actionFunc = ObjHariko_Wait;
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/func_80B66AA0.asm")
+void ObjHariko_Wait(ObjHariko* this, GlobalContext* globalCtx) {
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/func_80B66AC4.asm")
+void ObjHariko_SetupBobHead(ObjHariko* this) {
+    this->bobbleStep = 2730.0f;
+    this->unk154 = 0;
+    this->actionFunc = ObjHariko_BobHead;
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/func_80B66B78.asm")
+void ObjHariko_BobHead(ObjHariko* this, GlobalContext* globalCtx) {
+    this->headOffset += 0x1555;
+    this->headRotation.x = Math_SinS(this->headOffset) * this->bobbleStep;
+    this->headRotation.y = Math_CosS(this->headOffset) * this->bobbleStep;
+    Math_SmoothStepToF(&this->bobbleStep, 0, 0.5f, 18.0f, 18.0f);
+    if (this->bobbleStep < 182.0f) {
+        ObjHariko_SetupWait(this);
+    }
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/ObjHariko_Update.asm")
+void ObjHariko_CheckForQuakes(ObjHariko* this) {
+    if (Quake_NumActiveQuakes() != 0) {
+        ObjHariko_SetupBobHead(this);
+    }
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Hariko_0x80B66A20/ObjHariko_Draw.asm")
+void ObjHariko_Update(Actor* thisx, GlobalContext* globalCtx) {
+    ObjHariko* this = THIS;
+
+    this->actionFunc(this, globalCtx);
+    ObjHariko_CheckForQuakes(this);
+}
+
+void ObjHariko_Draw(Actor* thisx, GlobalContext* globalCtx) {
+    ObjHariko* this = THIS;
+
+    OPEN_DISPS(globalCtx->state.gfxCtx);
+    func_8012C28C(globalCtx->state.gfxCtx);
+
+    Matrix_Push();
+    Matrix_RotateXS(this->headRotation.x, MTXMODE_APPLY);
+    Matrix_RotateYS(this->headRotation.y, MTXMODE_APPLY);
+
+    gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPDisplayList(POLY_OPA_DISP++, gHarikoBodyDL);
+    gSPDisplayList(POLY_OPA_DISP++, gHarikoFaceDL);
+
+    Matrix_Pop();
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
+}

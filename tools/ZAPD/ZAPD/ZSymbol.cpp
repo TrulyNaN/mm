@@ -1,5 +1,7 @@
 #include "ZSymbol.h"
-#include "StringHelper.h"
+
+#include "Utils/StringHelper.h"
+#include "WarningHandler.h"
 #include "ZFile.h"
 
 REGISTER_ZFILENODE(Symbol, ZSymbol);
@@ -25,11 +27,8 @@ void ZSymbol::ParseXML(tinyxml2::XMLElement* reader)
 
 	if (typeXml == "")
 	{
-		fprintf(stderr,
-		        "ZSymbol::ParseXML: Warning in '%s'.\n"
-		        "\t Missing 'Type' attribute in xml.\n"
-		        "\t Defaulting to 'void*'.\n",
-		        name.c_str());
+		HANDLE_WARNING_RESOURCE(WarningType::MissingAttribute, parent, this, rawDataIndex,
+		                        "missing 'Type' attribute in <Symbol>", "Defaulting to 'void*'.");
 		type = "void*";
 	}
 	else
@@ -40,11 +39,8 @@ void ZSymbol::ParseXML(tinyxml2::XMLElement* reader)
 	std::string typeSizeXml = registeredAttributes.at("TypeSize").value;
 	if (typeSizeXml == "")
 	{
-		fprintf(stderr,
-		        "ZSymbol::ParseXML: Warning in '%s'.\n"
-		        "\t Missing 'TypeSize' attribute in xml.\n"
-		        "\t Defaulting to '4'.\n",
-		        name.c_str());
+		HANDLE_WARNING_RESOURCE(WarningType::MissingAttribute, parent, this, rawDataIndex,
+		                        "missing 'TypeSize' attribute in <Symbol>", "Defaulting to '4'.");
 		typeSize = 4;  // Size of a word.
 	}
 	else
@@ -60,6 +56,20 @@ void ZSymbol::ParseXML(tinyxml2::XMLElement* reader)
 		if (countXml != "")
 			count = StringHelper::StrToL(countXml, 0);
 	}
+
+	if (registeredAttributes.at("Static").value == "On")
+	{
+		HANDLE_WARNING_RESOURCE(WarningType::InvalidAttributeValue, parent, this, rawDataIndex,
+		                        "a <Symbol> cannot be marked as static",
+		                        "Disabling static for this resource.");
+	}
+	staticConf = StaticConfig::Off;
+}
+
+Declaration* ZSymbol::DeclareVar([[maybe_unused]] const std::string& prefix,
+                                 [[maybe_unused]] const std::string& bodyStr)
+{
+	return nullptr;
 }
 
 size_t ZSymbol::GetRawDataSize() const

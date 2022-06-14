@@ -1,5 +1,5 @@
-#ifndef _Z64_ANIMATION_H
-#define _Z64_ANIMATION_H
+#ifndef Z64_ANIMATION_H
+#define Z64_ANIMATION_H
 
 #include <PR/ultratypes.h>
 #include <PR/gbi.h>
@@ -14,9 +14,28 @@
 #define ANIM_FLAG_UPDATEXZ 0x02
 #define ANIM_FLAG_UPDATEY 0x10
 
-struct GlobalContext;
-struct Actor;
-typedef struct SkelAnime SkelAnime;
+typedef enum {
+    /* 0 */ ANIMMODE_LOOP,
+    /* 1 */ ANIMMODE_LOOP_INTERP,
+    /* 2 */ ANIMMODE_ONCE,
+    /* 3 */ ANIMMODE_ONCE_INTERP,
+    /* 4 */ ANIMMODE_LOOP_PARTIAL,
+    /* 5 */ ANIMMODE_LOOP_PARTIAL_INTERP
+} AnimationModes;
+
+typedef enum { 
+    /* -1 */ ANIMTAPER_DECEL = -1,
+    /*  0 */ ANIMTAPER_NONE, 
+    /*  1 */ ANIMTAPER_ACCEL
+} AnimationTapers;
+
+typedef struct {
+    /* 0x00 */ Vec3s jointPos; // Root is position in model space, children are relative to parent
+    /* 0x06 */ u8 child;       // The first child's index into the limb table.
+    /* 0x07 */ u8 sibling;     // The parent limb's next limb index into the limb table.
+    /* 0x08 */ Gfx* dList;     // Display lists for the limb. Index 0 is the normal display list, index 1 is the
+                               // far model display list.
+} StandardLimb; // size = 0xC
 
 typedef struct {
     /* 0x000 */ Vec3s translation;  // Translation relative to parent limb.  root limb is a tranlation for entire model.
@@ -152,48 +171,48 @@ struct SkelAnime {
     /* 0x02 */ u8 dListCount;
     /* 0x03 */ s8 unk03;
     /* 0x04 */ void** skeleton;   // An array of pointers to limbs. Can be StandardLimb, LodLimb, or SkinLimb.
-    /* 0x08 */
-    union {
-        AnimationHeader* animCurrentSeg;
-        LinkAnimationHeader* linkAnimetionSeg;
-        AnimationHeaderCommon* genericSeg;
-    };
-    /* 0x0C */ f32 initialFrame;
-    /* 0x10 */ f32 animFrameCount;
-    /* 0x14 */ f32 totalFrames;
-    /* 0x18 */ f32 animCurrentFrame;
-    /* 0x1C */ f32 animPlaybackSpeed;
-    /* 0x20 */ Vec3s* limbDrawTbl;       // now_joint
-    /* 0x24 */ Vec3s* transitionDrawTbl; // morf_joint
-    /* 0x28 */ f32 transCurrentFrame;
-    /* 0x2C */ f32 transitionStep;
-    /* 0x30 */ s32 (*animUpdate)();
-    /* 0x34 */ s8 initFlags;
-    /* 0x35 */ u8 flags;
-    /* 0x36 */ s16 prevFrameRot;
-    /* 0x38 */ Vec3s prevFramePos;
-    /* 0x3E */ Vec3s unk3E;
-}; // size = 0x44
+    /* 0x08 */ void* animation;   // Can be an AnimationHeader or LinkAnimationHeader.
+    /* 0x0C */ f32 startFrame;    // In mode 4, start of partial loop.
+    /* 0x10 */ f32 endFrame;      // In mode 2, Update returns true when curFrame is equal to this. In mode 4, end of partial loop.
+    /* 0x14 */ f32 animLength;    // Total number of frames in the current animation's file.
+    /* 0x18 */ f32 curFrame;      // Current frame in the animation
+    /* 0x1C */ f32 playSpeed;     // Multiplied by R_UPDATE_RATE / 3 to get the animation's frame rate.
+    /* 0x20 */ Vec3s* jointTable; // Current translation of model and rotations of all limbs
+    /* 0x24 */ Vec3s* morphTable; // Table of values used to morph between animations
+    /* 0x28 */ f32 morphWeight;   // Weight of the current animation morph as a fraction in [0,1]
+    /* 0x2C */ f32 morphRate;     // Reciprocal of the number of frames in the morph
+    /* 0x30 */ union {
+                    s32 (*normal)(struct SkelAnime*);// Can be Loop, Partial loop, Play once, Morph, or Tapered morph
+                    s32 (*link)(struct GlobalContext*, struct SkelAnime*); // Loop, Play once, and Morph
+                } update;
+    /* 0x34 */ s8 initFlags;      // Flags used when initializing Link's skeleton
+    /* 0x35 */ u8 moveFlags;          // Flags used for animations that move the actor in worldspace.
+    /* 0x36 */ s16 prevRot;       // Previous rotation in worldspace.
+    /* 0x38 */ Vec3s prevTransl;  // Previous modelspace translation.
+    /* 0x3E */ Vec3s baseTransl;  // Base modelspace translation.
+} SkelAnime; // size = 0x44
+
+typedef s32 (*OverrideLimbDrawOpa)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
+                                   struct Actor* thisx);
+
+typedef void (*PostLimbDrawOpa)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot,
+                                struct Actor* thisx);
 
 typedef s32 (*OverrideLimbDraw)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                struct Actor* actor);
+                                struct Actor* thisx, Gfx** gfx);
 
 typedef void (*PostLimbDraw)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot,
-                             struct Actor* actor);
+                             struct Actor* thisx, Gfx** gfx);
 
-typedef s32 (*OverrideLimbDraw2)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                 struct Actor* actor, Gfx** gfx);
+typedef s32 (*OverrideLimbDrawFlex)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
+                                    struct Actor* thisx);
 
-typedef void (*PostLimbDraw2)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot,
-                              struct Actor* actor, Gfx** gfx);
+typedef void (*PostLimbDrawFlex)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot,
+                                 struct Actor* thisx);
 
-typedef s32 (*OverrideLimbDrawSV)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
-                                  struct Actor* actor);
+typedef void (*TransformLimbDrawOpa)(struct GlobalContext* globalCtx, s32 limbIndex, struct Actor* thisx);
 
-typedef void (*PostLimbDrawSV)(struct GlobalContext* globalCtx, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot,
-                               struct Actor* actor);
-
-typedef void (*UnkActorDraw)(struct GlobalContext* globalCtx, s32 limbIndex, struct Actor* actor);
+typedef void (*TransformLimbDraw)(struct GlobalContext* globalCtx, s32 limbIndex, struct Actor* thisx, Gfx** gfx);
 
 typedef void (*AnimationEntryCallback)(struct GlobalContext*, AnimationEntryType*);
 
@@ -249,11 +268,98 @@ typedef s32 (*OverrideCurveLimbDraw)(struct GlobalContext* globalCtx, SkelAnimeC
 typedef void (*PostCurveLimbDraw)(struct GlobalContext* globalCtx, SkelAnimeCurve* skelCuve, s32 limbIndex,
                                   struct Actor* actor);
 
-typedef struct struct_80B8E1A8 {
-    /* 0x00 */ AnimationHeader* animationSeg;
-    /* 0x04 */ f32 playbackSpeed;
+typedef struct {
+    /* 0x00 */ AnimationHeader* animation;
+    /* 0x04 */ f32 playSpeed;
+    /* 0x08 */ f32 startFrame;
+    /* 0x0C */ f32 frameCount;
+    /* 0x10 */ u8 mode;
+    /* 0x14 */ f32 morphFrames;
+} AnimationInfo; // size = 0x18
+
+typedef struct {
+    /* 0x00 */ AnimationHeader* animation;
+    /* 0x04 */ f32 playSpeed;
+    /* 0x08 */ s16 startFrame;
+    /* 0x0A */ s16 frameCount;
+    /* 0x0C */ u8 mode;
+    /* 0x0E */ s16 morphFrames;
+} AnimationInfoS; // size = 0x10
+
+typedef struct AnimationSpeedInfo {
+    /* 0x00 */ AnimationHeader* animation;
+    /* 0x04 */ f32 playSpeed;
     /* 0x08 */ u8 mode;
-    /* 0x0C */ f32 transitionRate;
-} struct_80B8E1A8; // size = 0x10
+    /* 0x0C */ f32 morphFrames;
+} AnimationSpeedInfo; // size = 0x10
+
+struct SkeletonInfo;
+
+typedef s32 (*UnkKeyframeCallback)(struct GlobalContext* globalCtx, struct SkeletonInfo* skeletonInfo, s32* arg2, Gfx** dList,
+                                   u8* arg4, void* arg5);
+
+// Keyframe limb?
+typedef struct {
+    /* 0x00 */ Gfx* dList;
+    /* 0x04 */ u8 unk_4;
+    /* 0x05 */ u8 flags;
+    /* 0x06 */ Vec3s root;
+} Struct_801BFA14_Arg1_Field4; // size = 0xC
+
+// Other limb type?
+typedef struct {
+    /* 0x00 */ Gfx* dList;
+    /* 0x04 */ u8 unk_4;
+    /* 0x05 */ u8 flags;
+    /* 0x06 */ u8 unk_6;         // transform limb draw index
+} Struct_801BFA14_Arg1_Field4_2; // size = 0x8
+
+typedef struct {
+    /* 0x00 */ u8 limbCount;
+    /* 0x01 */ u8 unk_1; // non-zero in object files, number of non-null-dlist limbs?
+    /* 0x04 */ union {
+        Struct_801BFA14_Arg1_Field4* unk_4; // arrays
+        Struct_801BFA14_Arg1_Field4_2* unk_4_2;
+    };
+    /* 0x08 */ s16* unk_8;
+    /* 0x0C */ s16* unk_C;
+    /* 0x0C */ char unk_10[0x2];
+    /* 0x12 */ s16 unk_12;
+} Struct_801BFA14_Arg1;
+
+typedef struct {
+    /* 0x00 */ u16* unk_0;
+    /* 0x04 */ s16* unk_4;
+    /* 0x08 */ s16* unk_8;
+    /* 0x0C */ s16* unk_C;
+    /* 0x0C */ char unk_10[0x2];
+    /* 0x12 */ s16 unk_12;
+} SkeletonInfo_1C;
+
+typedef struct {
+    /* 0x00 */ f32 unk_0;
+    /* 0x04 */ f32 unk_4;
+    /* 0x08 */ f32 unk_8;
+    /* 0x0C */ f32 unk_C;
+    /* 0x10 */ f32 unk_10;
+    /* 0x14 */ s32 unk_14;
+} FrameControl;
+
+// FlexKeyframeSkeleton ?
+typedef struct SkeletonInfo {
+    /* 0x00 */ FrameControl frameCtrl;
+    /* 0x18 */ Struct_801BFA14_Arg1* unk_18;    // array
+    /* 0x1C */ SkeletonInfo_1C* unk_1C;
+    /* 0x20 */ UnkKeyframeCallback* unk_20;     // pointer to array of functions
+    /* 0x24 */ f32 unk_24;                      // duration? current time?
+    /* 0x28 */ Vec3s* frameData;                // array of 3 Vec3s
+    /* 0x2C */ s16* unk_2C;
+} SkeletonInfo;
+
+typedef s32 (*OverrideKeyframeDrawScaled)(struct GlobalContext* globalCtx, SkeletonInfo* skeletonInfo, s32 limbIndex, Gfx** dList,
+                                          u8* flags, struct Actor* actor, Vec3f* scale, Vec3s* rot, Vec3f* pos);
+
+typedef void (*PostKeyframeDrawScaled)(struct GlobalContext* globalCtx, SkeletonInfo* skeleton, s32 limbIndex, Gfx** dList,
+                                       u8* flags, struct Actor* actor, Vec3f* scale, Vec3s* rot, Vec3f* pos);
 
 #endif

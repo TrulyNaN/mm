@@ -1,6 +1,6 @@
 #include "z_boss_hakugin.h"
 
-#define FLAGS 0x00000035
+#define FLAGS (ACTOR_FLAG_1 | ACTOR_FLAG_4 | ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
 #define THIS ((BossHakugin*)thisx)
 

@@ -1,11 +1,11 @@
-#include "BuildInfo.h"
-#include "Directory.h"
-#include "File.h"
 #include "Globals.h"
 #include "HighLevel/HLAnimationIntermediette.h"
 #include "HighLevel/HLModelIntermediette.h"
 #include "Overlays/ZOverlay.h"
-#include "Path.h"
+#include "Utils/Directory.h"
+#include "Utils/File.h"
+#include "Utils/Path.h"
+#include "WarningHandler.h"
 #include "ZAnimation.h"
 #include "ZBackground.h"
 #include "ZBlob.h"
@@ -15,10 +15,10 @@
 #if !defined(_MSC_VER) && !defined(__CYGWIN__)
 #include <csignal>
 #include <cstdlib>
+#include <ctime>
 #include <cxxabi.h>  // for __cxa_demangle
 #include <dlfcn.h>   // for dladdr
 #include <execinfo.h>
-#include <time.h>
 #include <unistd.h>
 #endif
 
@@ -51,6 +51,7 @@ void ErrorHandler(int sig)
 	const char* crashEasterEgg[] = {
 		"\tYou've met with a terrible fate, haven't you?",
 		"\tSEA BEARS FOAM. SLEEP BEARS DREAMS. \n\tBOTH END IN THE SAME WAY: CRASSSH!",
+		"\tZAPD has fallen and cannot get up.",
 	};
 
 	srand(time(nullptr));
@@ -101,6 +102,9 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	Globals* g = new Globals();
+	WarningHandler::Init(argc, argv);
+
 	for (int i = 1; i < argc; i++)
 	{
 		if (!strcmp(argv[i], "--version"))
@@ -113,37 +117,10 @@ int main(int argc, char* argv[])
 			printf("Congratulations!\n");
 			printf("You just found the (unimplemented and undocumented) ZAPD's help message.\n");
 			printf("Feel free to implement it if you want :D\n");
+
+			WarningHandler::PrintHelp();
 			return 0;
 		}
-	}
-
-	Globals* g = new Globals();
-
-	// Parse File Mode
-	std::string buildMode = argv[1];
-	ZFileMode fileMode = ZFileMode::Invalid;
-
-	if (buildMode == "btex")
-		fileMode = ZFileMode::BuildTexture;
-	else if (buildMode == "bren")
-		fileMode = ZFileMode::BuildBackground;
-	else if (buildMode == "bovl")
-		fileMode = ZFileMode::BuildOverlay;
-	else if (buildMode == "bsf")
-		fileMode = ZFileMode::BuildSourceFile;
-	else if (buildMode == "bblb")
-		fileMode = ZFileMode::BuildBlob;
-	else if (buildMode == "bmdlintr")
-		fileMode = ZFileMode::BuildModelIntermediette;
-	else if (buildMode == "bamnintr")
-		fileMode = ZFileMode::BuildAnimationIntermediette;
-	else if (buildMode == "e")
-		fileMode = ZFileMode::Extract;
-
-	if (fileMode == ZFileMode::Invalid)
-	{
-		printf("Error: Invalid file mode '%s'\n", buildMode.c_str());
-		return 1;
 	}
 
 	// Parse other "commands"
@@ -230,23 +207,81 @@ int main(int argc, char* argv[])
 			signal(SIGSEGV, ErrorHandler);
 			signal(SIGABRT, ErrorHandler);
 #else
-			fprintf(stderr,
-			        "Warning: Tried to set error handler, but this build lacks support for one.\n");
+			HANDLE_WARNING(WarningType::Always,
+			               "tried to set error handler, but this ZAPD build lacks support for one",
+			               "");
 #endif
 		}
 		else if (arg == "-v")  // Verbose
 		{
 			Globals::Instance->verbosity = static_cast<VerbosityLevel>(strtol(argv[++i], NULL, 16));
 		}
-		else if (arg == "-wu" || arg == "--warn-unaccounted")  // Warn unaccounted
+		else if (arg == "-vu" || arg == "--verbose-unaccounted")  // Verbose unaccounted
 		{
-			Globals::Instance->warnUnaccounted = true;
+			Globals::Instance->verboseUnaccounted = true;
 		}
+		else if (arg == "-se" || arg == "--set-exporter")  // Set Current Exporter
+		{
+			Globals::Instance->currentExporter = argv[++i];
+		}
+		else if (arg == "--gcc-compat")  // GCC compatibility
+		{
+			Globals::Instance->gccCompat = true;
+		}
+		else if (arg == "-s" || arg == "--static")
+		{
+			Globals::Instance->forceStatic = true;
+		}
+		else if (arg == "-us" || arg == "--unaccounted-static")
+		{
+			Globals::Instance->forceUnaccountedStatic = true;
+		}
+	}
+
+	// Parse File Mode
+	ExporterSet* exporterSet = Globals::Instance->GetExporterSet();
+	std::string buildMode = argv[1];
+	ZFileMode fileMode = ZFileMode::Invalid;
+
+	if (buildMode == "btex")
+		fileMode = ZFileMode::BuildTexture;
+	else if (buildMode == "bren")
+		fileMode = ZFileMode::BuildBackground;
+	else if (buildMode == "bovl")
+		fileMode = ZFileMode::BuildOverlay;
+	else if (buildMode == "bsf")
+		fileMode = ZFileMode::BuildSourceFile;
+	else if (buildMode == "bblb")
+		fileMode = ZFileMode::BuildBlob;
+	else if (buildMode == "e")
+		fileMode = ZFileMode::Extract;
+	else if (exporterSet != nullptr && exporterSet->parseFileModeFunc != nullptr)
+		exporterSet->parseFileModeFunc(buildMode, fileMode);
+
+	if (fileMode == ZFileMode::Invalid)
+	{
+		printf("Error: Invalid file mode '%s'\n", buildMode.c_str());
+		return 1;
+	}
+
+	// We've parsed through our commands once. If an exporter exists, it's been set by now.
+	// Now we'll parse through them again but pass them on to our exporter if one is available.
+
+	if (exporterSet != nullptr && exporterSet->parseArgsFunc != nullptr)
+	{
+		for (int32_t i = 2; i < argc; i++)
+			exporterSet->parseArgsFunc(argc, argv, i);
 	}
 
 	if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_INFO)
 		printf("ZAPD: Zelda Asset Processor For Decomp: %s\n", gBuildHash);
 
+	if (Globals::Instance->verbosity >= VerbosityLevel::VERBOSITY_DEBUG)
+	{
+		WarningHandler::PrintWarningsDebugInfo();
+	}
+
+	// TODO: switch
 	if (fileMode == ZFileMode::Extract || fileMode == ZFileMode::BuildSourceFile)
 	{
 		bool parseSuccessful = Parse(Globals::Instance->inputPath, Globals::Instance->baseRomPath,
@@ -300,7 +335,9 @@ bool Parse(const fs::path& xmlFilePath, const fs::path& basePath, const fs::path
 
 	if (eResult != tinyxml2::XML_SUCCESS)
 	{
-		fprintf(stderr, "Invalid xml file: '%s'\n", xmlFilePath.c_str());
+		// TODO: use XMLDocument::ErrorIDToName to get more specific error messages here
+		HANDLE_ERROR(WarningType::InvalidXML,
+		             StringHelper::Sprintf("invalid XML file: '%s'", xmlFilePath.c_str()), "");
 		return false;
 	}
 
@@ -308,7 +345,9 @@ bool Parse(const fs::path& xmlFilePath, const fs::path& basePath, const fs::path
 
 	if (root == nullptr)
 	{
-		fprintf(stderr, "Missing Root tag in xml file: '%s'\n", xmlFilePath.c_str());
+		HANDLE_WARNING(
+			WarningType::InvalidXML,
+			StringHelper::Sprintf("missing Root tag in xml file: '%s'", xmlFilePath.c_str()), "");
 		return false;
 	}
 
@@ -322,10 +361,11 @@ bool Parse(const fs::path& xmlFilePath, const fs::path& basePath, const fs::path
 		}
 		else
 		{
-			throw std::runtime_error(
-				StringHelper::Sprintf("Parse: Fatal error in '%s'.\n\t Found a resource outside of "
-			                          "a File element: '%s'\n",
-			                          xmlFilePath.c_str(), child->Name()));
+			std::string errorHeader =
+				StringHelper::Sprintf("when parsing file '%s'", xmlFilePath.c_str());
+			std::string errorBody = StringHelper::Sprintf(
+				"Found a resource outside a File element: '%s'", child->Name());
+			HANDLE_ERROR(WarningType::InvalidXML, errorHeader, errorBody);
 		}
 	}
 
@@ -351,7 +391,11 @@ void BuildAssetTexture(const fs::path& pngFilePath, TextureType texType, const f
 	std::string name = outPath.stem().string();
 
 	ZTexture tex(nullptr);
-	tex.FromPNG(pngFilePath, texType);
+
+	if (name.find("u32") != std::string::npos)
+		tex.dWordAligned = false;
+
+	tex.FromPNG(pngFilePath.string(), texType);
 	std::string cfgPath = StringHelper::Split(pngFilePath.string(), ".")[0] + ".cfg";
 
 	if (File::Exists(cfgPath))

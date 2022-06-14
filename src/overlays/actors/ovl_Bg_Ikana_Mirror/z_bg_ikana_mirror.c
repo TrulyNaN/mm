@@ -1,6 +1,6 @@
 #include "z_bg_ikana_mirror.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((BgIkanaMirror*)thisx)
 

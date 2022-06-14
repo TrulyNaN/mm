@@ -7,7 +7,23 @@ struct EnFirefly;
 
 typedef struct EnFirefly {
     /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x230];
+    /* 0x144 */ SkelAnime skelAnime;
+    /* 0x188 */ EnFireflyActionFunc actionFunc;
+    /* 0x18C */ u8 auraType;
+    /* 0x18D */ u8 currentType;
+    /* 0x18E */ u8 isInvisible;
+    /* 0x18F */ u8 drawDmgEffType;
+    /* 0x190 */ s16 timer;
+    /* 0x192 */ s16 targetPitch;
+    /* 0x194 */ Vec3s jointTable[28];
+    /* 0x23C */ Vec3s morphTable[28];
+    /* 0x2E4 */ f32 maxAltitude;
+    /* 0x2E8 */ f32 drawDmgEffAlpha;
+    /* 0x2E8 */ f32 drawDmgEffScale;
+    /* 0x2E8 */ f32 drawDmgEffFrozenSteamScale;
+    /* 0x2F4 */ u32 unk_2F4;
+    /* 0x2F8 */ Vec3f limbPos[3];
+    /* 0x31C */ ColliderSphere collider;
 } EnFirefly; // size = 0x374
 
 extern const ActorInit En_Firefly_InitVars;

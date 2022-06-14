@@ -6,8 +6,9 @@
 struct EnEncount3;
 
 typedef struct EnEncount3 {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x88];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ EnEncount3ActionFunc actionFunc;
+    /* 0x0148 */ char unk_148[0x84];
 } EnEncount3; // size = 0x1CC
 
 extern const ActorInit En_Encount3_InitVars;

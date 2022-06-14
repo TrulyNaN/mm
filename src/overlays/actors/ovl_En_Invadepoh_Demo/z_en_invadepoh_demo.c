@@ -1,6 +1,6 @@
 #include "z_en_invadepoh_demo.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((EnInvadepohDemo*)thisx)
 
@@ -23,7 +23,67 @@ const ActorInit En_Invadepoh_Demo_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Invadepoh_Demo_0x80C192A0/func_80C192A0.asm")
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_80C1AA74[] = {
+    ICHAIN_F32(uncullZoneForward, 20000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 500, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 600, ICHAIN_CONTINUE),
+    ICHAIN_F32(targetArrowOffset, 6000, ICHAIN_CONTINUE),
+    ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_STOP),
+};
+
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_80C1AA88[] = {
+    ICHAIN_F32(uncullZoneForward, 20000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 100, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 100, ICHAIN_CONTINUE),
+    ICHAIN_F32(targetArrowOffset, 1500, ICHAIN_CONTINUE),
+    ICHAIN_U8(targetMode, 6, ICHAIN_CONTINUE),
+    ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_STOP),
+};
+
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_80C1AAA0[] = {
+    ICHAIN_F32(uncullZoneForward, 20000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 200, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 300, ICHAIN_CONTINUE),
+    ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_STOP),
+};
+
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_80C1AAB0[] = {
+    ICHAIN_F32(uncullZoneForward, 20000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 1000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 1000, ICHAIN_CONTINUE),
+    ICHAIN_VEC3S(shape.rot, 0, ICHAIN_CONTINUE),
+    ICHAIN_F32(terminalVelocity, -100, ICHAIN_CONTINUE),
+    ICHAIN_VEC3F_DIV1000(scale, 800, ICHAIN_STOP),
+};
+
+// static InitChainEntry sInitChain[] = {
+static InitChainEntry D_80C1AAC8[] = {
+    ICHAIN_F32(uncullZoneForward, 20000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 100, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 100, ICHAIN_CONTINUE),
+    ICHAIN_VEC3F_DIV1000(scale, 10, ICHAIN_STOP),
+};
+
+#endif
+
+extern InitChainEntry D_80C1AA74[];
+extern InitChainEntry D_80C1AA88[];
+extern InitChainEntry D_80C1AAA0[];
+extern InitChainEntry D_80C1AAB0[];
+extern InitChainEntry D_80C1AAC8[];
+
+extern UNK_TYPE D_06000560;
+extern UNK_TYPE D_06001D80;
+extern UNK_TYPE D_06004264;
+extern UNK_TYPE D_06004E98;
+extern UNK_TYPE D_06011FC8;
+extern UNK_TYPE D_06016588;
+
+#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Invadepoh_Demo/func_80C192A0.s")
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Invadepoh_Demo_0x80C192A0/func_80C192B0.asm")
 

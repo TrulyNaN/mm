@@ -9,12 +9,12 @@ s32 osContStartReadData(OSMesgQueue* mq) {
 
     if (__osContLastCmd != 1) {
         __osPackReadData();
-        __osSiRawStartDma(1, &__osContPifRam);
-        osRecvMesg(mq, NULL, 1);
+        __osSiRawStartDma(OS_WRITE, &__osContPifRam);
+        osRecvMesg(mq, NULL, OS_MESG_BLOCK);
     }
 
-    ret = __osSiRawStartDma(0, &__osContPifRam);
-    __osContLastCmd = 1;
+    ret = __osSiRawStartDma(OS_READ, &__osContPifRam);
+    __osContLastPoll = 1;
 
     __osSiRelAccess();
 
@@ -48,7 +48,7 @@ void __osPackReadData() {
         __osContPifRam.ramarray[i] = 0;
     }
 
-    __osContPifRam.pifstatus = 1;
+    __osContPifRam.status = 1;
     readformat.dummy = 255;
     readformat.txsize = 1;
     readformat.rxsize = 4;

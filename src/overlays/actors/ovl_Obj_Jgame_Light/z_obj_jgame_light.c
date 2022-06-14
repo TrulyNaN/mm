@@ -1,6 +1,6 @@
 #include "z_obj_jgame_light.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((ObjJgameLight*)thisx)
 

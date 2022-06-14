@@ -1,6 +1,6 @@
 #include "z_tg_sw.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((TGSw*)thisx)
 
@@ -49,9 +49,8 @@ static void TGSw_ActionExecuteOneShot(struct TGSw* this, GlobalContext* globalCt
 
     actorIterator = NULL;
     do {
-        actorEntry =
-            func_ActorCategoryIterateById(globalCtx, (struct Actor*)actorIterator, ACTORCAT_ENEMY, ACTOR_EN_SW);
-        if (actorIterator = (void*)!actorEntry) {
+        actor = SubS_FindActor(globalCtx, actor, ACTORCAT_ENEMY, ACTOR_EN_SW);
+        if (actor == NULL) {
             break;
         }
 
@@ -66,8 +65,9 @@ static void TGSw_ActionExecuteOneShot(struct TGSw* this, GlobalContext* globalCt
 
     actorIterator = NULL;
     do {
-        actorEntry = func_ActorCategoryIterateById(globalCtx, actorIterator, ACTORCAT_NPC, ACTOR_EN_SW);
-        if (actorIterator = (void*)!actorEntry) {
+        actor = SubS_FindActor(globalCtx, actor, ACTORCAT_NPC, ACTOR_EN_SW);
+
+        if (actor == NULL) {
             break;
         }
 

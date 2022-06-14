@@ -1,6 +1,6 @@
 #include "z_en_weather_tag.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((EnWeatherTag*)thisx)
 
@@ -56,13 +56,13 @@ void EnWeatherTag_Destroy(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 void EnWeatherTag_Init(Actor* thisx, GlobalContext* globalCtx) {
-    EnWeatherTag* this = (EnWeatherTag*)thisx;
+    EnWeatherTag* this = THIS;
     s32 pad;
     Path* path;
     s32 pathID;
 
     // flag: is targetable. Should do nothing as not set by default above
-    this->actor.flags &= ~1;
+    this->actor.flags &= ~ACTOR_FLAG_1;
 
     switch (WEATHER_TAG_TYPE(this)) {
         case WEATHERTAG_TYPE_UNK0:
@@ -72,7 +72,7 @@ void EnWeatherTag_Init(Actor* thisx, GlobalContext* globalCtx) {
             EnWeatherTag_SetupAction(this, func_80966A08);
             break;
         case WEATHERTAG_TYPE_UNK1:
-            if (gSaveContext.weekEventReg[0x34] & 0x20) { // if cleared STT
+            if (gSaveContext.save.weekEventReg[52] & 0x20) { // if cleared STT
                 Actor_MarkForDeath(&this->actor);
             }
             EnWeatherTag_SetupAction(this, func_80966B08);
@@ -186,11 +186,11 @@ void func_8096689C(EnWeatherTag* this, GlobalContext* globalCtx) {
 
     globalCtx->kankyoContext.windClothIntensity = (this->actor.world.rot.z * partialResult) + 30.0f;
     if (partialResult > 0.01f) {
-        globalCtx->kankyoContext.unkEA = 8;
+        globalCtx->envCtx.sandstormState = 8;
         D_801F4E30 = 0x9B;
-    } else if (globalCtx->kankyoContext.unkEA == 8) {
+    } else if (globalCtx->envCtx.sandstormState == 8) {
         D_801F4E30 = 0;
-        globalCtx->kankyoContext.unkEA = 9;
+        globalCtx->envCtx.sandstormState = 9;
     }
 }
 
@@ -244,10 +244,10 @@ void func_80966BF4(EnWeatherTag* this, GlobalContext* globalCtx) {
     u8 newUnk20;
     CsCmdActorAction* tmpAction;
 
-    if (func_800EE29C(globalCtx, 0x237) != 0) {
-        tmpAction = globalCtx->csCtx.actorActions[func_800EE200(globalCtx, 0x237)];
-        if ((globalCtx->csCtx.frames >= tmpAction->startFrame) && (tmpAction->unk0 >= 2)) {
-            switch (gSaveContext.day) {
+    if (Cutscene_CheckActorAction(globalCtx, 567)) {
+        tmpAction = globalCtx->csCtx.actorActions[Cutscene_GetActorActionIndex(globalCtx, 567)];
+        if ((globalCtx->csCtx.frames >= tmpAction->startFrame) && (tmpAction->action >= 2)) {
+            switch (gSaveContext.save.day) {
                 case 0:
                 case 1:
                 default:
@@ -275,7 +275,7 @@ void func_80966BF4(EnWeatherTag* this, GlobalContext* globalCtx) {
 void func_80966D20(EnWeatherTag* this, GlobalContext* globalCtx) {
     u8 newUnk20;
 
-    switch (gSaveContext.day) {
+    switch (gSaveContext.save.day) {
         case 0:
         case 1:
         default:
@@ -423,32 +423,27 @@ void func_809672DC(EnWeatherTag* this, GlobalContext* globalCtx) {
     f32 range;
     f32 strength = 0.0f;
 
-    // the parameters here are correct but loaded in the wrong order
-    // eec:  addiu   a3,s0,0x24    | eec:  lw      a0,0x150(s0)   4
-    // ef0:  sw      v0,0x3c(sp)   | ef0:  lbu     a1,0x14c(s0)   3
-    // ef4:  lbu     a1,0x14c(s0)  | ef4:  sw      zero,0x10(sp)  5
-    // ef8:  lw      a0,0x150(s0)  | ef8:  addiu   a3,s0,0x24     1
-    // efc:  sw      zero,0x10(sp) | efc:  sw      v0,0x3c(sp)    2
-    func_800BCCDC(this->pathPoints, this->pathCount, &player->base.world.pos, &this->actor.world.pos, 0);
+    Actor_GetClosestPosOnPath(this->pathPoints, this->pathCount, &GET_PLAYER(globalCtx)->actor.world.pos,
+                              &this->actor.world.pos, false);
 
     distance = Actor_XZDistanceBetweenActors(&player->base, &this->actor);
     range = WEATHER_TAG_RANGE100(this);
 
     if (distance < range) {
-        globalCtx->kankyoContext.unkEA = 6;
+        globalCtx->envCtx.sandstormState = 6;
         strength = 1.0f - (distance / range);
         if (0.8f < strength) {
             strength = 1.0f;
         }
         D_801F4E30 = (200.0f * strength);
     } else {
-        if (globalCtx->kankyoContext.unkEA == 6) {
+        if (globalCtx->envCtx.sandstormState == 6) {
             D_801F4E30 = 0;
-            globalCtx->kankyoContext.unkEA = 7;
+            globalCtx->envCtx.sandstormState = 7;
         }
     }
 
-    Math_SmoothStepToS(&globalCtx->kankyoContext.unkA4, (s16)(-40.0f * strength), 1, 1, 1);
+    Math_SmoothStepToS(&globalCtx->envCtx.lightSettings.fogNear, (s16)(-40.0f * strength), 1, 1, 1);
 }
 #else
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Weather_Tag_0x80966410/func_809672DC.asm")
@@ -461,8 +456,8 @@ void func_809674C8(EnWeatherTag* this, GlobalContext* globalCtx) {
 
     if (Actor_XZDistanceBetweenActors(&player->base, &this->actor) < WEATHER_TAG_RANGE100(this)) {
         if (CURRENT_DAY == 2) {
-            if ((gSaveContext.time >= 0x4AAA) && (gSaveContext.time < 0xBAAA) &&
-                (globalCtx->kankyoContext.unkF2[2] == 0)) {
+            if ((gSaveContext.save.time >= CLOCK_TIME(7, 0)) && (gSaveContext.save.time < CLOCK_TIME(17, 30)) &&
+                (globalCtx->envCtx.unk_F2[2] == 0)) {
 
                 D_801BDBB0 = 1;
                 func_800FD78C(globalCtx);
@@ -489,19 +484,16 @@ void func_80967608(EnWeatherTag* this, GlobalContext* globalCtx) {
 }
 
 void EnWeatherTag_Update(Actor* thisx, GlobalContext* globalCtx) {
-    EnWeatherTag* this = (EnWeatherTag*)thisx;
-    u16 oldTime;
+    EnWeatherTag* this = THIS;
 
     this->actionFunc(this, globalCtx);
-    if ((globalCtx->actorCtx.unk5 & 2) && (globalCtx->msgCtx.unk11F22 != 0) &&
-        (globalCtx->msgCtx.unk11F04 == 0x5E6) && (!FrameAdvance_IsEnabled(globalCtx)) && (globalCtx->unk18875 == 0) &&
-        (ActorCutscene_GetCurrentIndex() == -1) && (globalCtx->csCtx.state == 0)) {
+    if ((globalCtx->actorCtx.unk5 & 2) && (globalCtx->msgCtx.msgMode != 0) &&
+        (globalCtx->msgCtx.currentTextId == 0x5E6) && (!FrameAdvance_IsEnabled(&globalCtx->state)) &&
+        (globalCtx->sceneLoadFlag == 0) && (ActorCutscene_GetCurrentIndex() == -1) && (globalCtx->csCtx.state == 0)) {
 
-        oldTime = gSaveContext.time;
-        gSaveContext.time = (u16)REG(0xF) + oldTime; // cast req
-        if (REG(0xF) != 0) {
-            oldTime = gSaveContext.time;
-            gSaveContext.time = (gSaveContext.unk_16) + oldTime;
+        gSaveContext.save.time = ((void)0, gSaveContext.save.time) + (u16)REG(15);
+        if (REG(15) != 0) {
+            gSaveContext.save.time = ((void)0, gSaveContext.save.time) + (u16)((void)0, gSaveContext.save.daySpeed);
         }
     }
 }

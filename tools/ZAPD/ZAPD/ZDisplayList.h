@@ -371,8 +371,8 @@ public:
 	                              DListType dListType);
 
 	size_t GetRawDataSize() const override;
-	std::string GetSourceOutputHeader(const std::string& prefix) override;
-	std::string GetSourceOutputCode(const std::string& prefix) override;
+	DeclarationAlignment GetDeclarationAlignment() const override;
+	void DeclareReferences(const std::string& prefix) override;
 	std::string ProcessLegacy(const std::string& prefix);
 	std::string ProcessGfxDis(const std::string& prefix);
 

@@ -2,8 +2,9 @@ OPTIMIZATION_ON ?= 1
 ASAN ?= 0
 DEPRECATION_OFF ?= 0
 DEBUG ?= 0
-CFLAGS ?= 
-COPYCHECK_ARGS ?= 
+COPYCHECK_ARGS ?=
+LLD ?= 0
+WERROR ?= 0
 
 CC := g++
 INC := -I ZAPD -I lib/assimp/include -I lib/elfio -I lib/json/include -I lib/stb -I lib/tinygltf -I lib/libgfxd -I lib/tinyxml2
@@ -14,12 +15,17 @@ ifneq ($(DEBUG),0)
   DEPRECATION_OFF = 1
   CFLAGS += -g3 -DDEVELOPMENT
   COPYCHECK_ARGS += --devel
+  DEPRECATION_ON = 0
+endif
+
+ifneq ($(WERROR),0)
+  CXXFLAGS += -Werror
 endif
 
 ifeq ($(OPTIMIZATION_ON),0)
   CFLAGS += -O0
 else
-  CFLAGS += -O2
+  OPTFLAGS := -O2
 endif
 ifneq ($(ASAN),0)
   CFLAGS += -fsanitize=address
@@ -31,14 +37,25 @@ endif
 
 LDFLAGS := -ldl -lpng
 UNAME := $(shell uname)
-
-FS_INC ?=
+UNAMEM := $(shell uname -m)
 ifneq ($(UNAME), Darwin)
-    FS_INC += -lstdc++fs
-	CFLAGS += -Wl,-export-dynamic
+  LDFLAGS += -Wl,-export-dynamic -lstdc++fs
+  EXPORTERS := -Wl,--whole-archive ExporterTest/ExporterTest.a -Wl,--no-whole-archive
+else
+  EXPORTERS := -Wl,-force_load ExporterTest/ExporterTest.a
+  ifeq ($(UNAMEM),arm64)
+    ifeq ($(shell brew list libpng > /dev/null 2>&1; echo $$?),0)
+      LDFLAGS += -L $(shell brew --prefix)/lib
+      INC += -I $(shell brew --prefix)/include
+      else
+      $(error Please install libpng via Homebrew)
+    endif
+  endif
 endif
 
-SRC_DIRS := ZAPD ZAPD/ZRoom ZAPD/ZRoom/Commands ZAPD/Overlays ZAPD/HighLevel
+
+ZAPD_SRC_DIRS := $(shell find ZAPD -type d)
+SRC_DIRS = $(ZAPD_SRC_DIRS) lib/tinyxml2
 
 ZAPD_CPP_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
 ZAPD_H_FILES   := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.h))
@@ -74,5 +91,15 @@ ZAPD/Main.o: genbuildinfo ZAPD/Main.cpp
 lib/libgfxd/libgfxd.a:
 	$(MAKE) -C lib/libgfxd
 
-ZAPD.out: $(O_FILES) lib/libgfxd/libgfxd.a
-	$(CC) $(CFLAGS) $(INC) $(O_FILES) lib/libgfxd/libgfxd.a -o $@ $(FS_INC) $(LDFLAGS)
+.PHONY: ExporterTest
+ExporterTest:
+	$(MAKE) -C ExporterTest
+
+.PHONY: ZAPDUtils
+ZAPDUtils:
+	$(MAKE) -C ZAPDUtils
+
+
+# Linking
+ZAPD.out: $(O_FILES) lib/libgfxd/libgfxd.a ExporterTest ZAPDUtils
+	$(CXX) $(CXXFLAGS) $(O_FILES) lib/libgfxd/libgfxd.a ZAPDUtils/ZAPDUtils.a $(EXPORTERS) $(LDFLAGS) $(OUTPUT_OPTION)

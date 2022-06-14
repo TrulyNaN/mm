@@ -1,6 +1,6 @@
 #include "z_en_horse_link_child.h"
 
-#define FLAGS 0x02000010
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_2000000)
 
 #define THIS ((EnHorseLinkChild*)thisx)
 

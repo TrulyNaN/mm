@@ -6,8 +6,14 @@
 struct EnBox;
 
 typedef struct EnBox {
-    /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0xE0];
+    /* 0x0000 */ Actor actor;
+    /* 0x0144 */ char unk_144[0xAC];
+    /* 0x01F0 */ char unk_1F0[0x01];
+    /* 0x01F1 */ u8 unk_1F1;
+    /* 0x01F2 */ char unk_1F2[0x02];
+    /* 0x01F4 */ char unk_1F4[0x0C];
+    /* 0x0200 */ EnBoxActionFunc actionFunc;
+    /* 0x0204 */ char unk_204[0x20];
 } EnBox; // size = 0x224
 
 extern const ActorInit En_Box_InitVars;

@@ -39,7 +39,12 @@ public:
 	void ExtractFromXML(tinyxml2::XMLElement* reader, const std::vector<uint8_t>& nRawData,
 	                    uint32_t nRawDataIndex) override;
 
-	void ParseCommands(std::vector<ZRoomCommand*>& commandList, CommandSet commandSet);
+	Declaration* DeclareVar(const std::string& prefix, const std::string& body) override;
+	std::string GetBodySourceCode() const override;
+
+	void GetSourceOutputCode(const std::string& prefix) override;
+
+	std::string GetDefaultName(const std::string& prefix) const override;
 	size_t GetDeclarationSizeFromNeighbor(uint32_t declarationAddress);
 	size_t GetCommandSizeFromNeighbor(ZRoomCommand* cmd);
 	ZRoomCommand* FindCommandOfType(RoomCommand cmdType);

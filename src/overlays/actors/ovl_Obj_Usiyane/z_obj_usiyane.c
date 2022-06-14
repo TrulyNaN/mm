@@ -1,6 +1,6 @@
 #include "z_obj_usiyane.h"
 
-#define FLAGS 0x00000020
+#define FLAGS (ACTOR_FLAG_20)
 
 #define THIS ((ObjUsiyane*)thisx)
 
@@ -14,7 +14,7 @@ const ActorInit Obj_Usiyane_InitVars = {
     ACTOR_OBJ_USIYANE,
     ACTORCAT_PROP,
     FLAGS,
-    OBJECT_OBJECT_UNSET_USIYANE,
+    OBJECT_OBJ_USIYANE,
     sizeof(ObjUsiyane),
     (ActorFunc)ObjUsiyane_Init,
     (ActorFunc)ObjUsiyane_Destroy,

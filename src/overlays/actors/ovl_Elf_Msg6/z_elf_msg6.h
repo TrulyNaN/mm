@@ -5,6 +5,12 @@
 
 struct ElfMsg6;
 
+typedef void (*ElfMsg6ActionFunc)(struct ElfMsg6*, GlobalContext*);
+
+#define ELFMSG6_GET_F(thisx) ((thisx)->params & 0xF)
+#define ELFMSG6_GET_F0(thisx) (((thisx)->params & 0xF0) >> 4)
+#define ELFMSG6_SWITCHFLAG(thisx) (((thisx)->params & 0xFE00) >> 9)
+
 typedef struct ElfMsg6 {
     /* 0x000 */ Actor actor;
     /* 0x144 */ char unk_144[0x4];

@@ -7,7 +7,22 @@ struct EnBji01;
 
 typedef struct EnBji01 {
     /* 0x000 */ Actor actor;
-    /* 0x144 */ char unk_144[0x170];
+    /* 0x144 */ EnBji01ActionFunc actionFunc;
+    /* 0x148 */ SkelAnime skelAnime;
+    /* 0x18C */ ColliderCylinder collider;
+    /* 0x1D8 */ Vec3s jointTable[BJI_LIMB_MAX]; 
+    /* 0x238 */ Vec3s morphTable[BJI_LIMB_MAX];
+    /* 0x298 */ s32 animationIndex;
+    /* 0x29C */ s16 eyeTexIndex;
+    /* 0x29E */ s16 blinkSeqIndex;
+    /* 0x2A0 */ s16 blinkTimer;
+    /* 0x2A2 */ s16 torsoZRotStep;
+    /* 0x2A4 */ s16 torsoXRotStep;
+    /* 0x2A6 */ s16 headZRotStep;
+    /* 0x2A8 */ s16 headXRotStep;
+    /* 0x2AA */ u16 textId;
+    /* 0x2AC */ s16 cutscenes[1];
+    /* 0x2B0 */ ObjMoonStone* moonsTear;
 } EnBji01; // size = 0x2B4
 
 extern const ActorInit En_Bji_01_InitVars;

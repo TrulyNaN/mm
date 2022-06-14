@@ -1,6 +1,6 @@
 #include "z_dm_ah.h"
 
-#define FLAGS 0x00000009
+#define FLAGS (ACTOR_FLAG_1 | ACTOR_FLAG_8)
 
 #define THIS ((DmAh*)thisx)
 

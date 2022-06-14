@@ -1,6 +1,6 @@
 #include "z_obj_roomtimer.h"
 
-#define FLAGS 0x00000010
+#define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((ObjRoomtimer*)thisx)
 
@@ -8,7 +8,10 @@ void ObjRoomtimer_Init(Actor* thisx, GlobalContext* globalCtx);
 void ObjRoomtimer_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void ObjRoomtimer_Update(Actor* thisx, GlobalContext* globalCtx);
 
-/*
+void func_80973CD8(ObjRoomtimer* this, GlobalContext* globalCtx);
+void func_80973D3C(ObjRoomtimer* this, GlobalContext* globalCtx);
+void func_80973DE0(ObjRoomtimer* this, GlobalContext* globalCtx);
+
 const ActorInit Obj_Roomtimer_InitVars = {
     ACTOR_OBJ_ROOMTIMER,
     ACTORCAT_ENEMY,
@@ -22,14 +25,64 @@ const ActorInit Obj_Roomtimer_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/ObjRoomtimer_Init.asm")
+void ObjRoomtimer_Init(Actor* thisx, GlobalContext* globalCtx) {
+    ObjRoomtimer* this = THIS;
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/ObjRoomtimer_Destroy.asm")
+    this->switchFlag = ROOMTIMER_GET_SWITCHFLAG(thisx);
+    this->actor.params &= 0x1FF;
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/func_80973CD8.asm")
+    if (this->actor.params != 0x1FF) {
+        this->actor.params = CLAMP_MAX(this->actor.params, 500);
+    }
+    this->actionFunc = func_80973CD8;
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/func_80973D3C.asm")
+void ObjRoomtimer_Destroy(Actor* thisx, GlobalContext* globalCtx) {
+    ObjRoomtimer* this = THIS;
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/func_80973DE0.asm")
+    if (this->actor.params != 0x1FF && gSaveContext.unk_3DD0[4] > 0) {
+        gSaveContext.unk_3DD0[4] = 5;
+    }
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Roomtimer_0x80973C50/ObjRoomtimer_Update.asm")
+void func_80973CD8(ObjRoomtimer* this, GlobalContext* globalCtx) {
+    if (this->actor.params != 0x1FF) {
+        func_8010E9F0(4, this->actor.params);
+    }
+
+    func_800BC154(globalCtx, &globalCtx->actorCtx, &this->actor, ACTORCAT_PROP);
+    this->actionFunc = func_80973D3C;
+}
+
+void func_80973D3C(ObjRoomtimer* this, GlobalContext* globalCtx) {
+    if (Flags_GetClearTemp(globalCtx, this->actor.room)) {
+        if (this->actor.params != 0x1FF) {
+            gSaveContext.unk_3DD0[4] = 5;
+        }
+        ActorCutscene_SetIntentToPlay(this->actor.cutscene);
+        this->actionFunc = func_80973DE0;
+    } else if (this->actor.params != 0x1FF && gSaveContext.unk_3DD0[4] == 0) {
+        play_sound(NA_SE_OC_ABYSS);
+        func_80169EFC(&globalCtx->state);
+        Actor_MarkForDeath(&this->actor);
+    }
+}
+
+void func_80973DE0(ObjRoomtimer* this, GlobalContext* globalCtx) {
+    if (ActorCutscene_GetCanPlayNext(this->actor.cutscene)) {
+        Flags_SetClear(globalCtx, this->actor.room);
+        Flags_SetSwitch(globalCtx, this->switchFlag);
+        if (ActorCutscene_GetLength(this->actor.cutscene) != -1) {
+            ActorCutscene_StartAndSetUnkLinkFields(this->actor.cutscene, &this->actor);
+        }
+        Actor_MarkForDeath(&this->actor);
+    } else {
+        ActorCutscene_SetIntentToPlay(this->actor.cutscene);
+    }
+}
+
+void ObjRoomtimer_Update(Actor* thisx, GlobalContext* globalCtx) {
+    ObjRoomtimer* this = THIS;
+
+    this->actionFunc(this, globalCtx);
+}

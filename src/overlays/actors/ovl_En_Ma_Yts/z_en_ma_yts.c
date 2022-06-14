@@ -5,8 +5,9 @@
  */
 
 #include "z_en_ma_yts.h"
+#include "objects/object_ma1/object_ma1.h"
 
-#define FLAGS 0x02100009
+#define FLAGS (ACTOR_FLAG_1 | ACTOR_FLAG_8 | ACTOR_FLAG_100000 | ACTOR_FLAG_2000000)
 
 #define THIS ((EnMaYts*)thisx)
 
@@ -28,40 +29,6 @@ void EnMaYts_ChooseNextDialogue(EnMaYts* this, GlobalContext* globalCtx);
 void EnMaYts_SetFaceExpression(EnMaYts* this, s16 overrideEyeTexIndex, s16 mouthTexIndex);
 
 void EnMaYts_DrawSleeping(Actor* thisx, GlobalContext* globalCtx);
-
-extern AnimationHeader D_06009E58;
-extern AnimationHeader D_06018948;
-extern AnimationHeader D_0601B76C;
-extern AnimationHeader D_06007328;
-extern AnimationHeader D_06014088;
-extern AnimationHeader D_06002A8C;
-extern AnimationHeader D_06015B7C;
-extern AnimationHeader D_06007D98;
-extern AnimationHeader D_0600852C;
-extern AnimationHeader D_06008F6C;
-extern AnimationHeader D_060180DC;
-
-extern u64 D_060127C8[];
-extern u64 D_06012BC8[];
-extern u64 D_06012FC8[];
-extern u64 D_060133C8[];
-
-extern u64 D_0600FFC8[];
-extern u64 D_060107C8[];
-extern u64 D_06010FC8[];
-extern u64 D_060117C8[];
-extern u64 D_06011FC8[];
-
-extern FlexSkeletonHeader D_06013928;
-
-extern AnimationHeader D_06009E58;
-extern AnimationHeader D_06007D98;
-
-// Bow
-extern Gfx D_060003B0[];
-
-// Sleeping
-extern Gfx D_060043A0[];
 
 const ActorInit En_Ma_Yts_InitVars = {
     ACTOR_EN_MA_YTS,
@@ -111,34 +78,48 @@ static CollisionCheckInfoInit2 sColChkInfoInit2 = {
     0, 0, 0, 0, MASS_IMMOVABLE,
 };
 
-static struct_80B8E1A8 D_80B8E1A8[] = {
-    { &D_06009E58, 1.0f, 0, 0.0f },  { &D_06009E58, 1.0f, 0, -6.0f }, { &D_06018948, 1.0f, 2, 0.0f },
-    { &D_06018948, 1.0f, 2, -6.0f }, { &D_0601B76C, 1.0f, 0, 0.0f },  { &D_0601B76C, 1.0f, 0, -6.0f },
-    { &D_06007328, 1.0f, 0, 0.0f },  { &D_06007328, 1.0f, 0, -6.0f }, { &D_06014088, 1.0f, 0, 0.0f },
-    { &D_06014088, 1.0f, 0, -6.0f }, { &D_06002A8C, 1.0f, 0, 0.0f },  { &D_06002A8C, 1.0f, 0, -6.0f },
-    { &D_06015B7C, 1.0f, 0, 0.0f },  { &D_06015B7C, 1.0f, 0, -6.0f }, { &D_06007D98, 1.0f, 0, 0.0f },
-    { &D_06007D98, 1.0f, 0, -6.0f }, { &D_0600852C, 1.0f, 0, 0.0f },  { &D_0600852C, 1.0f, 0, -6.0f },
-    { &D_06008F6C, 1.0f, 0, 0.0f },  { &D_06008F6C, 1.0f, 0, -6.0f }, { &D_060180DC, 1.0f, 2, 0.0f },
-    { &D_060180DC, 1.0f, 2, -6.0f },
+static AnimationSpeedInfo sAnimationInfo[] = {
+    { &object_ma1_Anim_009E58, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_009E58, 1.0f, ANIMMODE_LOOP, -6.0f }, // Idle anim
+    { &object_ma1_Anim_018948, 1.0f, ANIMMODE_ONCE, 0.0f },
+    { &object_ma1_Anim_018948, 1.0f, ANIMMODE_ONCE, -6.0f }, // Starts holding hands anim
+    { &object_ma1_Anim_01B76C, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_01B76C, 1.0f, ANIMMODE_LOOP, -6.0f }, // Holnding hands anim
+    { &object_ma1_Anim_007328, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_007328, 1.0f, ANIMMODE_LOOP, -6.0f }, // Walking anim
+    { &object_ma1_Anim_014088, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_014088, 1.0f, ANIMMODE_LOOP, -6.0f }, //
+    { &object_ma1_Anim_002A8C, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_002A8C, 1.0f, ANIMMODE_LOOP, -6.0f }, // Looking around anim
+    { &object_ma1_Anim_015B7C, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_015B7C, 1.0f, ANIMMODE_LOOP, -6.0f }, // Shoot arrow anim
+    { &object_ma1_Anim_007D98, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_007D98, 1.0f, ANIMMODE_LOOP, -6.0f }, // Sitting anim
+    { &object_ma1_Anim_00852C, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_00852C, 1.0f, ANIMMODE_LOOP, -6.0f }, // Sitting traumatized anim
+    { &object_ma1_Anim_008F6C, 1.0f, ANIMMODE_LOOP, 0.0f },
+    { &object_ma1_Anim_008F6C, 1.0f, ANIMMODE_LOOP, -6.0f }, // Sitting sad anim
+    { &object_ma1_Anim_0180DC, 1.0f, ANIMMODE_ONCE, 0.0f },
+    { &object_ma1_Anim_0180DC, 1.0f, ANIMMODE_ONCE, -6.0f }, // Turns around anim
 };
 
-static void* sMouthTextures[] = {
-    D_060127C8,
-    D_06012BC8,
-    D_06012FC8,
-    D_060133C8,
+static TexturePtr sMouthTextures[] = {
+    object_ma1_Tex_0127C8,
+    object_ma1_Tex_012BC8,
+    object_ma1_Tex_012FC8,
+    object_ma1_Tex_0133C8,
 };
 
-static void* sEyeTextures[] = {
-    D_0600FFC8, D_060107C8, D_06010FC8, D_060117C8, D_06011FC8,
+static TexturePtr sEyeTextures[] = {
+    object_ma1_Tex_00FFC8, object_ma1_Tex_0107C8, object_ma1_Tex_010FC8, object_ma1_Tex_0117C8, object_ma1_Tex_011FC8,
 };
 
 static u16 D_80B8E32C = 99;
 
 void EnMaYts_ChangeAnim(EnMaYts* this, s32 index) {
-    SkelAnime_ChangeAnim(&this->skelAnime, D_80B8E1A8[index].animationSeg, 1.0f, 0.0f,
-                         SkelAnime_GetFrameCount(&D_80B8E1A8[index].animationSeg->common), D_80B8E1A8[index].mode,
-                         D_80B8E1A8[index].transitionRate);
+    Animation_Change(&this->skelAnime, sAnimationInfo[index].animation, 1.0f, 0.0f,
+                     Animation_GetLastFrame(sAnimationInfo[index].animation), sAnimationInfo[index].mode,
+                     sAnimationInfo[index].morphFrames);
 }
 
 void func_80B8D12C(EnMaYts* this, GlobalContext* globalCtx) {
@@ -166,7 +147,7 @@ void EnMaYts_InitAnimation(EnMaYts* this, GlobalContext* globalCtx) {
         case EN_NA_YTS_TYPE_SITTING:
             this->actor.targetMode = 6;
             // Day 1 or "Winning" the alien invasion
-            if (CURRENT_DAY == 1 || (gSaveContext.weekEventReg[0x16] & 1)) {
+            if (CURRENT_DAY == 1 || (gSaveContext.save.weekEventReg[22] & 1)) {
                 EnMaYts_ChangeAnim(this, 14);
             } else {
                 EnMaYts_ChangeAnim(this, 18);
@@ -199,14 +180,14 @@ s32 EnMaYts_CheckValidSpawn(EnMaYts* this, GlobalContext* globalCtx) {
 
                 case 2:
                     // Failing the alien invasion
-                    if (!(gSaveContext.weekEventReg[0x16] & 1)) {
+                    if (!(gSaveContext.save.weekEventReg[22] & 1)) {
                         return false;
                     }
                     break;
 
                 case 3:
                     // "Winning" the alien invasion
-                    if (gSaveContext.weekEventReg[0x16] & 1) {
+                    if (gSaveContext.save.weekEventReg[22] & 1) {
                         return false;
                     }
                     break;
@@ -215,16 +196,16 @@ s32 EnMaYts_CheckValidSpawn(EnMaYts* this, GlobalContext* globalCtx) {
 
         case EN_NA_YTS_TYPE_BARN:
             // Failing the alien invasion
-            if (!(gSaveContext.weekEventReg[0x16] & 1)) {
+            if (!(gSaveContext.save.weekEventReg[22] & 1)) {
                 return false;
-            } else if ((gSaveContext.time >= 0xD555) && (CURRENT_DAY == 3)) {
+            } else if (gSaveContext.save.time >= CLOCK_TIME(20, 0) && CURRENT_DAY == 3) {
                 return false;
             }
             break;
 
         case EN_NA_YTS_TYPE_SLEEPING:
             // "Winning" the alien invasion
-            if (gSaveContext.weekEventReg[0x16] & 1) {
+            if (gSaveContext.save.weekEventReg[22] & 1) {
                 return false;
             }
             break;
@@ -244,9 +225,10 @@ void EnMaYts_Init(Actor* thisx, GlobalContext* globalCtx) {
     if (!EnMaYts_CheckValidSpawn(this, globalCtx)) {
         Actor_MarkForDeath(&this->actor);
     }
-    ActorShape_Init(&this->actor.shape, 0.0f, func_800B3FC0, 18.0f);
-    SkelAnime_InitSV(globalCtx, &this->skelAnime, &D_06013928, NULL, this->limbDrawTbl, this->transitionDrawTbl,
-                     OBJECT_MA1_LIMB_TABLE_COUNT);
+
+    ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 18.0f);
+    SkelAnime_InitFlex(globalCtx, &this->skelAnime, &object_ma1_Skel_013928, NULL, this->jointTable, this->morphTable,
+                       MA1_LIMB_MAX);
     EnMaYts_InitAnimation(this, globalCtx);
 
     Collider_InitCylinder(globalCtx, &this->collider);
@@ -270,7 +252,7 @@ void EnMaYts_Init(Actor* thisx, GlobalContext* globalCtx) {
         this->hasBow = false;
     }
 
-    if (CURRENT_DAY == 1 || (gSaveContext.weekEventReg[0x16] & 1)) {
+    if (CURRENT_DAY == 1 || (gSaveContext.save.weekEventReg[22] & 1)) {
         this->overrideEyeTexIndex = 0;
         this->eyeTexIndex = 0;
         this->mouthTexIndex = 0;
@@ -288,7 +270,7 @@ void EnMaYts_Init(Actor* thisx, GlobalContext* globalCtx) {
         this->mouthTexIndex = 0;
         this->unk_32C = 2;
         EnMaYts_SetupEndCreditsHandler(this);
-    } else if (CURRENT_DAY == 2 && gSaveContext.isNight == 1 && (gSaveContext.weekEventReg[0x16] & 1)) {
+    } else if (CURRENT_DAY == 2 && gSaveContext.save.isNight == 1 && (gSaveContext.save.weekEventReg[22] & 1)) {
         EnMaYts_SetupStartDialogue(this);
     } else {
         EnMaYts_SetupDoNothing(this);
@@ -316,48 +298,48 @@ void EnMaYts_SetupStartDialogue(EnMaYts* this) {
 void EnMaYts_StartDialogue(EnMaYts* this, GlobalContext* globalCtx) {
     s16 sp26 = this->actor.shape.rot.y - this->actor.yawTowardsPlayer;
 
-    if (func_800B84D0(&this->actor, globalCtx)) { // if (Actor_IsTalking)
-        if (!(gSaveContext.playerForm == 4)) {    // PLAYER_FORM != HUMAN_FORM
-            if (!(gSaveContext.weekEventReg[0x41] & 0x80)) {
+    if (Actor_ProcessTalkRequest(&this->actor, &globalCtx->state)) {
+        if (!(gSaveContext.save.playerForm == PLAYER_FORM_HUMAN)) {
+            if (!(gSaveContext.save.weekEventReg[65] & 0x80)) {
                 // Saying to non-human Link: "Cremia went to town."
-                gSaveContext.weekEventReg[0x41] |= 0x80;
+                gSaveContext.save.weekEventReg[65] |= 0x80;
                 EnMaYts_SetFaceExpression(this, 0, 0);
-                func_801518B0(globalCtx, 0x335F, &this->actor);
+                Message_StartTextbox(globalCtx, 0x335F, &this->actor);
                 this->textId = 0x335F;
             } else {
                 // Saying to non-human Link: "Pretend you did not heard that."
                 EnMaYts_SetFaceExpression(this, 4, 3);
-                func_801518B0(globalCtx, 0x3362, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3362, &this->actor);
                 this->textId = 0x3362;
                 func_80151BB4(globalCtx, 5);
             }
-        } else if (func_8012403C(globalCtx)) { // Player_IsWearingAMask
-            if (!(gSaveContext.weekEventReg[0x41] & 0x40)) {
-                gSaveContext.weekEventReg[0x41] |= 0x40;
+        } else if (Player_GetMask(globalCtx) != PLAYER_MASK_NONE) {
+            if (!(gSaveContext.save.weekEventReg[65] & 0x40)) {
+                gSaveContext.save.weekEventReg[65] |= 0x40;
                 EnMaYts_SetFaceExpression(this, 0, 0);
-                func_801518B0(globalCtx, 0x3363, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3363, &this->actor);
                 this->textId = 0x3363;
             } else {
                 EnMaYts_SetFaceExpression(this, 4, 2);
-                func_801518B0(globalCtx, 0x3366, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3366, &this->actor);
                 this->textId = 0x3366;
                 func_80151BB4(globalCtx, 5);
             }
-        } else if (!(gSaveContext.weekEventReg[0x15] & 0x20)) {
+        } else if (!(gSaveContext.save.weekEventReg[21] & 0x20)) {
             EnMaYts_SetFaceExpression(this, 0, 0);
-            func_801518B0(globalCtx, 0x3367, &this->actor);
+            Message_StartTextbox(globalCtx, 0x3367, &this->actor);
             this->textId = 0x3367;
         } else {
-            if (!(gSaveContext.weekEventReg[0x41] & 0x20)) {
+            if (!(gSaveContext.save.weekEventReg[65] & 0x20)) {
                 // Saying to Grasshopper: "Cremia went to town."
-                gSaveContext.weekEventReg[0x41] |= 0x20;
+                gSaveContext.save.weekEventReg[65] |= 0x20;
                 EnMaYts_SetFaceExpression(this, 4, 2);
-                func_801518B0(globalCtx, 0x3369, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3369, &this->actor);
                 this->textId = 0x3369;
             } else {
                 // Saying to Grasshopper: "You're our bodyguard."
                 EnMaYts_SetFaceExpression(this, 0, 0);
-                func_801518B0(globalCtx, 0x336C, &this->actor);
+                Message_StartTextbox(globalCtx, 0x336C, &this->actor);
                 this->textId = 0x336C;
                 func_80151BB4(globalCtx, 5);
             }
@@ -373,13 +355,13 @@ void EnMaYts_SetupDialogueHandler(EnMaYts* this) {
 }
 
 void EnMaYts_DialogueHandler(EnMaYts* this, GlobalContext* globalCtx) {
-    switch (func_80152498(&globalCtx->msgCtx)) {
+    switch (Message_GetState(&globalCtx->msgCtx)) {
         case 5: // End message block
             EnMaYts_ChooseNextDialogue(this, globalCtx);
             break;
 
         case 6: // End conversation
-            if (func_80147624(globalCtx) != 0) {
+            if (Message_ShouldAdvance(globalCtx)) {
                 EnMaYts_SetupStartDialogue(this);
             }
             break;
@@ -394,21 +376,20 @@ void EnMaYts_DialogueHandler(EnMaYts* this, GlobalContext* globalCtx) {
 }
 
 void EnMaYts_SetupEndCreditsHandler(EnMaYts* this) {
-    this->actor.flags |= 0x10;
+    this->actor.flags |= ACTOR_FLAG_10;
     EnMaYts_SetFaceExpression(this, 0, 0);
     this->actionFunc = EnMaYts_EndCreditsHandler;
 }
 
 void EnMaYts_EndCreditsHandler(EnMaYts* this, GlobalContext* globalCtx) {
-    u32 actionIndex;
+    if (Cutscene_CheckActorAction(globalCtx, 120)) {
+        s32 actionIndex = Cutscene_GetActorActionIndex(globalCtx, 120);
 
-    if (func_800EE29C(globalCtx, 0x78) != 0) {
-        actionIndex = func_800EE200(globalCtx, 0x78);
         if (globalCtx->csCtx.frames == globalCtx->csCtx.actorActions[actionIndex]->startFrame) {
-            if (globalCtx->csCtx.actorActions[actionIndex]->unk0 != D_80B8E32C) {
-                D_80B8E32C = globalCtx->csCtx.actorActions[actionIndex]->unk0;
+            if (globalCtx->csCtx.actorActions[actionIndex]->action != D_80B8E32C) {
+                D_80B8E32C = globalCtx->csCtx.actorActions[actionIndex]->action;
                 this->endCreditsFlag = 0;
-                switch (globalCtx->csCtx.actorActions[actionIndex]->unk0) {
+                switch (globalCtx->csCtx.actorActions[actionIndex]->action) {
                     case 1:
                         this->hasBow = true;
                         EnMaYts_ChangeAnim(this, 0);
@@ -432,9 +413,9 @@ void EnMaYts_EndCreditsHandler(EnMaYts* this, GlobalContext* globalCtx) {
             }
         }
 
-        func_800EDF24(&this->actor, globalCtx, actionIndex);
+        Cutscene_ActorTranslateAndYaw(&this->actor, globalCtx, actionIndex);
         if ((D_80B8E32C == 2) && (this->endCreditsFlag == 0) &&
-            (func_801378B8(&this->skelAnime, this->skelAnime.animFrameCount) != 0)) {
+            Animation_OnFrame(&this->skelAnime, this->skelAnime.endFrame)) {
             this->endCreditsFlag++;
             EnMaYts_ChangeAnim(this, 5);
         }
@@ -446,50 +427,50 @@ void EnMaYts_EndCreditsHandler(EnMaYts* this, GlobalContext* globalCtx) {
 
 // Select the following dialogue based on the current one, and an appropiate face expression
 void EnMaYts_ChooseNextDialogue(EnMaYts* this, GlobalContext* globalCtx) {
-    if (func_80147624(globalCtx) != 0) {
+    if (Message_ShouldAdvance(globalCtx)) {
         switch (this->textId) {
             case 0x335F:
                 EnMaYts_SetFaceExpression(this, 0, 2);
-                func_801518B0(globalCtx, 0x3360, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3360, &this->actor);
                 this->textId = 0x3360;
                 break;
 
             case 0x3360:
                 EnMaYts_SetFaceExpression(this, 4, 3);
-                func_801518B0(globalCtx, 0x3361, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3361, &this->actor);
                 this->textId = 0x3361;
                 func_80151BB4(globalCtx, 5);
                 break;
 
             case 0x3363:
                 EnMaYts_SetFaceExpression(this, 1, 1);
-                func_801518B0(globalCtx, 0x3364, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3364, &this->actor);
                 this->textId = 0x3364;
                 break;
 
             case 0x3364:
                 EnMaYts_SetFaceExpression(this, 4, 2);
-                func_801518B0(globalCtx, 0x3365, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3365, &this->actor);
                 this->textId = 0x3365;
                 func_80151BB4(globalCtx, 5);
                 break;
 
             case 0x3367:
                 EnMaYts_SetFaceExpression(this, 4, 3);
-                func_801518B0(globalCtx, 0x3368, &this->actor);
+                Message_StartTextbox(globalCtx, 0x3368, &this->actor);
                 this->textId = 0x3368;
                 func_80151BB4(globalCtx, 5);
                 break;
 
             case 0x3369:
                 EnMaYts_SetFaceExpression(this, 0, 0);
-                func_801518B0(globalCtx, 0x336A, &this->actor);
+                Message_StartTextbox(globalCtx, 0x336A, &this->actor);
                 this->textId = 0x336A;
                 break;
 
             case 0x336A:
                 EnMaYts_SetFaceExpression(this, 3, 3);
-                func_801518B0(globalCtx, 0x336B, &this->actor);
+                Message_StartTextbox(globalCtx, 0x336B, &this->actor);
                 this->textId = 0x336B;
                 func_80151BB4(globalCtx, 5);
                 break;
@@ -529,7 +510,8 @@ s32 EnMaYts_OverrideLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dLis
     if (limbIndex == OBJECT_MA1_LIMB_HAIR_TOP) {
         sp4 = this->unk_1D8.unk_08;
         rot->x += sp4.y;
-        if ((this->skelAnime.animCurrentSeg == &D_06009E58) || (this->skelAnime.animCurrentSeg == &D_06007D98)) {
+        if ((this->skelAnime.animation == &object_ma1_Anim_009E58) ||
+            (this->skelAnime.animation == &object_ma1_Anim_007D98)) {
             rot->z += sp4.x;
         }
     } else if (limbIndex == OBJECT_MA1_LIMB_HEAD) {
@@ -538,18 +520,18 @@ s32 EnMaYts_OverrideLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dLis
         rot->z += sp4.x;
     }
 
-    return 0;
+    return false;
 }
 
 void EnMaYts_PostLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* thisx) {
     EnMaYts* this = THIS;
 
-    if (limbIndex == OBJECT_MA1_LIMB_HAIR_TOP) {
-        SysMatrix_GetStateTranslation(&this->actor.focus.pos);
-    } else if (limbIndex == OBJECT_MA1_LIMB_ARM_RIGHT) {
+    if (limbIndex == MA1_LIMB_HEAD) {
+        Matrix_MultZero(&this->actor.focus.pos);
+    } else if (limbIndex == MA1_LIMB_HAND_LEFT) {
         if (this->hasBow == true) {
             OPEN_DISPS(globalCtx->state.gfxCtx);
-            gSPDisplayList(POLY_OPA_DISP++, D_060003B0);
+            gSPDisplayList(POLY_OPA_DISP++, object_ma1_DL_0003B0);
             CLOSE_DISPS(globalCtx->state.gfxCtx);
         }
     }
@@ -576,7 +558,7 @@ void EnMaYts_DrawSleeping(Actor* thisx, GlobalContext* globalCtx) {
     func_8012C28C(globalCtx->state.gfxCtx);
 
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-    gSPDisplayList(POLY_OPA_DISP++, D_060043A0);
+    gSPDisplayList(POLY_OPA_DISP++, object_ma1_DL_0043A0);
 
     CLOSE_DISPS(globalCtx->state.gfxCtx);
 }

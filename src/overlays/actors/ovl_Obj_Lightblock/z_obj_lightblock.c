@@ -1,4 +1,5 @@
 #include "z_obj_lightblock.h"
+#include "objects/object_lightblock/object_lightblock.h"
 
 #define FLAGS 0x00000000
 
@@ -23,13 +24,118 @@ const ActorInit Obj_Lightblock_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/func_80AF3910.asm")
+static ColliderCylinderInit sCylinderInit = {
+    {
+        COLTYPE_NONE,
+        AT_NONE,
+        AC_ON | AC_TYPE_PLAYER | AC_TYPE_OTHER,
+        OC1_NONE,
+        OC2_NONE,
+        COLSHAPE_CYLINDER,
+    },
+    {
+        ELEMTYPE_UNK0,
+        { 0x00000000, 0x00, 0x00 },
+        { 0x00202000, 0x00, 0x00 },
+        TOUCH_NONE | TOUCH_SFX_NORMAL,
+        BUMP_ON,
+        OCELEM_NONE,
+    },
+    { 84, 120, 0, { 0, 0, 0 } },
+};
+
+typedef struct {
+    /* 0x00 */ f32 scale;
+    /* 0x04 */ s16 radius;
+    /* 0x06 */ s16 height;
+    /* 0x08 */ s16 yShift;
+    /* 0x0C */ s32 params;
+} LightblockTypeVars; // size = 0x10
+
+static LightblockTypeVars sLightblockTypeVars[] = {
+    { 0.1f, 76, 80, 19, 2 },
+    { (1.0f / 6), 126, 144, 19, 3 },
+};
+
+static InitChainEntry sInitChain[] = {
+    ICHAIN_F32(uncullZoneForward, 4000, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneScale, 500, ICHAIN_CONTINUE),
+    ICHAIN_F32(uncullZoneDownward, 500, ICHAIN_STOP),
+};
+
+extern Gfx D_801AEF88[];
+extern Gfx D_801AEFA0[];
+
+void func_80AF3910(ObjLightblock* this, GlobalContext* globalCtx) {
+    LightblockTypeVars* typeVars = &sLightblockTypeVars[LIGHTBLOCK_TYPE(&this->dyna.actor)];
+
+    Actor_Spawn(&globalCtx->actorCtx, globalCtx, ACTOR_DEMO_EFFECT, this->dyna.actor.world.pos.x,
+                this->dyna.actor.world.pos.y, this->dyna.actor.world.pos.z, 0, 0, 0, typeVars->params);
+}
+
+void ObjLightblock_Init(Actor* thisx, GlobalContext* globalCtx) {
+    s32 pad;
+    ObjLightblock* this = THIS;
+    LightblockTypeVars* typeVars = &sLightblockTypeVars[LIGHTBLOCK_TYPE(&this->dyna.actor)];
+
+    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
+    Actor_SetScale(&this->dyna.actor, typeVars->scale);
+    DynaPolyActor_Init(&this->dyna, 0);
+    Collider_InitCylinder(globalCtx, &this->collider);
+    if (Flags_GetSwitch(globalCtx, LIGHTBLOCK_DESTROYED(&this->dyna.actor))) {
+        Actor_MarkForDeath(&this->dyna.actor);
+    } else {
+        DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &object_lightblock_Colheader_000B80);
+        Collider_SetCylinder(globalCtx, &this->collider, &this->dyna.actor, &sCylinderInit);
+        Collider_UpdateCylinder(&this->dyna.actor, &this->collider);
+        this->collider.dim.radius = typeVars->radius;
+        this->collider.dim.height = typeVars->height;
+        this->collider.dim.yShift = typeVars->yShift;
+        this->alpha = 255;
+        func_80AF3AC8(this);
+    }
+}
+
+void ObjLightblock_Destroy(Actor* thisx, GlobalContext* globalCtx) {
+    ObjLightblock* this = THIS;
+
+    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    Collider_DestroyCylinder(globalCtx, &this->collider);
+}
+
+void func_80AF3AC8(ObjLightblock* this) {
+    this->actionFunc = func_80AF3ADC;
+}
+
+void func_80AF3ADC(ObjLightblock* this, GlobalContext* globalCtx) {
+    if (this->collider.base.acFlags & AC_HIT) {
+        this->collider.base.acFlags &= ~AC_HIT;
+        // light arrows
+        if (this->collider.info.acHitInfo->toucher.dmgFlags & (1 << 13)) {
+            this->collisionCounter = 8;
+        }
+        // light ray
+        else {
+            this->collisionCounter++;
+        }
+    } else {
+        this->collisionCounter = 0;
+    }
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/ObjLightblock_Init.asm")
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/ObjLightblock_Destroy.asm")
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/func_80AF3AC8.asm")
+void func_80AF3BA0(ObjLightblock* this, GlobalContext* globalCtx) {
+    if (ActorCutscene_GetCanPlayNext(this->dyna.actor.cutscene)) {
+        ActorCutscene_StartAndSetUnkLinkFields(this->dyna.actor.cutscene, &this->dyna.actor);
+        Flags_SetSwitch(globalCtx, LIGHTBLOCK_DESTROYED(&this->dyna.actor));
+        func_80AF3910(this, globalCtx);
+        func_80AF3C18(this);
+    } else {
+        ActorCutscene_SetIntentToPlay(this->dyna.actor.cutscene);
+    }
+}
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/func_80AF3ADC.asm")
 
@@ -43,4 +149,19 @@ const ActorInit Obj_Lightblock_InitVars = {
 
 #pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/ObjLightblock_Update.asm")
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Lightblock_0x80AF3910/ObjLightblock_Draw.asm")
+    OPEN_DISPS(globalCtx->state.gfxCtx);
+    if (this->alpha < 255) {
+        func_8012C2DC(globalCtx->state.gfxCtx);
+        gSPSegment(POLY_XLU_DISP++, 0x08, D_801AEF88);
+        gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gDPSetPrimColor(POLY_XLU_DISP++, 0, 0x80, 255, 255, 255, this->alpha);
+        gSPDisplayList(POLY_XLU_DISP++, object_lightblock_DL_000178);
+    } else {
+        func_8012C28C(globalCtx->state.gfxCtx);
+        gSPSegment(POLY_OPA_DISP++, 0x08, D_801AEFA0);
+        gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        gDPSetPrimColor(POLY_OPA_DISP++, 0, 0x80, 255, 255, 255, 255);
+        gSPDisplayList(POLY_OPA_DISP++, object_lightblock_DL_000178);
+    }
+    CLOSE_DISPS(globalCtx->state.gfxCtx);
+}

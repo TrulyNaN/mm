@@ -1,6 +1,6 @@
 #include "z_en_fr.h"
 
-#define FLAGS 0x40000000
+#define FLAGS (ACTOR_FLAG_40000000)
 
 #define THIS ((EnFr*)thisx)
 
@@ -8,7 +8,6 @@ void EnFr_Init(Actor* thisx, GlobalContext* globalCtx);
 void EnFr_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void EnFr_Update(Actor* thisx, GlobalContext* globalCtx);
 
-/*
 const ActorInit En_Fr_InitVars = {
     ACTOR_EN_FR,
     ACTORCAT_ITEMACTION,
@@ -22,8 +21,27 @@ const ActorInit En_Fr_InitVars = {
 };
 */
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Fr_0x808FC550/EnFr_Init.asm")
+void EnFr_Init(Actor* thisx, GlobalContext* globalCtx) {
+    EnFr* this = THIS;
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Fr_0x808FC550/EnFr_Destroy.asm")
+    if (Flags_GetSwitch(globalCtx, ENFR_GET_SWITCHFLAG(&this->actor))) {
+        Actor_MarkForDeath(&this->actor);
+    } else {
+        this->actor.targetMode = ENFR_GET_TARGETMODE(&this->actor);
+    }
+}
 
-#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Fr_0x808FC550/EnFr_Update.asm")
+void EnFr_Destroy(Actor* thisx, GlobalContext* globalCtx) {
+}
+
+void EnFr_Update(Actor* thisx, GlobalContext* globalCtx) {
+    EnFr* this = THIS;
+
+    if (Flags_GetSwitch(globalCtx, ENFR_GET_SWITCHFLAG(&this->actor))) {
+        Actor_MarkForDeath(&this->actor);
+    } else if (this->actor.xyzDistToPlayerSq < SQ(IREG(29))) {
+        this->actor.flags &= ~ACTOR_FLAG_40000000;
+    } else {
+        this->actor.flags |= ACTOR_FLAG_40000000;
+    }
+}

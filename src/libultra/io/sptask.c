@@ -38,35 +38,22 @@ void osSpTaskLoad(OSTask* intp) {
         tp->t.ucode_data = tp->t.yield_data_ptr;
         tp->t.ucode_data_size = tp->t.yield_data_size;
 
-        intp->t.flags = intp->t.flags & 0xFFFFFFFE;
-
-        if ((tp->t.flags & 0x4) != 0) {
-            tp->t.ucode = *(u64**)(((u32)intp->t.yield_data_ptr + 3068) | 0xA0000000);
+        if (tp->t.flags & OS_TASK_LOADABLE) {
+            tp->t.ucode = HW_REG((uintptr_t)intp->t.yieldDataPtr + OS_YIELD_DATA_SIZE - 4, u32);
         }
     }
 
-    osWritebackDCache((void*)tp, sizeof(OSTask));
+    while (__osSpSetPc((void*)SP_IMEM_START) == -1) {}
 
-    __osSpSetStatus(11008);
+    while (__osSpRawStartDma(1, (void*)(SP_IMEM_START - sizeof(*tp)), tp, sizeof(OSTask)) == -1) {}
 
-    while (__osSpSetPc(0x04001000) == -1) {
-        ;
-    }
-    while (__osSpRawStartDma(1, 0x04000FC0, (void*)tp, sizeof(OSTask)) == -1) {
-        ;
-    }
-    while (__osSpDeviceBusy()) {
-        ;
-    }
-    while (__osSpRawStartDma(1, 0x04001000, (void*)tp->t.ucode_boot, tp->t.ucode_boot_size) == -1) {
-        ;
-    }
+    while (__osSpDeviceBusy()) {}
+
+    while (__osSpRawStartDma(1, (void*)SP_IMEM_START, tp->t.ucodeBoot, tp->t.ucodeBootSize) == -1) {}
 }
 
 void osSpTaskStartGo(OSTask* tp) {
-    while (__osSpDeviceBusy()) {
-        ;
-    }
+    while (__osSpDeviceBusy()) {}
 
-    __osSpSetStatus(293);
+    __osSpSetStatus(SP_SET_INTR_BREAK | SP_CLR_SSTEP | SP_CLR_BROKE | SP_CLR_HALT);
 }

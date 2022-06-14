@@ -7,7 +7,8 @@ struct BgDyYoseizo;
 
 typedef struct BgDyYoseizo {
     /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_0144[0x33C0];
+    /* 0x0144 */ BgDyYoseizoActionFunc actionFunc;
+    /* 0x0148 */ char unk_148[0x33BC];
 } BgDyYoseizo; // size = 0x3504
 
 extern const ActorInit Bg_Dy_Yoseizo_InitVars;

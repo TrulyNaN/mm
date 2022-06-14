@@ -1,14 +1,14 @@
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include <stdexcept>
-#include <stdint.h>
 #include <string>
 #include <vector>
 #include "Declaration.h"
+#include "Utils/BinaryWriter.h"
+#include "Utils/Directory.h"
 #include "tinyxml2.h"
-
-#include "Directory.h"
 
 #define SEGMENT_SCENE 2
 #define SEGMENT_ROOM 3
@@ -33,11 +33,14 @@ enum class ZResourceType
 	Background,
 	Blob,
 	CollisionHeader,
+	CollisionPoly,
 	Cutscene,
 	DisplayList,
 	Limb,
 	Mtx,
 	Path,
+	PlayerAnimationData,
+	Pointer,
 	Room,
 	RoomCommand,
 	Scalar,
@@ -79,7 +82,7 @@ public:
 	virtual void DeclareReferences(const std::string& prefix);
 	virtual std::string GetBodySourceCode() const;
 
-	virtual std::string GetSourceOutputCode(const std::string& prefix);
+	virtual void GetSourceOutputCode(const std::string& prefix);
 	virtual std::string GetSourceOutputHeader(const std::string& prefix);
 	virtual void PreGenSourceFiles();
 	virtual void GenerateHLIntermediette(HLFileIntermediette& hlFile);
@@ -98,11 +101,17 @@ public:
 	void SetName(const std::string& nName);
 	const std::string& GetOutName() const;
 	void SetOutName(const std::string& nName);
-	virtual uint32_t GetRawDataIndex() const;
-	virtual void SetRawDataIndex(uint32_t value);
-	virtual size_t GetRawDataSize() const = 0;
-	virtual const std::vector<uint8_t>& GetRawData() const;
-	virtual void SetRawData(const std::vector<uint8_t>& nData);
+	[[nodiscard]] offset_t GetRawDataIndex() const;
+	void SetRawDataIndex(offset_t nRawDataIndex);
+
+	/**
+	 * The size of the current struct being extracted, not counting data referenced by it
+	 */
+	[[nodiscard]] virtual size_t GetRawDataSize() const = 0;
+	/**
+	 * The alignment of the extracted struct
+	 */
+	[[nodiscard]] virtual DeclarationAlignment GetDeclarationAlignment() const;
 	void SetInnerNode(bool inner);
 	bool WasDeclaredInXml() const;
 
