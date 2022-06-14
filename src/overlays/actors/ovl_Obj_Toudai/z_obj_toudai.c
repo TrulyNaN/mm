@@ -1,9 +1,3 @@
-/*
- * File: z_obj_toudai.c
- * Overlay: ovl_Obj_Toudai
- * Description: Clock Tower Spotlight
- */
-
 #include "z_obj_toudai.h"
 
 #define FLAGS 0x00000030
@@ -15,7 +9,7 @@ void ObjToudai_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void ObjToudai_Update(Actor* thisx, GlobalContext* globalCtx);
 void ObjToudai_Draw(Actor* thisx, GlobalContext* globalCtx);
 
-#if 0
+/*
 const ActorInit Obj_Toudai_InitVars = {
     ACTOR_OBJ_TOUDAI,
     ACTORCAT_PROP,
@@ -27,22 +21,18 @@ const ActorInit Obj_Toudai_InitVars = {
     (ActorFunc)ObjToudai_Update,
     (ActorFunc)ObjToudai_Draw,
 };
+*/
 
-#endif
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/func_80A33B00.asm")
 
-extern UNK_TYPE D_060023B0;
-extern UNK_TYPE D_060024E8;
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/func_80A33BB4.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/func_80A33B00.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/func_80A342F4.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/func_80A33BB4.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/ObjToudai_Init.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/func_80A342F4.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/ObjToudai_Destroy.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/ObjToudai_Init.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/ObjToudai_Update.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/ObjToudai_Destroy.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/ObjToudai_Update.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Toudai/ObjToudai_Draw.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Toudai_0x80A33B00/ObjToudai_Draw.asm")

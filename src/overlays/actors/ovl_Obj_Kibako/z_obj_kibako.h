@@ -1,12 +1,13 @@
 #ifndef Z_OBJ_KIBAKO_H
 #define Z_OBJ_KIBAKO_H
 
-#include "global.h"
+#include <global.h>
 
-#define KIBAKO_COLLECTIBLE_ID(thisx) ((thisx)->params & 0x3F)
-#define KIBAKO_COLLECTIBLE_FLAG(thisx) (((thisx)->params >> 0x8) & 0x7F)
-#define KIBAKO_BANK_INDEX(thisx) (((thisx)->params >> 0xF) & 1)
-#define KIBAKO_BOMBER_CAN_HIDE_IN_BOX(thisx) (((thisx)->params >> 7) & 1)
+#define GET_KIBAKO_COLLECTIBLE_ID(x) (((x->actor.params >> 0x8) & 0x7F) << 8)
+#define D_05007890 0x05007890
+#define D_05007980 0x05007980
+#define D_06001180 0x06001180
+#define D_06001A70 0x06001A70
 
 struct ObjKibako;
 
@@ -23,5 +24,7 @@ typedef struct ObjKibako {
 } ObjKibako; // size = 0x19C
 
 extern const ActorInit Obj_Kibako_InitVars;
+
+
 
 #endif // Z_OBJ_KIBAKO_H

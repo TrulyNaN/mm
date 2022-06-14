@@ -1,16 +1,13 @@
 #ifndef Z_EN_OSK_H
 #define Z_EN_OSK_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnOsk;
 
-typedef void (*EnOskActionFunc)(struct EnOsk*, GlobalContext*);
-
 typedef struct EnOsk {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x11C];
-    /* 0x0260 */ EnOskActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x120];
 } EnOsk; // size = 0x264
 
 extern const ActorInit En_Osk_InitVars;

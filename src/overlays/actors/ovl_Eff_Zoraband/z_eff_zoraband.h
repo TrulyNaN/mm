@@ -1,16 +1,13 @@
 #ifndef Z_EFF_ZORABAND_H
 #define Z_EFF_ZORABAND_H
 
-#include "global.h"
+#include <global.h>
 
 struct EffZoraband;
 
-typedef void (*EffZorabandActionFunc)(struct EffZoraband*, GlobalContext*);
-
 typedef struct EffZoraband {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x4];
-    /* 0x0148 */ EffZorabandActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x8];
 } EffZoraband; // size = 0x14C
 
 extern const ActorInit Eff_Zoraband_InitVars;

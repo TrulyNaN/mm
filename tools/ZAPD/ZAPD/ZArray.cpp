@@ -1,9 +1,7 @@
 #include "ZArray.h"
-
 #include <cassert>
-
 #include "Globals.h"
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 #include "ZFile.h"
 
 REGISTER_ZFILENODE(Array, ZArray);
@@ -24,7 +22,7 @@ void ZArray::ParseXML(tinyxml2::XMLElement* reader)
 {
 	ZResource::ParseXML(reader);
 
-	arrayCnt = reader->IntAttribute("Count", 0);
+	arrayCnt = StringHelper::StrToL(registeredAttributes.at("Count").value, 0);
 	// TODO: do a better check.
 	assert(arrayCnt > 0);
 
@@ -48,63 +46,30 @@ void ZArray::ParseXML(tinyxml2::XMLElement* reader)
 		}
 		res->parent = parent;
 		res->SetInnerNode(true);
-		res->ExtractFromXML(child, childIndex);
+		res->ExtractFromXML(child, rawData, childIndex);
 
 		childIndex += res->GetRawDataSize();
 		resList.push_back(res);
 	}
 }
 
-Declaration* ZArray::DeclareVar(const std::string& prefix, const std::string& bodyStr)
+std::string ZArray::GetSourceOutputCode(const std::string& prefix)
 {
-	std::string auxName = name;
-
-	if (name == "")
-		auxName = GetDefaultName(prefix);
-
-	ZResource* res = resList.at(0);
-	Declaration* decl;
-	if (res->IsExternalResource())
-	{
-		auto filepath = Globals::Instance->outputPath / name;
-		std::string includePath = StringHelper::Sprintf("%s.%s.inc", filepath.c_str(),
-		                                                res->GetExternalExtension().c_str());
-		decl = parent->AddDeclarationIncludeArray(rawDataIndex, includePath, GetRawDataSize(),
-		                                          GetSourceTypeName(), name, arrayCnt);
-		decl->text = bodyStr;
-		decl->isExternal = true;
-	}
-	else
-	{
-		decl =
-			parent->AddDeclarationArray(rawDataIndex, GetDeclarationAlignment(), GetRawDataSize(),
-		                                GetSourceTypeName(), name, arrayCnt, bodyStr);
-	}
-
-	decl->staticConf = staticConf;
-	return decl;
-}
-
-std::string ZArray::GetBodySourceCode() const
-{
-	std::string output;
+	std::string output = "";
 
 	for (size_t i = 0; i < arrayCnt; i++)
 	{
-		const auto& res = resList[i];
-		output += "\t";
+		output += resList.at(i)->GetBodySourceCode();
 
-		if (res->GetResourceType() == ZResourceType::Scalar ||
-		    res->GetResourceType() == ZResourceType::Vertex)
-			output += resList.at(i)->GetBodySourceCode();
-		else
-			output += StringHelper::Sprintf("{ %s }", resList.at(i)->GetBodySourceCode().c_str());
-
-		if (i < arrayCnt - 1 || res->IsExternalResource())
+		if (i < arrayCnt - 1)
 			output += ",\n";
 	}
 
-	return output;
+	if (parent != nullptr)
+		parent->AddDeclarationArray(rawDataIndex, DeclarationAlignment::None, GetRawDataSize(),
+		                            resList.at(0)->GetSourceTypeName(), name, arrayCnt, output);
+
+	return "";
 }
 
 size_t ZArray::GetRawDataSize() const
@@ -115,21 +80,7 @@ size_t ZArray::GetRawDataSize() const
 	return size;
 }
 
-std::string ZArray::GetSourceTypeName() const
-{
-	return resList.at(0)->GetSourceTypeName();
-}
-
 ZResourceType ZArray::GetResourceType() const
 {
 	return ZResourceType::Array;
-}
-
-DeclarationAlignment ZArray::GetDeclarationAlignment() const
-{
-	if (resList.size() == 0)
-	{
-		return DeclarationAlignment::Align4;
-	}
-	return resList.at(0)->GetDeclarationAlignment();
 }

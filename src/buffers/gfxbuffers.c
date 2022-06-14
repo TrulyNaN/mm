@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 u8 gGfxSPTaskYieldBuffer[OS_YIELD_DATA_SIZE];
 

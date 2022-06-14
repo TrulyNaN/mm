@@ -22,7 +22,6 @@ typedef volatile s64 vs64;
 typedef float  f32;
 typedef double f64;
 
-typedef void* TexturePtr;
 
 typedef long int Mtx_t[4][4];
 typedef union {

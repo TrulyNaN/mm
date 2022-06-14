@@ -1,6 +1,6 @@
 #include "SetSkyboxModifier.h"
 
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 
 SetSkyboxModifier::SetSkyboxModifier(ZFile* nParent) : ZRoomCommand(nParent)
 {

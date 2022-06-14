@@ -1,5 +1,6 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 u32 osDpGetStatus(void) {
-    return HW_REG(DPC_STATUS_REG, u32);
+    return *(u32*)0xA410000C;
 }

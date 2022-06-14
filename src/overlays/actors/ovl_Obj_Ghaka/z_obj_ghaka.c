@@ -1,6 +1,6 @@
 /*
  * File z_obj_ghaka.c
- * Overlay: ovl_Obj_Ghaka
+ * Overlay: ovl_obj_ghaka
  * Description: Darmani's Gravestone
  */
 
@@ -63,16 +63,16 @@ void func_80B3C2B0(ObjGhaka* this) {
 
 void func_80B3C2C4(ObjGhaka* this, GlobalContext* globalCtx) {
     if (!(gSaveContext.weekEventReg[20] & 0x20)) {
-        Actor_SpawnAsChildAndCutscene(&globalCtx->actorCtx, globalCtx, ACTOR_BG_GORON_OYU, 0.0f, 25.0f, 261.0f, 0, 0, 0,
-                                      0, this->dyna.actor.cutscene, this->dyna.actor.unk20, 0);
+        Actor_SpawnWithParentAndCutscene(&globalCtx->actorCtx, globalCtx, ACTOR_BG_GORON_OYU, 0.0f, 25.0f, 261.0f, 0, 0,
+                                         0, 0, this->dyna.actor.cutscene, this->dyna.actor.unk20, 0);
     } else {
-        Actor_SpawnAsChildAndCutscene(&globalCtx->actorCtx, globalCtx, ACTOR_BG_GORON_OYU, 0.0f, 25.0f, 261.0f, 0, 0, 0,
-                                      1, -1, this->dyna.actor.unk20, 0);
+        Actor_SpawnWithParentAndCutscene(&globalCtx->actorCtx, globalCtx, ACTOR_BG_GORON_OYU, 0.0f, 25.0f, 261.0f, 0, 0,
+                                         0, 1, -1, this->dyna.actor.unk20, 0);
     }
 }
 
 void func_80B3C39C(ObjGhaka* this, GlobalContext* globalCtx) {
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
     s16 distDiff = this->dyna.actor.yawTowardsPlayer - this->dyna.actor.shape.rot.y;
 
     if (func_800B84D0(&this->dyna.actor, globalCtx)) {
@@ -80,32 +80,32 @@ void func_80B3C39C(ObjGhaka* this, GlobalContext* globalCtx) {
     } else if (this->dyna.actor.xzDistToPlayer < 100.0f || this->dyna.actor.isTargeted) {
         if (distDiff <= -0x5556 || distDiff >= 0x5556) {
             func_800B863C(&this->dyna.actor, globalCtx);
-            if (player->transformation == PLAYER_FORM_GORON) {
+            if (player->unk14B == 1) {
                 this->dyna.actor.textId = 0xCF3;
             } else {
                 this->dyna.actor.textId = 0xCF2;
             }
         }
     }
-    if (this->dyna.pushForce < 0.0f && !(gSaveContext.weekEventReg[20] & 0x20) &&
-        player->transformation == PLAYER_FORM_GORON) {
+    if (this->dyna.unk148 < 0.0f && !(gSaveContext.weekEventReg[20] & 0x20) && player->unk14B == 1) {
         func_80B3C2B0(this);
     } else {
-        player->stateFlags2 &= ~0x10;
-        this->dyna.pushForce = 0.0f;
+        player->unkA70 &= ~0x10;
+        this->dyna.unk148 = 0.0f;
     }
 }
 
 void func_80B3C4E0(ObjGhaka* this, GlobalContext* globalCtx) {
-    u8 talkState = func_80152498(&globalCtx->msgCtx);
+    s32 temp_v0 = func_80152498(&globalCtx->msgCtx);
 
-    if (talkState == 5) {
+    if (temp_v0 == 5) {
         if (func_80147624(globalCtx)) {
             globalCtx->msgCtx.unk11F22 = 0x43;
             globalCtx->msgCtx.unk12023 = 4;
             func_80B3C260(this);
         }
-    } else if (talkState == 4) {
+        // Could be fake, but helps match
+    } else if ((temp_v0 & 0xFFFFFFFF) == 4) {
         if (func_80147624(globalCtx)) {
             switch (globalCtx->msgCtx.choiceIndex) {
                 case 0:
@@ -129,14 +129,13 @@ void func_80B3C4E0(ObjGhaka* this, GlobalContext* globalCtx) {
 }
 
 void func_80B3C624(ObjGhaka* this, GlobalContext* globalCtx) {
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
     u8 stepTemp = Math_StepToS(&this->unk_168, 0x64, 1);
 
     this->dyna.actor.world.pos.z = this->dyna.actor.home.pos.z + this->unk_168;
-
     if (stepTemp) {
-        player->stateFlags2 &= ~0x10;
-        this->dyna.pushForce = 0.0f;
+        player->unkA70 &= ~0x10;
+        this->dyna.unk148 = 0.0f;
         func_80B3C2C4(this, globalCtx);
         gSaveContext.weekEventReg[20] |= 0x20;
         func_80B3C260(this);
@@ -153,10 +152,10 @@ void ObjGhaka_Init(Actor* thisx, GlobalContext* globalCtx) {
 
     Actor_ProcessInitChain(&this->dyna.actor, D_80B3C96C);
     Actor_SetScale(&this->dyna.actor, 0.1f);
-    DynaPolyActor_Init(&this->dyna, 1);
-    CollisionHeader_GetVirtual(&D_06003CD0, &colHeader);
-    this->dyna.bgId = DynaPoly_SetBgActor(globalCtx, &globalCtx->colCtx.dyna, &this->dyna.actor, colHeader);
-    Actor_UpdateBgCheckInfo(globalCtx, &this->dyna.actor, 0.0f, 0.0f, 0.0f, 0x4);
+    BcCheck3_BgActorInit(&this->dyna, 1);
+    BgCheck_RelocateMeshHeader(&D_06003CD0, &colHeader);
+    this->dyna.bgId = BgCheck_AddActorMesh(globalCtx, &globalCtx->colCtx.dyna, &this->dyna, colHeader);
+    func_800B78B8(globalCtx, &this->dyna.actor, 0.0f, 0.0f, 0.0f, 4);
     if (this->dyna.actor.floorPoly == 0) {
         Actor_MarkForDeath(&this->dyna.actor);
     }
@@ -169,7 +168,7 @@ void ObjGhaka_Init(Actor* thisx, GlobalContext* globalCtx) {
 void ObjGhaka_Destroy(Actor* thisx, GlobalContext* globalCtx) {
     ObjGhaka* this = THIS;
 
-    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    BgCheck_RemoveActorMesh(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
 }
 
 void ObjGhaka_Update(Actor* thisx, GlobalContext* globalCtx) {

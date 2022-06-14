@@ -1,24 +1,25 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 s32 __osSiRawStartDma(s32 direction, void* dramAddr) {
-    if (HW_REG(SI_STATUS_REG, u32) & (SI_STATUS_DMA_BUSY | SI_STATUS_IO_READ_BUSY)) {
+    if ((*(u32*)0xA4800018 & 0x3) != 0) {
         return -1;
     }
 
-    if (direction == OS_WRITE) {
-        osWritebackDCache(dramAddr, PIF_RAM_SIZE);
+    if (direction == 1) {
+        osWritebackDCache(dramAddr, 64);
     }
 
-    HW_REG(SI_DRAM_ADDR_REG, u32) = osVirtualToPhysical(dramAddr);
+    *(u32*)0xA4800000 = osVirtualToPhysical(dramAddr);
 
-    if (direction == OS_READ) {
-        HW_REG(SI_PIF_ADDR_RD64B_REG, void*) = (void*)PIF_RAM_START;
+    if (direction == 0) {
+        *(u32*)0xA4800004 = 0x1FC007C0;
     } else {
-        HW_REG(SI_PIF_ADDR_WR64B_REG, void*) = (void*)PIF_RAM_START;
+        *(u32*)0xA4800010 = 0x1FC007C0;
     }
 
-    if (direction == OS_READ) {
-        osInvalDCache(dramAddr, PIF_RAM_SIZE);
+    if (direction == 0) {
+        osInvalDCache(dramAddr, 64);
     }
     return 0;
 }

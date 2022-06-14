@@ -1,14 +1,15 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void* osViGetNextFramebuffer(void) {
     register u32 saveMask;
-    void* buffer;
+    void* framep;
 
     saveMask = __osDisableInt();
 
-    buffer = __osViNext->buffer;
+    framep = __osViNext->framep;
 
     __osRestoreInt(saveMask);
 
-    return buffer;
+    return framep;
 }

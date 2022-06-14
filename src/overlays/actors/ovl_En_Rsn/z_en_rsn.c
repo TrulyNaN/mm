@@ -1,9 +1,3 @@
-/*
- * File: z_en_rsn.c
- * Overlay: ovl_En_Rsn
- * Description: Bomb Shop Man in the credits?
- */
-
 #include "z_en_rsn.h"
 
 #define FLAGS 0x02000019
@@ -48,7 +42,7 @@ void EnRsn_Init(Actor* thisx, GlobalContext* globalCtx) {
     EnRsn* this = THIS;
 
     ActorShape_Init(&this->actor.shape, 0.0f, func_800B3FC0, 20.0f);
-    SkelAnime_InitFlex(globalCtx, &this->skelAnime, &D_06009220, &D_06009120, NULL, NULL, 0);
+    SkelAnime_InitSV(globalCtx, &this->skelAnime, &D_06009220, &D_06009120, NULL, NULL, 0);
     this->actor.flags &= ~1;
     func_80C25D40(this);
 }
@@ -64,37 +58,36 @@ void EnRsn_Update(Actor* thisx, GlobalContext* globalCtx) {
 
     this->actionFunc(this, globalCtx);
     Actor_SetVelocityAndMoveYRotationAndGravity(&this->actor);
-    SkelAnime_Update(&this->skelAnime);
+    SkelAnime_FrameUpdateMatrix(&this->skelAnime);
     func_800E9250(globalCtx, &this->actor, &this->unk1D8, &this->unk1DE, this->actor.focus.pos);
 }
 
-s32 EnRsn_OverrideLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* arg) {
-    EnRsn* this = (EnRsn*)arg;
+s32 EnRsn_OverrideLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
+    EnRsn* this = THIS;
 
     if (limbIndex == 14) {
-        Matrix_InsertXRotation_s(this->unk1D8.y, 1);
+        SysMatrix_InsertXRotation_s(this->unk1D8.y, 1);
     }
     return 0;
 }
 
 static Vec3f D_80C26028 = { 0.0f, 0.0f, 0.0f };
 
-void EnRsn_PostLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* arg) {
-    EnRsn* this = (EnRsn*)arg;
+void EnRsn_PostLimbDraw(GlobalContext* globalCtx, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* thisx) {
+    EnRsn* this = THIS;
     Vec3f sp18 = D_80C26028;
 
     if (limbIndex == 14) {
-        Matrix_MultiplyVector3fByState(&sp18, &this->actor.focus.pos);
+        SysMatrix_MultiplyVector3fByState(&sp18, &this->actor.focus.pos);
     }
 }
 
 void EnRsn_Draw(Actor* thisx, GlobalContext* globalCtx) {
     EnRsn* this = THIS;
-
     OPEN_DISPS(globalCtx->state.gfxCtx);
     func_8012C5B0(globalCtx->state.gfxCtx);
     gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(D_06005458));
-    SkelAnime_DrawFlexOpa(globalCtx, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,
-                          EnRsn_OverrideLimbDraw, EnRsn_PostLimbDraw, &this->actor);
+    SkelAnime_DrawSV(globalCtx, this->skelAnime.skeleton, this->skelAnime.limbDrawTbl, this->skelAnime.dListCount,
+                     EnRsn_OverrideLimbDraw, EnRsn_PostLimbDraw, &this->actor);
     CLOSE_DISPS(globalCtx->state.gfxCtx);
 }

@@ -1,7 +1,7 @@
 /*
  * File: z_bg_ctower_rot.c
  * Overlay: ovl_Bg_CtowerRot
- * Description: Twisting path along with the Doors to Clock Tower
+ * Description: Twisting path along with the Doors to Clocktower
  */
 
 #include "z_bg_ctower_rot.h"
@@ -33,11 +33,17 @@ const ActorInit Bg_Ctower_Rot_InitVars = {
 };
 
 extern Gfx D_060129D0[];
+
 extern Gfx D_06012DA0[];
+
 extern CollisionHeader D_060142E8;
+
 extern Gfx D_06017220[];
+
 extern CollisionHeader D_06017410;
+
 extern Gfx D_060174E0[];
+
 extern CollisionHeader D_06017650;
 
 static InitChainEntry sInitChain[] = {
@@ -49,25 +55,25 @@ static Gfx* bgCtowerRotDlists[] = { D_06012DA0, D_06017220, D_060174E0 };
 void BgCtowerRot_Init(Actor* thisx, GlobalContext* globalCtx) {
     BgCtowerRot* this = THIS;
     s32 pad;
-    Player* player;
+    ActorPlayer* player;
     Vec3f offset;
 
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 1);
+    BcCheck3_BgActorInit(&this->dyna, 1);
     if (this->dyna.actor.params == CORRIDOR) {
-        DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_060142E8);
+        BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_060142E8);
         this->actionFunc = BgCtowerRot_CorridorRotate;
         return;
     }
-    player = GET_PLAYER(globalCtx);
+    player = PLAYER;
     if (this->dyna.actor.params == MAIN_DOOR) {
-        DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_06017410);
+        BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_06017410);
         this->dyna.actor.world.rot.y = this->dyna.actor.shape.rot.y + 0x4000;
     } else {
-        DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_06017650);
+        BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_06017650);
         this->dyna.actor.world.rot.y = this->dyna.actor.shape.rot.y - 0x4000;
     }
-    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->actor.world.pos);
+    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->base.world.pos);
     if (offset.z < 0.0f) {
         this->dyna.actor.world.pos.x = this->dyna.actor.home.pos.x + (Math_SinS(this->dyna.actor.world.rot.y) * 80.0f);
         this->dyna.actor.world.pos.z = this->dyna.actor.home.pos.z + (Math_CosS(this->dyna.actor.world.rot.y) * 80.0f);
@@ -81,17 +87,17 @@ void BgCtowerRot_Init(Actor* thisx, GlobalContext* globalCtx) {
 void BgCtowerRot_Destroy(Actor* thisx, GlobalContext* globalCtx) {
     BgCtowerRot* this = THIS;
 
-    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    BgCheck_RemoveActorMesh(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
 }
 
 void BgCtowerRot_CorridorRotate(BgCtowerRot* this, GlobalContext* globalCtx) {
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
     Vec3f offset;
     f32 rotZ;
     f32 offsetDiffZ;
     f32 rotZtmp;
 
-    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->actor.world.pos);
+    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->base.world.pos);
     if (offset.z > 1100.0f) {
         rotZ = 0.0f;
     } else {
@@ -128,10 +134,10 @@ void BgCtowerRot_DoorClose(BgCtowerRot* this, GlobalContext* globalCtx) {
 }
 
 void BgCtowerRot_DoorIdle(BgCtowerRot* this, GlobalContext* globalCtx) {
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
     Vec3f offset;
 
-    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->actor.world.pos);
+    Actor_CalcOffsetOrientedToDrawRotation(&this->dyna.actor, &offset, &player->base.world.pos);
     if (offset.z > 30.0f) {
         this->unk160 = 0.0f;
         ActorCutscene_SetIntentToPlay(this->dyna.actor.cutscene);

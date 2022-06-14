@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 // clang-format off
 MtxF sMtxFClear = {
@@ -577,7 +578,12 @@ void SkinMatrix_MtxFToMtx(MtxF* src, Mtx* dest) {
 }
 
 Mtx* SkinMatrix_MtxFToNewMtx(GraphicsContext* gfxCtx, MtxF* src) {
-    Mtx* mtx = GRAPH_ALLOC(gfxCtx, sizeof(Mtx));
+    s32 pad;
+    Mtx* mtx;
+
+    // TODO allocation should be a macro
+    mtx = (Mtx*)((int)gfxCtx->polyOpa.d - sizeof(Mtx));
+    gfxCtx->polyOpa.d = (void*)mtx;
 
     if (mtx == NULL) {
         return NULL;

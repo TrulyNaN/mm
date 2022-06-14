@@ -1,11 +1,9 @@
 #include "ZVector.h"
-
-#include <cassert>
-
+#include <assert.h>
+#include "BitConverter.h"
+#include "File.h"
 #include "Globals.h"
-#include "Utils/BitConverter.h"
-#include "Utils/File.h"
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 #include "ZFile.h"
 
 REGISTER_ZFILENODE(Vector, ZVector);
@@ -14,23 +12,8 @@ ZVector::ZVector(ZFile* nParent) : ZResource(nParent)
 {
 	scalarType = ZScalarType::ZSCALAR_NONE;
 	dimensions = 0;
-
 	RegisterRequiredAttribute("Type");
 	RegisterRequiredAttribute("Dimensions");
-}
-
-void ZVector::ExtractFromBinary(uint32_t nRawDataIndex, ZScalarType nScalarType,
-                                uint32_t nDimensions)
-{
-	rawDataIndex = nRawDataIndex;
-	scalarType = nScalarType;
-	dimensions = nDimensions;
-
-	// Don't parse raw data of external files
-	if (parent->GetMode() == ZFileMode::ExternalFile)
-		return;
-
-	ParseRawData();
 }
 
 void ZVector::ParseXML(tinyxml2::XMLElement* reader)
@@ -50,8 +33,10 @@ void ZVector::ParseRawData()
 
 	for (uint32_t i = 0; i < dimensions; i++)
 	{
-		ZScalar scalar(parent);
-		scalar.ExtractFromBinary(currentRawDataIndex, scalarType);
+		ZScalar scalar(scalarType, parent);
+		scalar.rawDataIndex = currentRawDataIndex;
+		scalar.rawData = rawData;
+		scalar.ParseRawData();
 		currentRawDataIndex += scalar.GetRawDataSize();
 
 		scalars.push_back(scalar);
@@ -99,17 +84,21 @@ std::string ZVector::GetSourceTypeName() const
 
 std::string ZVector::GetBodySourceCode() const
 {
-	std::string body;
+	std::string body = "";
 
-	for (size_t i = 0; i < scalars.size(); i++)
-	{
-		body += StringHelper::Sprintf("%6s", scalars[i].GetBodySourceCode().c_str());
+	for (size_t i = 0; i < this->scalars.size(); i++)
+		body += StringHelper::Sprintf("%6s, ", scalars[i].GetBodySourceCode().c_str());
 
-		if (i + 1 < scalars.size())
-			body += ", ";
-	}
+	return "{ " + body + "}";
+}
 
-	return body;
+std::string ZVector::GetSourceOutputCode(const std::string& prefix)
+{
+	if (parent != nullptr)
+		parent->AddDeclaration(rawDataIndex, DeclarationAlignment::None, GetRawDataSize(),
+		                       GetSourceTypeName(), GetName(), GetBodySourceCode());
+
+	return "";
 }
 
 ZResourceType ZVector::GetResourceType() const
@@ -117,11 +106,12 @@ ZResourceType ZVector::GetResourceType() const
 	return ZResourceType::Vector;
 }
 
-DeclarationAlignment ZVector::GetDeclarationAlignment() const
+void ZVector::SetScalarType(ZScalarType type)
 {
-	if (scalars.size() == 0)
-	{
-		return DeclarationAlignment::Align4;
-	}
-	return scalars.at(0).GetDeclarationAlignment();
+	scalarType = type;
+}
+
+void ZVector::SetDimensions(uint32_t dim)
+{
+	dimensions = dim;
 }

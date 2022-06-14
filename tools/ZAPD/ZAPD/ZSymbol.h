@@ -14,14 +14,15 @@ protected:
 public:
 	ZSymbol(ZFile* nParent);
 
+	void ExtractFromXML(tinyxml2::XMLElement* reader, const std::vector<uint8_t>& nRawData,
+	                    const uint32_t nRawDataIndex) override;
+
 	void ParseXML(tinyxml2::XMLElement* reader) override;
 
-	Declaration* DeclareVar(const std::string& prefix, const std::string& bodyStr) override;
+	size_t GetRawDataSize() const override;
 
 	std::string GetSourceOutputHeader(const std::string& prefix) override;
 
 	std::string GetSourceTypeName() const override;
 	ZResourceType GetResourceType() const override;
-
-	size_t GetRawDataSize() const override;
 };

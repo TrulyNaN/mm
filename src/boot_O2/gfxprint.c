@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 extern u16 sGfxPrintFontTLUT[64];
 extern u16 sGfxPrintUnkTLUT[16];
@@ -108,10 +109,10 @@ void GfxPrint_PrintCharImpl(GfxPrint* this, u8 c) {
     this->posX += 32;
 }
 #else
-#pragma GLOBAL_ASM("asm/non_matchings/boot/gfxprint/GfxPrint_PrintCharImpl.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/boot/gfxprint/GfxPrint_PrintCharImpl.asm")
 #endif
 
-#pragma GLOBAL_ASM("asm/non_matchings/boot/gfxprint/GfxPrint_PrintChar.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/boot/gfxprint/GfxPrint_PrintChar.asm")
 
 void GfxPrint_PrintStringWithSize(GfxPrint* this, const void* buffer, size_t charSize, size_t charCount) {
     const char* str = (const char*)buffer;
@@ -171,18 +172,13 @@ Gfx* GfxPrint_Close(GfxPrint* this) {
     return ret;
 }
 
-s32 GfxPrint_VPrintf(GfxPrint* this, const char* fmt, va_list args) {
-    return PrintUtils_VPrintf((PrintCallback*)&this->callback, fmt, args);
+void GfxPrint_VPrintf(GfxPrint* this, const char* fmt, va_list args) {
+    func_80087900(&this->callback, fmt, args);
 }
 
-s32 GfxPrint_Printf(GfxPrint* this, const char* fmt, ...) {
-    s32 ret;
+void GfxPrint_Printf(GfxPrint* this, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-    ret = GfxPrint_VPrintf(this, fmt, args);
-
-    va_end(args);
-
-    return ret;
+    GfxPrint_VPrintf(this, fmt, args);
 }

@@ -49,6 +49,8 @@
 #define _SHIFTR(v, s, w)	\
     ((unsigned int)(((unsigned int)(v) >> (s)) & ((0x01 << (w)) - 1)))
 
+#define _SHIFT _SHIFTL	/* old, for compatibility only */
+
 #define G_ON	(1)
 #define G_OFF	(0)
 
@@ -58,7 +60,7 @@
  *
  **************************************************************************/
 
-#include "PR/gbi.h"
+#include <PR/gbi.h>
 
 /**************************************************************************
  *
@@ -66,7 +68,7 @@
  *
  **************************************************************************/
 
-#include "PR/abi.h"
+#include <PR/abi.h>
 
 /**************************************************************************
  *
@@ -92,7 +94,7 @@
 #define	SEGMENT_ADDR(num, off)	(((num) << 24) + (off))
 
 #ifndef NULL
-#define NULL ((void*)0)
+#define NULL 0
 #endif
 
 #endif /* !_MBI_H_ */

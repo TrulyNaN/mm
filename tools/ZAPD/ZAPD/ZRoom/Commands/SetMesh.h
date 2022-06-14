@@ -5,45 +5,52 @@
 #include "ZDisplayList.h"
 #include "ZRoom/ZRoomCommand.h"
 
-class PolygonDlist : public ZResource
+class PolygonDlist
 {
 public:
-	ZRoom* zRoom;
+	PolygonDlist() = default;
+	PolygonDlist(const std::string& prefix, const std::vector<uint8_t>& nRawData,
+	             uint32_t nRawDataIndex, ZFile* nParent, ZRoom* nRoom);
 
-	uint8_t polyType;
+	void ParseRawData();
+	void DeclareReferences(const std::string& prefix);
 
+	size_t GetRawDataSize() const;
+	void SetPolyType(uint8_t nPolyType);
+
+	void DeclareVar(const std::string& prefix, const std::string& bodyStr);
+
+	std::string GetBodySourceCode(bool arrayElement);
+	void DeclareAndGenerateOutputCode();
+
+	static std::string GetDefaultName(const std::string& prefix, uint32_t address);
+	std::string GetSourceTypeName();
+	std::string GetName();
+
+protected:
 	int16_t x, y, z;  // polyType == 2
 	int16_t unk_06;   // polyType == 2
 
 	segptr_t opa = 0;  // Gfx*
 	segptr_t xlu = 0;  // Gfx*
 
+	uint8_t polyType;
+
 	ZDisplayList* opaDList = nullptr;  // Gfx*
 	ZDisplayList* xluDList = nullptr;  // Gfx*
 
-	PolygonDlist(ZFile* nParent);
+	std::vector<uint8_t> rawData;
+	uint32_t rawDataIndex;
+	ZFile* parent;
+	ZRoom* zRoom;
+	std::string name;
 
-	void ParseRawData() override;
-	void DeclareReferences(const std::string& prefix) override;
-
-	std::string GetBodySourceCode() const override;
-
-	std::string GetSourceOutputCode(const std::string& prefix) override;
-
-	std::string GetSourceTypeName() const override;
-	ZResourceType GetResourceType() const override;
-
-	size_t GetRawDataSize() const override;
-
-	void SetPolyType(uint8_t nPolyType);
-
-protected:
 	ZDisplayList* MakeDlist(segptr_t ptr, const std::string& prefix);
 };
 
-class BgImage : public ZResource
+class BgImage
 {
-public:
+protected:
 	uint16_t unk_00;
 	uint8_t id;
 	segptr_t source;
@@ -58,44 +65,65 @@ public:
 
 	ZBackground* sourceBackground;
 
+	std::vector<uint8_t> rawData;
+	uint32_t rawDataIndex;
+	ZFile* parent;
+	std::string name;
 	bool isSubStruct;
 
-	BgImage(ZFile* nParent);
-	BgImage(bool nIsSubStruct, const std::string& prefix, uint32_t nRawDataIndex, ZFile* nParent);
-
-	void ParseRawData() override;
-
-	std::string GetBodySourceCode() const override;
-
-	std::string GetSourceTypeName() const override;
-	ZResourceType GetResourceType() const override;
-
-	size_t GetRawDataSize() const override;
-
-protected:
+	void ParseRawData();
 	ZBackground* MakeBackground(segptr_t ptr, const std::string& prefix);
+
+public:
+	BgImage() = default;
+	BgImage(bool nIsSubStruct, const std::string& prefix, const std::vector<uint8_t>& nRawData,
+	        uint32_t nRawDataIndex, ZFile* nParent);
+
+	static size_t GetRawDataSize();
+
+	std::string GetBodySourceCode(bool arrayElement) const;
+
+	static std::string GetDefaultName(const std::string& prefix, uint32_t address);
+	static std::string GetSourceTypeName();
+	std::string GetName();
 };
 
-class PolygonTypeBase : public ZResource
+class PolygonTypeBase
 {
 public:
-	uint8_t type;
-	std::vector<PolygonDlist> polyDLists;
+	PolygonTypeBase(ZFile* nParent, const std::vector<uint8_t>& nRawData, uint32_t nRawDataIndex,
+	                ZRoom* nRoom);
 
-	PolygonTypeBase(ZFile* nParent, uint32_t nRawDataIndex, ZRoom* nRoom);
+	virtual void ParseRawData() = 0;
+	virtual void DeclareReferences(const std::string& prefix) = 0;
 
+	virtual std::string GetBodySourceCode() const = 0;
+	void DeclareVar(const std::string& prefix, const std::string& bodyStr);
 	void DeclareAndGenerateOutputCode(const std::string& prefix);
 
-	std::string GetSourceTypeName() const override;
-	ZResourceType GetResourceType() const override;
+	virtual std::string GetSourceTypeName() const;
+
+	std::string GetName() const;
+	void SetName(const std::string& newName);
+	virtual size_t GetRawDataSize() const = 0;
+
+	std::string GetDefaultName(const std::string& prefix) const;
 
 protected:
+	uint8_t type;
+
+	std::vector<PolygonDlist> polyDLists;
+
+	std::vector<uint8_t> rawData;
+	uint32_t rawDataIndex;
+	ZFile* parent;
 	ZRoom* zRoom;
+	std::string name;
 };
 
 class PolygonType1 : public PolygonTypeBase
 {
-public:
+protected:
 	uint8_t format;
 	segptr_t dlist;
 
@@ -107,7 +135,9 @@ public:
 	segptr_t list;  // BgImage*
 	std::vector<BgImage> multiList;
 
-	PolygonType1(ZFile* nParent, uint32_t nRawDataIndex, ZRoom* nRoom);
+public:
+	PolygonType1(ZFile* nParent, const std::vector<uint8_t>& nRawData, uint32_t nRawDataIndex,
+	             ZRoom* nRoom);
 
 	void ParseRawData() override;
 	void DeclareReferences(const std::string& prefix) override;
@@ -122,11 +152,8 @@ public:
 class PolygonType2 : public PolygonTypeBase
 {
 public:
-	uint8_t num;
-	segptr_t start;
-	segptr_t end;
-
-	PolygonType2(ZFile* nParent, uint32_t nRawDataIndex, ZRoom* nRoom);
+	PolygonType2(ZFile* nParent, const std::vector<uint8_t>& nRawData, uint32_t nRawDataIndex,
+	             ZRoom* nRoom);
 
 	void ParseRawData() override;
 	void DeclareReferences(const std::string& prefix) override;
@@ -134,16 +161,16 @@ public:
 	std::string GetBodySourceCode() const override;
 
 	size_t GetRawDataSize() const override;
-	DeclarationAlignment GetDeclarationAlignment() const override;
+
+protected:
+	uint8_t num;
+	segptr_t start;
+	segptr_t end;
 };
 
 class SetMesh : public ZRoomCommand
 {
 public:
-	uint8_t data;
-	uint8_t meshHeaderType;
-	std::shared_ptr<PolygonTypeBase> polyType;
-
 	SetMesh(ZFile* nParent);
 
 	void ParseRawData() override;
@@ -152,8 +179,12 @@ public:
 	std::string GetBodySourceCode() const override;
 
 	RoomCommand GetRoomCommand() const override;
+	size_t GetRawDataSize() const override;
 	std::string GetCommandCName() const override;
 
 private:
+	uint8_t meshHeaderType;
+	std::shared_ptr<PolygonTypeBase> polyType;
+
 	std::string GenDListExterns(ZDisplayList* dList);
 };

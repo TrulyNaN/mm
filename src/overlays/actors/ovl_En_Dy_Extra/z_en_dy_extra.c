@@ -1,9 +1,3 @@
-/*
- * File: z_en_dy_extra.c
- * Overlay: ovl_En_Dy_Extra
- * Description: Great Fairy beam
- */
-
 #include "z_en_dy_extra.h"
 
 #define FLAGS 0x00000030

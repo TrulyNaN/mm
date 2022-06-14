@@ -3,32 +3,28 @@
 #include <string>
 #include <vector>
 
-// TODO: should we drop the `_t` suffix because of UNIX compliance?
-typedef uint32_t segptr_t;
-typedef uint32_t offset_t;
-
-#define SEGMENTED_NULL ((segptr_t)0)
-
 enum class DeclarationAlignment
 {
+	None,
 	Align4,
 	Align8,
 	Align16
 };
 
-enum class StaticConfig
+enum class DeclarationPadding
 {
-	Off,
-	Global,
-	On
+	None,
+	Pad4,
+	Pad8,
+	Pad16
 };
 
 class Declaration
 {
 public:
-	offset_t address;
 	DeclarationAlignment alignment;
-	size_t size;
+	DeclarationPadding padding;
+	size_t size = 0;
 	std::string preText;
 	std::string text;
 	std::string rightText;
@@ -42,38 +38,28 @@ public:
 	bool isArray = false;
 	size_t arrayItemCnt = 0;
 	std::string arrayItemCntStr;
-	std::vector<segptr_t> references;
+	std::vector<uint32_t> references;
 	bool isUnaccounted = false;
 	bool isPlaceholder = false;
-	bool declaredInXml = false;
-	StaticConfig staticConf = StaticConfig::Global;
 
-	Declaration(offset_t nAddress, DeclarationAlignment nAlignment, size_t nSize,
-	            const std::string& nVarType, const std::string& nVarName, bool nIsArray,
-	            const std::string& nText);
-	Declaration(offset_t nAddress, DeclarationAlignment nAlignment, size_t nSize,
-	            const std::string& nVarType, const std::string& nVarName, bool nIsArray,
-	            size_t nArrayItemCnt, const std::string& nText);
-	Declaration(offset_t nAddress, DeclarationAlignment nAlignment, size_t nSize,
-	            const std::string& nVarType, const std::string& nVarName, bool nIsArray,
-	            const std::string& nArrayItemCntStr, const std::string& nText);
-	Declaration(offset_t nAddress, DeclarationAlignment nAlignment, size_t nSize,
-	            const std::string& nVarType, const std::string& nVarName, bool nIsArray,
-	            size_t nArrayItemCnt, const std::string& nText, bool nIsExternal);
-
-	Declaration(offset_t nAddress, const std::string& nIncludePath, size_t nSize,
-	            const std::string& nVarType, const std::string& nVarName);
-
-	bool IsStatic() const;
-
-	std::string GetNormalDeclarationStr() const;
-	std::string GetExternalDeclarationStr() const;
-
-	std::string GetExternStr() const;
-
-	std::string GetStaticForwardDeclarationStr() const;
+	Declaration(DeclarationAlignment nAlignment, size_t nSize, std::string nVarType,
+	            std::string nVarName, bool nIsArray, std::string nText);
+	Declaration(DeclarationAlignment nAlignment, DeclarationPadding nPadding, size_t nSize,
+	            std::string nVarType, std::string nVarName, bool nIsArray, std::string nText);
+	Declaration(DeclarationAlignment nAlignment, size_t nSize, std::string nVarType,
+	            std::string nVarName, bool nIsArray, size_t nArrayItemCnt, std::string nText);
+	Declaration(DeclarationAlignment nAlignment, size_t nSize, std::string nVarType,
+	            std::string nVarName, bool nIsArray, std::string nArrayItemCntStr,
+	            std::string nText);
+	Declaration(DeclarationAlignment nAlignment, size_t nSize, std::string nVarType,
+	            std::string nVarName, bool nIsArray, size_t nArrayItemCnt, std::string nText,
+	            bool nIsExternal);
+	Declaration(DeclarationAlignment nAlignment, DeclarationPadding nPadding, size_t nSize,
+	            std::string nVarType, std::string nVarName, bool nIsArray, size_t nArrayItemCnt,
+	            std::string nText);
+	Declaration(std::string nIncludePath, size_t nSize, std::string nVarType, std::string nVarName);
 
 protected:
-	Declaration(offset_t nAddress, DeclarationAlignment nAlignment, size_t nSize,
-	            const std::string& nText);
+	Declaration(DeclarationAlignment nAlignment, DeclarationPadding nPadding, size_t nSize,
+	            std::string nText);
 };

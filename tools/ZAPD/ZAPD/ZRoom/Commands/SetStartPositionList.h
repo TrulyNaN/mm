@@ -6,8 +6,6 @@
 class SetStartPositionList : public ZRoomCommand
 {
 public:
-	std::vector<ActorSpawnEntry> actors;
-
 	SetStartPositionList(ZFile* nParent);
 
 	void ParseRawData() override;
@@ -17,4 +15,7 @@ public:
 
 	RoomCommand GetRoomCommand() const override;
 	std::string GetCommandCName() const override;
+
+private:
+	std::vector<ActorSpawnEntry> actors;
 };

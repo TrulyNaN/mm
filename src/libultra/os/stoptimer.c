@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 s32 osStopTimer(OSTimer* t) {
     register u32 savedMask;

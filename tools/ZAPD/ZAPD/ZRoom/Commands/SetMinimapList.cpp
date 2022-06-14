@@ -1,8 +1,8 @@
 #include "SetMinimapList.h"
 
+#include "BitConverter.h"
 #include "Globals.h"
-#include "Utils/BitConverter.h"
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 #include "ZFile.h"
 #include "ZRoom/ZRoom.h"
 
@@ -31,7 +31,7 @@ void SetMinimapList::ParseRawData()
 void SetMinimapList::DeclareReferences(const std::string& prefix)
 {
 	{
-		std::string declaration;
+		std::string declaration = "";
 
 		size_t index = 0;
 		for (const auto& entry : minimaps)
@@ -51,8 +51,7 @@ void SetMinimapList::DeclareReferences(const std::string& prefix)
 	}
 
 	{
-		std::string listName;
-		Globals::Instance->GetSegmentedPtrName(listSegmentAddr, parent, "MinimapEntry", listName);
+		std::string listName = parent->GetDeclarationPtrName(listSegmentAddr);
 		std::string declaration = StringHelper::Sprintf("\n\t%s, 0x%08X\n", listName.c_str(), unk4);
 
 		parent->AddDeclaration(
@@ -64,8 +63,7 @@ void SetMinimapList::DeclareReferences(const std::string& prefix)
 
 std::string SetMinimapList::GetBodySourceCode() const
 {
-	std::string listName;
-	Globals::Instance->GetSegmentedPtrName(cmdArg2, parent, "MinimapList", listName);
+	std::string listName = parent->GetDeclarationPtrName(cmdArg2);
 	return StringHelper::Sprintf("SCENE_CMD_MINIMAP_INFO(%s)", listName.c_str());
 }
 
@@ -77,6 +75,11 @@ std::string SetMinimapList::GetCommandCName() const
 RoomCommand SetMinimapList::GetRoomCommand() const
 {
 	return RoomCommand::SetMinimapList;
+}
+
+size_t SetMinimapList::GetRawDataSize() const
+{
+	return ZRoomCommand::GetRawDataSize() + (minimaps.size() * 10);
 }
 
 MinimapEntry::MinimapEntry(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex)

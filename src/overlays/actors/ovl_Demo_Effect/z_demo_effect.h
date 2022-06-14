@@ -1,16 +1,13 @@
 #ifndef Z_DEMO_EFFECT_H
 #define Z_DEMO_EFFECT_H
 
-#include "global.h"
+#include <global.h>
 
 struct DemoEffect;
 
-typedef void (*DemoEffectActionFunc)(struct DemoEffect*, GlobalContext*);
-
 typedef struct DemoEffect {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x34];
-    /* 0x0178 */ DemoEffectActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x38];
 } DemoEffect; // size = 0x17C
 
 extern const ActorInit Demo_Effect_InitVars;

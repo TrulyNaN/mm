@@ -1,11 +1,12 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
-void* proutSprintf(void* dst, const char* fmt, size_t size) {
-    return (void*)((uintptr_t)memcpy(dst, fmt, size) + size);
+void* proutSprintf(void* dst, char* fmt, size_t size) {
+    return (char*)memcpy(dst, fmt, size) + size;
 }
 
 int vsprintf(char* dst, char* fmt, va_list args) {
-    int ans = _Printf(proutSprintf, dst, fmt, args);
+    int ans = _Printf(&proutSprintf, dst, fmt, args);
     if (ans > -1) {
         dst[ans] = 0;
     }
@@ -14,15 +15,12 @@ int vsprintf(char* dst, char* fmt, va_list args) {
 
 int sprintf(char* dst, char* fmt, ...) {
     int ans;
-    va_list args;
-    va_start(args, fmt);
+    va_list ap;
+    va_start(ap, fmt);
 
-    ans = _Printf(&proutSprintf, dst, fmt, args);
+    ans = _Printf(&proutSprintf, dst, fmt, ap);
     if (ans > -1) {
         dst[ans] = 0;
     }
-
-    va_end(args);
-
     return ans;
 }

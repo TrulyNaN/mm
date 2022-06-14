@@ -1,6 +1,7 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
-void THGA_Ct(TwoHeadGfxArena* thga, Gfx* start, size_t size) {
+void THGA_Ct(TwoHeadGfxArena* thga, Gfx* start, u32 size) {
     THA_Ct((TwoHeadArena*)thga, start, size);
 }
 
@@ -44,7 +45,7 @@ Gfx* THGA_AllocStart8Wrapper(TwoHeadGfxArena* thga) {
     return THGA_AllocStart8(thga);
 }
 
-Gfx* THGA_AllocEnd(TwoHeadGfxArena* thga, size_t size) {
+Gfx* THGA_AllocEnd(TwoHeadGfxArena* thga, u32 size) {
     return THA_AllocEnd((TwoHeadArena*)thga, size);
 }
 

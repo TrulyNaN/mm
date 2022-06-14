@@ -77,38 +77,8 @@ static CollisionCheckInfoInit2 sColChkInfoInit2 = {
 };
 
 static DamageTable sDamageTable = {
-    /* Deku Nut       */ DMG_ENTRY(1, 0x0),
-    /* Deku Stick     */ DMG_ENTRY(1, 0x0),
-    /* Horse trample  */ DMG_ENTRY(1, 0x0),
-    /* Explosives     */ DMG_ENTRY(1, 0xE),
-    /* Zora boomerang */ DMG_ENTRY(1, 0x0),
-    /* Normal arrow   */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x06   */ DMG_ENTRY(1, 0x0),
-    /* Hookshot       */ DMG_ENTRY(1, 0x0),
-    /* Goron punch    */ DMG_ENTRY(1, 0xF),
-    /* Sword          */ DMG_ENTRY(1, 0x0),
-    /* Goron pound    */ DMG_ENTRY(1, 0x0),
-    /* Fire arrow     */ DMG_ENTRY(1, 0x0),
-    /* Ice arrow      */ DMG_ENTRY(1, 0x0),
-    /* Light arrow    */ DMG_ENTRY(1, 0x0),
-    /* Goron spikes   */ DMG_ENTRY(1, 0xF),
-    /* Deku spin      */ DMG_ENTRY(1, 0x0),
-    /* Deku bubble    */ DMG_ENTRY(1, 0x0),
-    /* Deku launch    */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x12   */ DMG_ENTRY(1, 0x0),
-    /* Zora barrier   */ DMG_ENTRY(1, 0x0),
-    /* Normal shield  */ DMG_ENTRY(1, 0x0),
-    /* Light ray      */ DMG_ENTRY(1, 0x0),
-    /* Thrown object  */ DMG_ENTRY(1, 0x0),
-    /* Zora punch     */ DMG_ENTRY(1, 0x0),
-    /* Spin attack    */ DMG_ENTRY(1, 0x0),
-    /* Sword beam     */ DMG_ENTRY(1, 0x0),
-    /* Normal Roll    */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x1B   */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x1C   */ DMG_ENTRY(1, 0x0),
-    /* Unblockable    */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x1E   */ DMG_ENTRY(1, 0x0),
-    /* Powder Keg     */ DMG_ENTRY(1, 0xE),
+    0x01, 0x01, 0x01, 0xE1, 0x01, 0x01, 0x01, 0x01, 0xF1, 0x01, 0x01, 0x01, 0x01, 0x01, 0xF1, 0x01,
+    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0xE1,
 };
 
 extern CollisionHeader D_06001BA8;
@@ -179,8 +149,8 @@ s32 func_80A357A8(ObjBell* this, GlobalContext* globalCtx) {
     f32 temp_f0;
     s16 temp_v1;
 
-    if (this->collider1.base.ocFlags1 & OC1_HIT) {
-        this->collider1.base.ocFlags1 &= ~OC1_HIT;
+    if (this->collider1.base.ocFlags1 & 2) {
+        this->collider1.base.ocFlags1 &= ~2;
         temp_v1 = this->dyna.actor.yawTowardsPlayer - this->unk_212;
         temp_f0 = this->unk_21C / 18000.0f;
         if (ABS_ALT(temp_v1) < 0x3FFC) {
@@ -193,8 +163,8 @@ s32 func_80A357A8(ObjBell* this, GlobalContext* globalCtx) {
             }
         }
     }
-    if (this->collider2.base.acFlags & AC_HIT) {
-        this->collider2.base.acFlags &= ~AC_HIT;
+    if (this->collider2.base.acFlags & 2) {
+        this->collider2.base.acFlags &= ~2;
         this->unk_20E = 10;
         switch (this->dyna.actor.colChkInfo.damageEffect) {
             case 15:
@@ -217,19 +187,19 @@ void func_80A358FC(ObjBell* this, GlobalContext* globalCtx) {
     this->collider1.dim.worldSphere.radius = (this->collider1.dim.modelSphere.radius * this->collider1.dim.scale);
     this->collider2.dim.worldSphere.radius = (this->collider2.dim.modelSphere.radius * this->collider2.dim.scale);
     if (DECR(this->unk_20E) == 0) {
-        CollisionCheck_SetAC(globalCtx, &globalCtx->colChkCtx, &this->collider2.base);
+        CollisionCheck_SetAC(globalCtx, &globalCtx->colCheckCtx, &this->collider2.base);
     }
-    CollisionCheck_SetOC(globalCtx, &globalCtx->colChkCtx, &this->collider1.base);
+    CollisionCheck_SetOC(globalCtx, &globalCtx->colCheckCtx, &this->collider1.base);
 }
 
 void func_80A359B4(Actor* thisx, GlobalContext* globalCtx) {
-    Matrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
+    SysMatrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
     Matrix_Scale(thisx->scale.x, thisx->scale.y, thisx->scale.z, MTXMODE_APPLY);
-    Matrix_InsertTranslation(0.0f, 2600.0f, 0.0f, MTXMODE_APPLY);
+    SysMatrix_InsertTranslation(0.0f, 2600.0f, 0.0f, MTXMODE_APPLY);
     Matrix_RotateY(thisx->world.rot.y, MTXMODE_APPLY);
-    Matrix_InsertXRotation_s(thisx->world.rot.x, MTXMODE_APPLY);
+    SysMatrix_InsertXRotation_s(thisx->world.rot.x, MTXMODE_APPLY);
     Matrix_RotateY(-thisx->world.rot.y, MTXMODE_APPLY);
-    Matrix_InsertTranslation(0.0f, -2600.0f, 0.0f, MTXMODE_APPLY);
+    SysMatrix_InsertTranslation(0.0f, -2600.0f, 0.0f, MTXMODE_APPLY);
     OPEN_DISPS(globalCtx->state.gfxCtx);
     func_8012C28C(globalCtx->state.gfxCtx);
     gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(globalCtx->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
@@ -241,7 +211,7 @@ void func_80A359B4(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 void func_80A35B18(Actor* thisx, GlobalContext* globalCtx) {
-    Matrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
+    SysMatrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
     Matrix_Scale(thisx->scale.x, thisx->scale.y, thisx->scale.z, MTXMODE_APPLY);
     Matrix_RotateY(thisx->shape.rot.y, MTXMODE_APPLY);
     OPEN_DISPS(globalCtx->state.gfxCtx);
@@ -252,7 +222,7 @@ void func_80A35B18(Actor* thisx, GlobalContext* globalCtx) {
 }
 
 void func_80A35BD4(Actor* thisx, GlobalContext* globalCtx) {
-    Matrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y - 4.0f, thisx->world.pos.z, MTXMODE_NEW);
+    SysMatrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y - 4.0f, thisx->world.pos.z, MTXMODE_NEW);
     Matrix_Scale(thisx->scale.x, thisx->scale.y, thisx->scale.z, MTXMODE_APPLY);
     OPEN_DISPS(globalCtx->state.gfxCtx);
     func_8012C2DC(globalCtx->state.gfxCtx);
@@ -264,8 +234,8 @@ void func_80A35BD4(Actor* thisx, GlobalContext* globalCtx) {
 void ObjBell_Init(Actor* thisx, GlobalContext* globalCtx) {
     ObjBell* this = THIS;
 
-    DynaPolyActor_Init(&this->dyna, 0);
-    DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_06001BA8);
+    BcCheck3_BgActorInit(&this->dyna, 0);
+    BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_06001BA8);
     Actor_SetScale(&this->dyna.actor, 0.08f);
     Collider_InitAndSetSphere(globalCtx, &this->collider1, &this->dyna.actor, &sCylinderInit1);
     Collider_InitAndSetSphere(globalCtx, &this->collider2, &this->dyna.actor, &sCylinderInit2);
@@ -275,7 +245,7 @@ void ObjBell_Init(Actor* thisx, GlobalContext* globalCtx) {
 void ObjBell_Destroy(Actor* thisx, GlobalContext* globalCtx) {
     ObjBell* this = THIS;
 
-    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    BgCheck_RemoveActorMesh(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
     Collider_DestroySphere(globalCtx, &this->collider1);
     Collider_DestroySphere(globalCtx, &this->collider2);
 }
@@ -300,9 +270,9 @@ void ObjBell_Draw(Actor* thisx, GlobalContext* globalCtx) {
     func_80A35BD4(thisx, globalCtx);
     func_80A359B4(thisx, globalCtx);
     Math_Vec3s_ToVec3f(&sp30, &this->collider1.dim.modelSphere.center);
-    Matrix_MultiplyVector3fByState(&sp30, &sp24);
+    SysMatrix_MultiplyVector3fByState(&sp30, &sp24);
     Math_Vec3f_ToVec3s(&this->collider1.dim.worldSphere.center, &sp24);
     Math_Vec3s_ToVec3f(&sp30, &this->collider2.dim.modelSphere.center);
-    Matrix_MultiplyVector3fByState(&sp30, &sp24);
+    SysMatrix_MultiplyVector3fByState(&sp30, &sp24);
     Math_Vec3f_ToVec3s(&this->collider2.dim.worldSphere.center, &sp24);
 }

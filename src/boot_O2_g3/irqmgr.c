@@ -1,11 +1,12 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 vs32 gIrqMgrResetStatus = 0;
 volatile OSTime sIrqMgrResetTime = 0;
 volatile OSTime sIrqMgrRetraceTime = 0;
 s32 sIrqMgrRetraceCount = 0;
 
-void IrqMgr_AddClient(IrqMgr* irqmgr, IrqMgrClient* param_2, OSMesgQueue* param_3) {
+void IrqMgr_AddClient(IrqMgr* irqmgr, OSMesgQueueListNode* param_2, OSMesgQueue* param_3) {
     u32 saveMask;
 
     saveMask = osSetIntMask(1);
@@ -24,9 +25,9 @@ void IrqMgr_AddClient(IrqMgr* irqmgr, IrqMgrClient* param_2, OSMesgQueue* param_
     }
 }
 
-void IrqMgr_RemoveClient(IrqMgr* irqmgr, IrqMgrClient* remove) {
-    IrqMgrClient* iter;
-    IrqMgrClient* last;
+void IrqMgr_RemoveClient(IrqMgr* irqmgr, OSMesgQueueListNode* remove) {
+    OSMesgQueueListNode* iter;
+    OSMesgQueueListNode* last;
     u32 saveMask;
 
     iter = irqmgr->callbacks;
@@ -51,7 +52,7 @@ void IrqMgr_RemoveClient(IrqMgr* irqmgr, IrqMgrClient* remove) {
 }
 
 void IrqMgr_SendMesgForClient(IrqMgr* irqmgr, OSMesg msg) {
-    IrqMgrClient* iter = irqmgr->callbacks;
+    OSMesgQueueListNode* iter = irqmgr->callbacks;
 
     while (iter != NULL) {
         osSendMesg(iter->queue, msg, 0);
@@ -60,7 +61,7 @@ void IrqMgr_SendMesgForClient(IrqMgr* irqmgr, OSMesg msg) {
 }
 
 void IrqMgr_JamMesgForClient(IrqMgr* irqmgr, OSMesg msg) {
-    IrqMgrClient* iter = irqmgr->callbacks;
+    OSMesgQueueListNode* iter = irqmgr->callbacks;
 
     while (iter != NULL) {
         if (iter->queue->validCount < iter->queue->msgCount) {

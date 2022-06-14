@@ -1,7 +1,7 @@
 #include "ZRoomCommand.h"
 
-#include "Utils/BitConverter.h"
-#include "Utils/StringHelper.h"
+#include "BitConverter.h"
+#include "StringHelper.h"
 #include "ZRoom.h"
 
 ZRoomCommand::ZRoomCommand(ZFile* nParent) : ZResource(nParent)
@@ -24,22 +24,20 @@ void ZRoomCommand::ParseRawData()
 
 	cmdArg1 = parentRawData.at(rawDataIndex + 1);
 	cmdArg2 = BitConverter::ToUInt32BE(parentRawData, rawDataIndex + 4);
-	segmentOffset = Seg2Filespace(cmdArg2, parent->baseAddress);
+	segmentOffset = GETSEGOFFSET(cmdArg2);
 }
 
-RoomCommand ZRoomCommand::GetRoomCommand() const
+void ZRoomCommand::ParseRawDataLate()
 {
-	return RoomCommand::Error;
 }
 
-size_t ZRoomCommand::GetRawDataSize() const
+void ZRoomCommand::DeclareReferencesLate(const std::string& prefix)
 {
-	return 0x08;
 }
 
-std::string ZRoomCommand::GetSourceTypeName() const
+std::string ZRoomCommand::GetCommandCName() const
 {
-	return GetCommandCName();
+	return "SCmdBase";
 }
 
 ZResourceType ZRoomCommand::GetResourceType() const
@@ -47,9 +45,9 @@ ZResourceType ZRoomCommand::GetResourceType() const
 	return ZResourceType::RoomCommand;
 }
 
-std::string ZRoomCommand::GetCommandCName() const
+size_t ZRoomCommand::GetRawDataSize() const
 {
-	return "SceneCmd";
+	return 0x08;
 }
 
 std::string ZRoomCommand::GetCommandHex() const

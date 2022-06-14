@@ -1,9 +1,3 @@
-/*
- * File: z_en_encount3.c
- * Overlay: ovl_En_Encount3
- * Description:
- */
-
 #include "z_en_encount3.h"
 
 #define FLAGS 0x08000030
@@ -15,11 +9,7 @@ void EnEncount3_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void EnEncount3_Update(Actor* thisx, GlobalContext* globalCtx);
 void EnEncount3_Draw(Actor* thisx, GlobalContext* globalCtx);
 
-void func_809AD084(EnEncount3* this, GlobalContext* globalCtx);
-void func_809AD194(EnEncount3* this, GlobalContext* globalCtx);
-void func_809AD1EC(EnEncount3* this, GlobalContext* globalCtx);
-
-#if 0
+/*
 const ActorInit En_Encount3_InitVars = {
     ACTOR_EN_ENCOUNT3,
     ACTORCAT_ENEMY,
@@ -31,23 +21,20 @@ const ActorInit En_Encount3_InitVars = {
     (ActorFunc)EnEncount3_Update,
     (ActorFunc)EnEncount3_Draw,
 };
+*/
 
-#endif
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/EnEncount3_Init.asm")
 
-extern UNK_TYPE D_060009A0;
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/EnEncount3_Destroy.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/EnEncount3_Init.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/func_809AD058.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/EnEncount3_Destroy.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/func_809AD084.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/func_809AD058.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/func_809AD194.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/func_809AD084.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/func_809AD1EC.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/func_809AD194.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/EnEncount3_Update.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/func_809AD1EC.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/EnEncount3_Update.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Encount3/EnEncount3_Draw.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Encount3_0x809ACF40/EnEncount3_Draw.asm")

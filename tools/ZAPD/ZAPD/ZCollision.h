@@ -3,7 +3,6 @@
 #include "ZFile.h"
 #include "ZResource.h"
 #include "ZRoom/ZRoom.h"
-#include "ZVector.h"
 
 class PolygonEntry
 {
@@ -15,14 +14,17 @@ public:
 	PolygonEntry(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
 };
 
+class VertexEntry
+{
+public:
+	int16_t x, y, z;
+
+	VertexEntry(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
+};
+
 class WaterBoxHeader
 {
 public:
-	WaterBoxHeader(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
-
-	std::string GetBodySourceCode() const;
-
-protected:
 	int16_t xMin;
 	int16_t ySurface;
 	int16_t zMin;
@@ -30,6 +32,8 @@ protected:
 	int16_t zLength;
 	int16_t pad;
 	int32_t properties;
+
+	WaterBoxHeader(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
 };
 
 class CameraPositionData
@@ -57,7 +61,6 @@ public:
 	CameraDataList(ZFile* parent, const std::string& prefix, const std::vector<uint8_t>& rawData,
 	               uint32_t rawDataIndex, uint32_t polyTypeDefSegmentOffset,
 	               uint32_t polygonTypesCnt);
-	~CameraDataList();
 };
 
 class ZCollisionHeader : public ZResource
@@ -78,22 +81,17 @@ public:
 	uint32_t vtxSegmentOffset, polySegmentOffset, polyTypeDefSegmentOffset, camDataSegmentOffset,
 		waterBoxSegmentOffset;
 
-	std::vector<ZVector> vertices;
+	std::vector<VertexEntry> vertices;
 	std::vector<PolygonEntry> polygons;
 	std::vector<uint64_t> polygonTypes;
-	std::vector<WaterBoxHeader> waterBoxes;
-	CameraDataList* camData = nullptr;
+	std::vector<WaterBoxHeader*> waterBoxes;
+	CameraDataList* camData;
 
 	ZCollisionHeader(ZFile* nParent);
 	~ZCollisionHeader();
 
 	void ParseRawData() override;
-	void DeclareReferences(const std::string& prefix) override;
 
-	std::string GetBodySourceCode() const override;
-	std::string GetDefaultName(const std::string& prefix) const override;
-
-	std::string GetSourceTypeName() const override;
 	ZResourceType GetResourceType() const override;
 
 	size_t GetRawDataSize() const override;

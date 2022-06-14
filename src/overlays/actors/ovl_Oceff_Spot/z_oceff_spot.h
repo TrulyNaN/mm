@@ -1,16 +1,13 @@
 #ifndef Z_OCEFF_SPOT_H
 #define Z_OCEFF_SPOT_H
 
-#include "global.h"
+#include <global.h>
 
 struct OceffSpot;
 
-typedef void (*OceffSpotActionFunc)(struct OceffSpot*, GlobalContext*);
-
 typedef struct OceffSpot {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x30];
-    /* 0x0174 */ OceffSpotActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x34];
 } OceffSpot; // size = 0x178
 
 extern const ActorInit Oceff_Spot_InitVars;

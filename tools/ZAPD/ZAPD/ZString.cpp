@@ -1,7 +1,7 @@
 #include "ZString.h"
 
-#include "Utils/File.h"
-#include "Utils/StringHelper.h"
+#include "File.h"
+#include "StringHelper.h"
 #include "ZFile.h"
 
 REGISTER_ZFILENODE(String, ZString);
@@ -13,8 +13,7 @@ ZString::ZString(ZFile* nParent) : ZResource(nParent)
 void ZString::ParseRawData()
 {
 	size_t size = 0;
-	const auto& rawData = parent->GetRawData();
-	const auto& rawDataArr = rawData.data();
+	uint8_t* rawDataArr = rawData.data();
 	size_t rawDataSize = rawData.size();
 	for (size_t i = rawDataIndex; i < rawDataSize; ++i)
 	{
@@ -29,28 +28,22 @@ void ZString::ParseRawData()
 	strData.assign(dataStart, dataStart + size);
 }
 
-Declaration* ZString::DeclareVar(const std::string& prefix, const std::string& bodyStr)
-{
-	std::string auxName = name;
-
-	if (name == "")
-		auxName = GetDefaultName(prefix);
-
-	Declaration* decl =
-		parent->AddDeclarationArray(rawDataIndex, GetDeclarationAlignment(), GetRawDataSize(),
-	                                GetSourceTypeName(), auxName, 0, bodyStr);
-	decl->staticConf = staticConf;
-	return decl;
-}
-
 std::string ZString::GetBodySourceCode() const
 {
 	return StringHelper::Sprintf("\t\"%s\"", strData.data());
 }
 
-std::string ZString::GetSourceOutputHeader([[maybe_unused]] const std::string& prefix)
+std::string ZString::GetSourceOutputCode(const std::string& prefix)
 {
-	return StringHelper::Sprintf("#define %s_macro \"%s\"", name.c_str(), strData.data());
+	parent->AddDeclarationArray(rawDataIndex, DeclarationAlignment::None, GetRawDataSize(),
+	                            GetSourceTypeName(), name, 0, GetBodySourceCode());
+
+	return "";
+}
+
+std::string ZString::GetSourceOutputHeader(const std::string& prefix)
+{
+	return StringHelper::Sprintf("#define %s_macro \"%s\"", name.c_str(), rawData.data());
 }
 
 std::string ZString::GetSourceTypeName() const

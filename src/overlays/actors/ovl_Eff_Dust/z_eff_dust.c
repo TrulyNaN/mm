@@ -1,4 +1,4 @@
-/*
+/**
  * File z_eff_dust.c
  * Overlay: ovl_Eff_Dust
  * Description: Dust effects
@@ -21,6 +21,8 @@ void func_80919230(EffDust* this, GlobalContext* globalCtx);
 
 void func_80919768(Actor* thisx, GlobalContext* globalCtx);
 void func_809199FC(Actor* thisx, GlobalContext* globalCtx);
+
+extern Gfx D_04054A90[];
 
 const ActorInit Eff_Dust_InitVars = {
     ACTOR_EFF_DUST,
@@ -92,7 +94,7 @@ void EffDust_Init(Actor* thisx, GlobalContext* globalCtx) {
             this->scalingFactor = 20.0f;
             break;
         default:
-            SystemArena_Free(this);
+            StartHeap_Free(this);
             break;
     }
     this->life = 10;
@@ -163,7 +165,7 @@ void func_80918FE4(EffDust* this, GlobalContext* globalCtx) {
 
 void func_80919230(EffDust* this, GlobalContext* globalCtx) {
     s16 theta;
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
     Actor* parent = this->actor.parent;
     f32* distanceTraveled = this->distanceTraveled;
     s32 i;
@@ -262,7 +264,7 @@ void func_80919768(Actor* thisx, GlobalContext* globalCtx2) {
     s16 sp92;
     Vec3f activeCamEye;
 
-    activeCamEye = GET_ACTIVE_CAM(globalCtx)->eye;
+    activeCamEye = ACTIVE_CAM->eye;
     sp92 = Math_Vec3f_Yaw(&activeCamEye, &thisx->world.pos);
 
     OPEN_DISPS(gfxCtx);
@@ -281,14 +283,14 @@ void func_80919768(Actor* thisx, GlobalContext* globalCtx2) {
     for (i = 0; i < ARRAY_COUNT(this->distanceTraveled); i++) {
         if (*distanceTraveled < 1.0f) {
             aux = 1.0f - SQ(*distanceTraveled);
-            Matrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
+            SysMatrix_InsertTranslation(thisx->world.pos.x, thisx->world.pos.y, thisx->world.pos.z, MTXMODE_NEW);
             Matrix_RotateY(sp92, MTXMODE_APPLY);
-            Matrix_InsertTranslation(initialPositions->x * ((this->dx * aux) + (1.0f - this->dx)),
-                                     initialPositions->y * ((this->dy * aux) + (1.0f - this->dy)),
-                                     initialPositions->z * ((this->dz * aux) + (1.0f - this->dz)), MTXMODE_APPLY);
-            Matrix_Scale(this->scalingFactor, this->scalingFactor, this->scalingFactor, MTXMODE_APPLY);
+            SysMatrix_InsertTranslation(initialPositions->x * ((this->dx * aux) + (1.0f - this->dx)),
+                                        initialPositions->y * ((this->dy * aux) + (1.0f - this->dy)),
+                                        initialPositions->z * ((this->dz * aux) + (1.0f - this->dz)), MTXMODE_APPLY);
+            Matrix_Scale(this->scalingFactor, this->scalingFactor, this->scalingFactor, 1);
 
-            Matrix_NormalizeXYZ(&globalCtx->mf_187FC);
+            SysMatrix_NormalizeXYZ(&globalCtx->unk187FC);
 
             gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
 
@@ -313,7 +315,7 @@ void func_809199FC(Actor* thisx, GlobalContext* globalCtx2) {
     Vec3f* initialPositions;
     s32 i;
     f32 aux;
-    Player* player = GET_PLAYER(globalCtx);
+    ActorPlayer* player = PLAYER;
 
     OPEN_DISPS(gfxCtx);
     func_8012C28C(gfxCtx);
@@ -324,7 +326,7 @@ void func_809199FC(Actor* thisx, GlobalContext* globalCtx2) {
     distanceTraveled = this->distanceTraveled;
 
     gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, 255);
-    if (player->unk_B08[0] >= 0.85f) {
+    if (player->unkB08 >= 0.85f) {
         gDPSetEnvColor(POLY_XLU_DISP++, 255, 0, 0, 0);
     } else {
         gDPSetEnvColor(POLY_XLU_DISP++, 0, 0, 255, 0);
@@ -337,15 +339,15 @@ void func_809199FC(Actor* thisx, GlobalContext* globalCtx2) {
             gDPSetPrimColor(POLY_XLU_DISP++, 0, 0, 255, 255, 255, (*distanceTraveled * 255.0f));
 
             aux = 1.0f - SQ(*distanceTraveled);
-            Matrix_InsertMatrix(&player->mf_CC4, MTXMODE_NEW);
-            Matrix_InsertTranslation(initialPositions->x * ((this->dx * aux) + (1.0f - this->dx)),
-                                     (initialPositions->y * (1.0f - *distanceTraveled)) + 320.0f,
-                                     (initialPositions->z * (1.0f - *distanceTraveled)) + -20.0f, MTXMODE_APPLY);
+            SysMatrix_InsertMatrix(&player->mf_CC4, MTXMODE_NEW);
+            SysMatrix_InsertTranslation(initialPositions->x * ((this->dx * aux) + (1.0f - this->dx)),
+                                        (initialPositions->y * (1.0f - *distanceTraveled)) + 320.0f,
+                                        (initialPositions->z * (1.0f - *distanceTraveled)) + -20.0f, MTXMODE_APPLY);
 
             Matrix_Scale(*distanceTraveled * this->scalingFactor, *distanceTraveled * this->scalingFactor,
                          *distanceTraveled * this->scalingFactor, MTXMODE_APPLY);
 
-            Matrix_NormalizeXYZ(&globalCtx->mf_187FC);
+            SysMatrix_NormalizeXYZ(&globalCtx->unk187FC);
 
             gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
             gSPClearGeometryMode(POLY_XLU_DISP++, G_FOG | G_LIGHTING);

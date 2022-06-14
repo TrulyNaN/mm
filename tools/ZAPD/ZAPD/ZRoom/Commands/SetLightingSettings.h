@@ -5,6 +5,13 @@
 class LightingSettings
 {
 public:
+	LightingSettings(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
+
+	std::string GetBodySourceCode() const;
+
+	size_t GetRawDataSize() const;
+
+protected:
 	uint8_t ambientClrR, ambientClrG, ambientClrB;
 	uint8_t diffuseClrA_R, diffuseClrA_G, diffuseClrA_B;
 	uint8_t diffuseDirA_X, diffuseDirA_Y, diffuseDirA_Z;
@@ -13,19 +20,11 @@ public:
 	uint8_t fogClrR, fogClrG, fogClrB;
 	uint16_t unk;
 	uint16_t drawDistance;
-
-	LightingSettings(const std::vector<uint8_t>& rawData, uint32_t rawDataIndex);
-
-	std::string GetBodySourceCode() const;
-
-	size_t GetRawDataSize() const;
 };
 
 class SetLightingSettings : public ZRoomCommand
 {
 public:
-	std::vector<LightingSettings> settings;
-
 	SetLightingSettings(ZFile* nParent);
 
 	void ParseRawData() override;
@@ -35,4 +34,7 @@ public:
 
 	RoomCommand GetRoomCommand() const override;
 	std::string GetCommandCName() const override;
+
+private:
+	std::vector<LightingSettings> settings;
 };

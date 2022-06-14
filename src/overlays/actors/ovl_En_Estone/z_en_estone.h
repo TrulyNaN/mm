@@ -1,16 +1,13 @@
 #ifndef Z_EN_ESTONE_H
 #define Z_EN_ESTONE_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnEstone;
 
-typedef void (*EnEstoneActionFunc)(struct EnEstone*, GlobalContext*);
-
 typedef struct EnEstone {
     /* 0x0000 */ Actor actor;
-    /* 0x0144 */ EnEstoneActionFunc actionFunc;
-    /* 0x0148 */ char unk_144[0x2C2C];
+    /* 0x0144 */ char unk_0144[0x2C30];
 } EnEstone; // size = 0x2D74
 
 extern const ActorInit En_Estone_InitVars;

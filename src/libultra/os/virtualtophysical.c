@@ -1,7 +1,6 @@
-#include "PR/ultratypes.h"
-#include "osint.h"
-#include "libc/stdint.h"
-#include "global.h"
+#include <PR/ultratypes.h>
+#include <osint.h>
+#include <stdint.h>
 
 uintptr_t osVirtualToPhysical(void* virtualAddress) {
     if (((uintptr_t)virtualAddress >= 0x80000000) && ((uintptr_t)virtualAddress < 0xA0000000)) {

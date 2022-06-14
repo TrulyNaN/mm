@@ -1,16 +1,13 @@
 #ifndef Z_BG_HAKUGIN_ELVPOLE_H
 #define Z_BG_HAKUGIN_ELVPOLE_H
 
-#include "global.h"
+#include <global.h>
 
 struct BgHakuginElvpole;
 
-typedef void (*BgHakuginElvpoleActionFunc)(struct BgHakuginElvpole*, GlobalContext*);
-
 typedef struct BgHakuginElvpole {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x20];
-    /* 0x0164 */ BgHakuginElvpoleActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x24];
 } BgHakuginElvpole; // size = 0x168
 
 extern const ActorInit Bg_Hakugin_Elvpole_InitVars;

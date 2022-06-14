@@ -1,9 +1,3 @@
-/*
- * File: z_demo_shd.c
- * Overlay: ovl_Demo_Shd
- * Description:
- */
-
 #include "z_demo_shd.h"
 
 #define FLAGS 0x00000030

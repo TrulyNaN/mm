@@ -9,9 +9,8 @@ public:
 	ZString(ZFile* nParent);
 
 	void ParseRawData() override;
-
-	Declaration* DeclareVar(const std::string& prefix, const std::string& bodyStr) override;
-	std::string GetBodySourceCode() const override;
+	std::string GetBodySourceCode() const;
+	std::string GetSourceOutputCode(const std::string& prefix) override;
 
 	std::string GetSourceOutputHeader(const std::string& prefix) override;
 	std::string GetSourceTypeName() const override;

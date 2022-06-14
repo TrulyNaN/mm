@@ -1,5 +1,6 @@
-#include "global.h"
+#include <osint.h>
+#include <assert.h>
 
 u32 __osSpGetStatus() {
-    return HW_REG(SP_STATUS_REG, u32);
+    return *(vu32*)0xA4040010;
 }

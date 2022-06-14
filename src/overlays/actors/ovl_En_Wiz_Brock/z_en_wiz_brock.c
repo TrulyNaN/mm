@@ -1,9 +1,3 @@
-/*
- * File: z_en_wiz_brock.c
- * Overlay: ovl_En_Wiz_Brock
- * Description: Wizzrobe Warp Platform
- */
-
 #include "z_en_wiz_brock.h"
 
 #define FLAGS 0x08000010
@@ -15,7 +9,7 @@ void EnWizBrock_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void EnWizBrock_Update(Actor* thisx, GlobalContext* globalCtx);
 void EnWizBrock_Draw(Actor* thisx, GlobalContext* globalCtx);
 
-#if 0
+/*
 const ActorInit En_Wiz_Brock_InitVars = {
     ACTOR_EN_WIZ_BROCK,
     ACTORCAT_PROP,
@@ -27,20 +21,16 @@ const ActorInit En_Wiz_Brock_InitVars = {
     (ActorFunc)EnWizBrock_Update,
     (ActorFunc)EnWizBrock_Draw,
 };
+*/
 
-#endif
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/EnWizBrock_Init.asm")
 
-extern UNK_TYPE D_060010E8;
-extern UNK_TYPE D_06001690;
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/EnWizBrock_Destroy.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/EnWizBrock_Init.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/func_80A490E4.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/EnWizBrock_Destroy.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/func_80A490FC.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/func_80A490E4.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/EnWizBrock_Update.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/func_80A490FC.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/EnWizBrock_Update.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_En_Wiz_Brock/EnWizBrock_Draw.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_En_Wiz_Brock_0x80A48FE0/EnWizBrock_Draw.asm")

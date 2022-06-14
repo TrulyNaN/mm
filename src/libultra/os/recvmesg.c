@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 s32 osRecvMesg(OSMesgQueue* mq, OSMesg* msg, s32 flags) {
     register u32 saveMask;
@@ -11,7 +12,7 @@ s32 osRecvMesg(OSMesgQueue* mq, OSMesg* msg, s32 flags) {
             return -1;
         }
         __osRunningThread->state = 8;
-        __osEnqueueAndYield(&mq->mtQueue);
+        __osEnqueueAndYield(&mq->mtqueue);
     }
 
     if (msg != NULL) {
@@ -21,8 +22,8 @@ s32 osRecvMesg(OSMesgQueue* mq, OSMesg* msg, s32 flags) {
     mq->first = (mq->first + 1) % mq->msgCount;
     mq->validCount--;
 
-    if (mq->fullQueue->next != NULL) {
-        osStartThread(__osPopThread(&mq->fullQueue));
+    if (mq->fullqueue->next != NULL) {
+        osStartThread(__osPopThread(&mq->fullqueue));
     }
 
     __osRestoreInt(saveMask);

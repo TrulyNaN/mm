@@ -1,9 +1,3 @@
-/*
- * File z_elf_msg3.c
- * Overlay: ovl_Elf_Msg3
- * Description: Tatl Message (Proximity-activated dialogue?)
- */
-
 #include "z_elf_msg3.h"
 
 #define FLAGS 0x00000010
@@ -14,9 +8,7 @@ void ElfMsg3_Init(Actor* thisx, GlobalContext* globalCtx);
 void ElfMsg3_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void ElfMsg3_Update(Actor* thisx, GlobalContext* globalCtx);
 
-void ElfMsg3_SetupAction(ElfMsg3* this, ElfMsg3ActionFunc actionFunc);
-
-#if 0
+/*
 const ActorInit Elf_Msg3_InitVars = {
     ACTOR_ELF_MSG3,
     ACTORCAT_ITEMACTION,
@@ -28,29 +20,18 @@ const ActorInit Elf_Msg3_InitVars = {
     (ActorFunc)ElfMsg3_Update,
     (ActorFunc)NULL,
 };
+*/
 
-// static InitChainEntry sInitChain[] = {
-static InitChainEntry D_80A2D1E0[] = {
-    ICHAIN_VEC3F_DIV1000(scale, 1000, ICHAIN_CONTINUE),
-    ICHAIN_F32(uncullZoneForward, 1000, ICHAIN_STOP),
-};
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/func_80A2CD10.asm")
 
-#endif
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/func_80A2CD1C.asm")
 
-extern InitChainEntry D_80A2D1E0[];
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/ElfMsg3_Init.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/D_80A2D1F0.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/ElfMsg3_Destroy.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/ElfMsg3_SetupAction.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/func_80A2CF50.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/func_80A2CD1C.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/func_80A2CF7C.asm")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/ElfMsg3_Init.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/ElfMsg3_Destroy.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/func_80A2CF50.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/func_80A2CF7C.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Elf_Msg3/ElfMsg3_Update.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Elf_Msg3_0x80A2CD10/ElfMsg3_Update.asm")

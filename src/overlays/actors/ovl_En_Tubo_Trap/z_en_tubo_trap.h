@@ -1,7 +1,7 @@
 #ifndef Z_EN_TUBO_TRAP_H
 #define Z_EN_TUBO_TRAP_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnTuboTrap;
 
@@ -16,5 +16,7 @@ typedef struct EnTuboTrap {
 } EnTuboTrap; // size = 0x1A4
 
 extern const ActorInit En_Tubo_Trap_InitVars;
+
+
 
 #endif // Z_EN_TUBO_TRAP_H

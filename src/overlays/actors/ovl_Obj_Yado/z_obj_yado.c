@@ -1,9 +1,3 @@
-/*
- * File: z_obj_yado.c
- * Overlay: ovl_Obj_Yado
- * Description: Stockpot Inn - 2nd Floor Window
- */
-
 #include "z_obj_yado.h"
 
 #define FLAGS 0x00000030
@@ -15,7 +9,7 @@ void ObjYado_Destroy(Actor* thisx, GlobalContext* globalCtx);
 void ObjYado_Update(Actor* thisx, GlobalContext* globalCtx);
 void ObjYado_Draw(Actor* thisx, GlobalContext* globalCtx);
 
-#if 0
+/*
 const ActorInit Obj_Yado_InitVars = {
     ACTOR_OBJ_YADO,
     ACTORCAT_BG,
@@ -27,23 +21,12 @@ const ActorInit Obj_Yado_InitVars = {
     (ActorFunc)ObjYado_Update,
     (ActorFunc)ObjYado_Draw,
 };
+*/
 
-// static InitChainEntry sInitChain[] = {
-static InitChainEntry D_80C16420[] = {
-    ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
-};
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Yado_0x80C161E0/ObjYado_Init.asm")
 
-#endif
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Yado_0x80C161E0/ObjYado_Destroy.asm")
 
-extern InitChainEntry D_80C16420[];
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Yado_0x80C161E0/ObjYado_Update.asm")
 
-extern UNK_TYPE D_06000430;
-extern UNK_TYPE D_060012E8;
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Yado/ObjYado_Init.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Yado/ObjYado_Destroy.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Yado/ObjYado_Update.s")
-
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Obj_Yado/ObjYado_Draw.s")
+#pragma GLOBAL_ASM("./asm/non_matchings/overlays/ovl_Obj_Yado_0x80C161E0/ObjYado_Draw.asm")

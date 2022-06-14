@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 OSYieldResult osSpTaskYielded(OSTask* task) {
     s32 status;

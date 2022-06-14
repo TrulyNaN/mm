@@ -1,17 +1,13 @@
 #ifndef Z_EN_BOMJIMB_H
 #define Z_EN_BOMJIMB_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnBomjimb;
 
-typedef void (*EnBomjimbActionFunc)(struct EnBomjimb*, GlobalContext*);
-
 typedef struct EnBomjimb {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x140];
-    /* 0x0284 */ EnBomjimbActionFunc actionFunc;
-    /* 0x0288 */ char unk_288[0xAC];
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x1F0];
 } EnBomjimb; // size = 0x334
 
 extern const ActorInit En_Bomjimb_InitVars;

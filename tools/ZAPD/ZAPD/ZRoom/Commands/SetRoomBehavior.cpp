@@ -1,8 +1,7 @@
 #include "SetRoomBehavior.h"
-
+#include "BitConverter.h"
 #include "Globals.h"
-#include "Utils/BitConverter.h"
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 
 SetRoomBehavior::SetRoomBehavior(ZFile* nParent) : ZRoomCommand(nParent)
 {

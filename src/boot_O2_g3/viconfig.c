@@ -1,15 +1,16 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void ViConfig_UpdateVi(u32 mode) {
     if (mode != 0) {
         switch (osTvType) {
-            case OS_TV_MPAL:
+            case 2:
                 osViSetMode(&osViModeMpalLan1);
                 break;
-            case OS_TV_PAL:
+            case 0:
                 osViSetMode(&osViModePalLan1);
                 break;
-            case OS_TV_NTSC:
+            case 1:
             default:
                 osViSetMode(&osViModeNtscLan1);
                 break;
@@ -26,7 +27,7 @@ void ViConfig_UpdateVi(u32 mode) {
         osViSetMode(&gViConfigMode);
 
         if (gViConfigAdditionalScanLines != 0) {
-            osViExtendVStart(gViConfigAdditionalScanLines);
+            func_80087E00(gViConfigAdditionalScanLines);
         }
 
         if (gViConfigFeatures != 0) {
@@ -47,8 +48,8 @@ void ViConfig_UpdateVi(u32 mode) {
 
 void ViConfig_UpdateBlack(void) {
     if (gViConfigUseDefault != 0) {
-        osViBlack(true);
+        osViBlack(1);
     } else {
-        osViBlack(false);
+        osViBlack(0);
     }
 }

@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void osStopThread(OSThread* t) {
     register u32 saveMask;

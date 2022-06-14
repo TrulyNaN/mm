@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void osSetThreadPri(OSThread* t, OSPri p) {
     register u32 saveMask;

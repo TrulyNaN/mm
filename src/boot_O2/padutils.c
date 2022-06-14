@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void PadUtils_Init(Input* input) {
     bzero(input, sizeof(Input));

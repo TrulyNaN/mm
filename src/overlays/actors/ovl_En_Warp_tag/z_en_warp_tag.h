@@ -1,16 +1,13 @@
 #ifndef Z_EN_WARP_TAG_H
 #define Z_EN_WARP_TAG_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnWarptag;
 
-typedef void (*EnWarptagActionFunc)(struct EnWarptag*, GlobalContext*);
-
 typedef struct EnWarptag {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ char unk_144[0x1C];
-    /* 0x0160 */ EnWarptagActionFunc actionFunc;
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x20];
 } EnWarptag; // size = 0x164
 
 extern const ActorInit En_Warp_tag_InitVars;

@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 u32 osGetMemSize(void) {
     u32* spC;

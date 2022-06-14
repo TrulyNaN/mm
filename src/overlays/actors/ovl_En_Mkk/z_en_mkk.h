@@ -1,16 +1,13 @@
 #ifndef Z_EN_MKK_H
 #define Z_EN_MKK_H
 
-#include "global.h"
+#include <global.h>
 
 struct EnMkk;
 
-typedef void (*EnMkkActionFunc)(struct EnMkk*, GlobalContext*);
-
 typedef struct EnMkk {
-    /* 0x0000 */ Actor actor;
-    /* 0x0144 */ EnMkkActionFunc actionFunc;
-    /* 0x0148 */ char unk_144[0x8C];
+    /* 0x000 */ Actor actor;
+    /* 0x144 */ char unk_144[0x90];
 } EnMkk; // size = 0x1D4
 
 extern const ActorInit En_Mkk_InitVars;

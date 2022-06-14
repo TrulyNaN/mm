@@ -1,9 +1,3 @@
-/*
- * File: z_bg_lbfshot.c
- * Overlay: ovl_Bg_Lbfshot
- * Description: Rainbow Hookshot Pillar
- */
-
 #include "z_bg_lbfshot.h"
 
 #define FLAGS 0x00000000
@@ -22,7 +16,7 @@ const ActorInit Bg_Lbfshot_InitVars = {
     sizeof(BgLbfshot),
     (ActorFunc)BgLbfshot_Init,
     (ActorFunc)BgLbfshot_Destroy,
-    (ActorFunc)Actor_Noop,
+    (ActorFunc)func_800BDFB0,
     (ActorFunc)BgLbfshot_Draw,
 };
 
@@ -38,13 +32,13 @@ void BgLbfshot_Init(Actor* thisx, GlobalContext* globalCtx) {
 
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
     this->dyna.actor.uncullZoneForward = 4000.0f;
-    DynaPolyActor_Init(&this->dyna, 1);
-    DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_060014D8);
+    BcCheck3_BgActorInit(&this->dyna, 1);
+    BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_060014D8);
 }
 void BgLbfshot_Destroy(Actor* thisx, GlobalContext* globalCtx) {
     BgLbfshot* this = THIS;
 
-    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    BgCheck_RemoveActorMesh(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
 }
 void BgLbfshot_Draw(Actor* thisx, GlobalContext* globalCtx) {
     func_800BDFC0(globalCtx, D_06000228);

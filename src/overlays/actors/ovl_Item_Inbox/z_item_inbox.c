@@ -1,9 +1,3 @@
-/*
- * File: z_item_inbox.c
- * Overlay: ovl_Item_Inbox
- * Description:
- */
-
 #include "z_item_inbox.h"
 
 #define FLAGS 0x00000009

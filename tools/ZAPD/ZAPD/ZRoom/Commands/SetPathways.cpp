@@ -1,8 +1,7 @@
 #include "SetPathways.h"
-
+#include "BitConverter.h"
 #include "Globals.h"
-#include "Utils/BitConverter.h"
-#include "Utils/StringHelper.h"
+#include "StringHelper.h"
 #include "ZFile.h"
 #include "ZRoom/ZRoom.h"
 
@@ -10,14 +9,10 @@ SetPathways::SetPathways(ZFile* nParent) : ZRoomCommand(nParent), pathwayList(nP
 {
 }
 
-void SetPathways::DeclareReferences([[maybe_unused]] const std::string& prefix)
+void SetPathways::DeclareReferences(const std::string& prefix)
 {
 	if (segmentOffset != 0)
-	{
-		std::string varName =
-			StringHelper::Sprintf("%sPathway_%06X", prefix.c_str(), segmentOffset);
-		parent->AddDeclarationPlaceholder(segmentOffset, varName);
-	}
+		parent->AddDeclarationPlaceholder(segmentOffset);
 }
 
 void SetPathways::ParseRawDataLate()
@@ -28,22 +23,28 @@ void SetPathways::ParseRawDataLate()
 		pathwayList.SetNumPaths(numPaths);
 	}
 
-	pathwayList.ExtractFromFile(segmentOffset);
+	pathwayList.SetRawDataIndex(segmentOffset);
+	pathwayList.ParseRawData();
 }
 
 void SetPathways::DeclareReferencesLate(const std::string& prefix)
 {
-	std::string varName = StringHelper::Sprintf("%sPathway_%06X", prefix.c_str(), segmentOffset);
-	pathwayList.SetName(varName);
+	pathwayList.SetName(StringHelper::Sprintf("%sPathway_%06X", prefix.c_str(), segmentOffset));
 	pathwayList.DeclareReferences(prefix);
 	pathwayList.GetSourceOutputCode(prefix);
 }
 
 std::string SetPathways::GetBodySourceCode() const
 {
-	std::string listName;
-	Globals::Instance->GetSegmentedPtrName(cmdArg2, parent, "Path", listName);
+	std::string listName = parent->GetDeclarationPtrName(cmdArg2);
 	return StringHelper::Sprintf("SCENE_CMD_PATH_LIST(%s)", listName.c_str());
+}
+
+size_t SetPathways::GetRawDataSize() const
+{
+	int32_t size = pathwayList.GetRawDataSize();
+
+	return ZRoomCommand::GetRawDataSize() + size;
 }
 
 std::string SetPathways::GetCommandCName() const

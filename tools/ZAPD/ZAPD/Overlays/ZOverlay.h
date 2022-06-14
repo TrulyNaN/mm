@@ -1,11 +1,10 @@
 #pragma once
 
-#include "Utils/Directory.h"
-#include "ZResource.h"
-#include "elfio/elfio.hpp"
+#include <elfio/elfio.hpp>
+#include "../ZResource.h"
 #include "tinyxml2.h"
 
-enum class SectionType
+enum SectionType
 {
 	Text = 1,
 	Data = 2,
@@ -14,7 +13,7 @@ enum class SectionType
 	ERROR = 255
 };
 
-enum class RelocationType
+enum RelocationType
 {
 	R_MIPS_32 = 2,
 	R_MIPS_26 = 4,
@@ -40,15 +39,12 @@ public:
 	{
 		uint32_t relocationWord = 0;
 
-		relocationWord |= static_cast<uint32_t>(sectionType) << 30;
-		relocationWord |= static_cast<uint32_t>(relocationType) << 24;
+		relocationWord |= sectionType << 30;
+		relocationWord |= relocationType << 24;
 		relocationWord |= offset;
 
 		return relocationWord;
 	}
-
-	const char* GetSectionName() const;
-	const char* GetRelocTypeName() const;
 };
 
 class ZOverlay
@@ -56,20 +52,16 @@ class ZOverlay
 public:
 	std::string name;
 
-	ZOverlay(const std::string& nName);
+	ZOverlay(std::string nName);
 	~ZOverlay();
-	static ZOverlay* FromBuild(fs::path buildPath, fs::path cfgFolderPath);
+	static ZOverlay* FromBuild(std::string buildPath, std::string cfgFolderPath);
 	std::string GetSourceOutputCode(const std::string& prefix);
 
 private:
 	std::vector<RelocationEntry*> entries;
-	std::vector<std::string> cfgLines;
 
 	ZOverlay();
 
-	static SectionType GetSectionTypeFromStr(const std::string& sectionName);
+	static SectionType GetSectionTypeFromStr(std::string sectionName);
 	// static std::string GetOverlayNameFromElf(ELFIO::elfio& reader);
-
-	ELFIO::Elf_Half FindSymbolInSection(const std::string& curSymName, ELFIO::section* sectionData,
-	                                    ELFIO::elfio& reader, size_t readerId);
 };

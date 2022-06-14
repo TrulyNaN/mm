@@ -1,9 +1,3 @@
-/*
- * File: z_bg_kin2_fence.c
- * Overlay: ovl_Bg_Kin2_Fence
- * Description: Ocean Spider House - Fireplace Grate
- */
-
 #include "z_bg_kin2_fence.h"
 
 #define FLAGS 0x00000010
@@ -98,18 +92,16 @@ static ColliderJntSphInit sJntSphInit = {
     sJntSphElementsInit,
 };
 
-static Vec3f eyeSparkleSpawnPositions[][2] = {
-    { { -215.0f, 139.0f, 50.0f }, { -193.0f, 139.0f, 50.0f } },
+Vec3f eyeSparkleSpawnPositions[][2] = { { { -215.0f, 139.0f, 50.0f }, { -193.0f, 139.0f, 50.0f } },
 
-    { { -125.0f, 139.0f, 50.0f }, { -103.0f, 139.0f, 50.0f } },
+                                        { { -125.0f, 139.0f, 50.0f }, { -103.0f, 139.0f, 50.0f } },
 
-    { { 103.0f, 139.0f, 50.0f }, { 125.0f, 139.0f, 50.0f } },
+                                        { { 103.0f, 139.0f, 50.0f }, { 125.0f, 139.0f, 50.0f } },
 
-    { { 193.0f, 139.0f, 50.0f }, { 215.0f, 139.0f, 50.0f } },
-};
+                                        { { 193.0f, 139.0f, 50.0f }, { 215.0f, 139.0f, 50.0f } } };
 
-static Color_RGBA8 primColor = { 255, 255, 255, 0 };
-static Color_RGBA8 envColor = { 0, 128, 128, 0 };
+Color_RGBA8 primColor = { 0xFF, 0xFF, 0xFF, 0x00 };
+Color_RGBA8 envColor = { 0x00, 128, 128, 0x00 };
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneForward, 2000, ICHAIN_CONTINUE),
@@ -144,11 +136,11 @@ void BgKin2Fence_SpawnEyeSparkles(BgKin2Fence* this, GlobalContext* globalCtx, s
     Vec3f sp58;
     s32 pad[2];
 
-    Matrix_SetStateRotationAndTranslation(this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
-                                          this->dyna.actor.world.pos.z, &this->dyna.actor.shape.rot);
+    SysMatrix_SetStateRotationAndTranslation(this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
+                                             this->dyna.actor.world.pos.z, &this->dyna.actor.shape.rot);
 
     for (i = 0; i < 2; i++) {
-        Matrix_MultiplyVector3fByState(&eyeSparkleSpawnPositions[mask][i], &sp58);
+        SysMatrix_MultiplyVector3fByState(&eyeSparkleSpawnPositions[mask][i], &sp58);
         EffectSsKiraKira_SpawnDispersed(globalCtx, &sp58, &D_801D15B0, &D_801D15B0, &primColor, &envColor, 6000, -10);
     }
 }
@@ -158,13 +150,13 @@ void BgKin2Fence_Init(Actor* thisx, GlobalContext* globalCtx) {
     s32 i = 0;
 
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    DynaPolyActor_Init(&this->dyna, 0);
-    DynaPolyActor_LoadMesh(globalCtx, &this->dyna, &D_06000908);
+    BcCheck3_BgActorInit(&this->dyna, 0);
+    BgCheck3_LoadMesh(globalCtx, &this->dyna, &D_06000908);
     Collider_InitJntSph(globalCtx, &this->collider);
     Collider_SetJntSph(globalCtx, &this->collider, &this->dyna.actor, &sJntSphInit, this->colliderElements);
-    Matrix_SetStateRotationAndTranslation(this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
-                                          this->dyna.actor.world.pos.z, &this->dyna.actor.shape.rot);
-    Matrix_Scale(this->dyna.actor.scale.x, this->dyna.actor.scale.y, this->dyna.actor.scale.z, MTXMODE_APPLY);
+    SysMatrix_SetStateRotationAndTranslation(this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.y,
+                                             this->dyna.actor.world.pos.z, &this->dyna.actor.shape.rot);
+    Matrix_Scale(this->dyna.actor.scale.x, this->dyna.actor.scale.y, this->dyna.actor.scale.z, 1);
 
     for (i = 0; i < 4; i++) {
         Collider_UpdateSpheres(i, &this->collider);
@@ -180,7 +172,7 @@ void BgKin2Fence_Init(Actor* thisx, GlobalContext* globalCtx) {
 void BgKin2Fence_Destroy(Actor* thisx, GlobalContext* globalCtx) {
     BgKin2Fence* this = THIS;
 
-    DynaPoly_DeleteBgActor(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
+    BgCheck_RemoveActorMesh(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
     Collider_DestroyJntSph(globalCtx, &this->collider);
 }
 
@@ -193,7 +185,7 @@ void BgKin2Fence_HandleMaskCode(BgKin2Fence* this, GlobalContext* globalCtx) {
     s32 hitMask;
     s32 nextMask;
 
-    if (this->collider.base.acFlags & AC_HIT) {
+    if (this->collider.base.acFlags & 2) {
         hitMask = BgKin2Fence_CheckHitMask(this);
         if (hitMask >= 0) {
             nextMask = (s8)gSaveContext.spiderHouseMaskOrder[this->masksHit];
@@ -206,7 +198,7 @@ void BgKin2Fence_HandleMaskCode(BgKin2Fence* this, GlobalContext* globalCtx) {
                 this->masksHit = 0;
             }
         }
-        this->collider.base.acFlags &= ~AC_HIT;
+        this->collider.base.acFlags &= ~2;
         this->cooldownTimer = 5;
         if (this->masksHit > 5) {
             BgKin2Fence_SetupPlayOpenCutscene(this);
@@ -217,7 +209,7 @@ void BgKin2Fence_HandleMaskCode(BgKin2Fence* this, GlobalContext* globalCtx) {
             this->cooldownTimer -= 1;
             return;
         }
-        CollisionCheck_SetAC(globalCtx, &globalCtx->colChkCtx, &this->collider.base);
+        CollisionCheck_SetAC(globalCtx, &globalCtx->colCheckCtx, &this->collider.base);
     }
 }
 

@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void View_ViewportToVp(Vp* dest, Viewport* src) {
     s32 width = src->rightX - src->leftX;
@@ -32,13 +33,13 @@ void View_Init(View* view, GraphicsContext* gfxCtx) {
     }
 
     view->scale = 1.0f;
-    view->up.y = 1.0f;
+    view->upDir.y = 1.0f;
     view->fovy = 60.0f;
     view->eye.x = 0.0f;
     view->eye.y = 0.0f;
-    view->at.x = 0.0f;
-    view->up.x = 0.0f;
-    view->up.z = 0.0f;
+    view->focalPoint.x = 0.0f;
+    view->upDir.x = 0.0f;
+    view->upDir.z = 0.0f;
     view->zNear = 10.0f;
     view->zFar = 12800.0f;
     view->eye.z = -1.0f;
@@ -46,24 +47,24 @@ void View_Init(View* view, GraphicsContext* gfxCtx) {
     View_InitCameraQuake(view);
 }
 
-void View_SetViewOrientation(View* view, Vec3f* eye, Vec3f* at, Vec3f* up) {
-    if (eye->x == at->x && eye->z == at->z) {
+void View_SetViewOrientation(View* view, Vec3f* eye, Vec3f* focalPoint, Vec3f* upDir) {
+    if (eye->x == focalPoint->x && eye->z == focalPoint->z) {
         eye->z += 0.1f;
-        up->z = 0.0f;
-        up->x = 0.0f;
-        up->y = 1.0f;
+        upDir->z = 0.0f;
+        upDir->x = 0.0f;
+        upDir->y = 1.0f;
     }
 
     view->eye = *eye;
-    view->at = *at;
-    view->up = *up;
+    view->focalPoint = *focalPoint;
+    view->upDir = *upDir;
     view->flags |= 1;
 }
 
-void func_8013F050(View* view, Vec3f* eye, Vec3f* at, Vec3f* up) {
+void func_8013F050(View* view, Vec3f* eye, Vec3f* focalPoint, Vec3f* upDir) {
     view->eye = *eye;
-    view->at = *at;
-    view->up = *up;
+    view->focalPoint = *focalPoint;
+    view->upDir = *upDir;
 }
 
 void View_SetScale(View* view, f32 scale) {
@@ -237,7 +238,7 @@ s32 View_SetQuake(View* view, Vec3f rot, Vec3f scale, f32 speed) {
     return 1;
 }
 
-s32 View_StepQuake(View* view, Mtx* matrix) {
+s32 View_StepQuake(View* view, RSPMatrix* matrix) {
     MtxF mf;
 
     if (view->quakeSpeed == 0.0f) {
@@ -256,16 +257,16 @@ s32 View_StepQuake(View* view, Mtx* matrix) {
         view->currQuakeScale.z += ((view->quakeScale.z - view->currQuakeScale.z) * view->quakeSpeed);
     }
 
-    Matrix_FromRSPMatrix(matrix, &mf);
-    Matrix_SetCurrentState(&mf);
-    Matrix_RotateStateAroundXAxis(view->currQuakeRot.x);
-    Matrix_InsertYRotation_f(view->currQuakeRot.y, 1);
-    Matrix_InsertZRotation_f(view->currQuakeRot.z, 1);
-    Matrix_Scale(view->currQuakeScale.x, view->currQuakeScale.y, view->currQuakeScale.z, MTXMODE_APPLY);
-    Matrix_InsertZRotation_f(-view->currQuakeRot.z, 1);
-    Matrix_InsertYRotation_f(-view->currQuakeRot.y, 1);
-    Matrix_RotateStateAroundXAxis(-view->currQuakeRot.x);
-    Matrix_ToMtx(matrix);
+    SysMatrix_FromRSPMatrix(matrix, &mf);
+    SysMatrix_SetCurrentState(&mf);
+    SysMatrix_RotateStateAroundXAxis(view->currQuakeRot.x);
+    SysMatrix_InsertYRotation_f(view->currQuakeRot.y, 1);
+    SysMatrix_InsertZRotation_f(view->currQuakeRot.z, 1);
+    Matrix_Scale(view->currQuakeScale.x, view->currQuakeScale.y, view->currQuakeScale.z, 1);
+    SysMatrix_InsertZRotation_f(-view->currQuakeRot.z, 1);
+    SysMatrix_InsertYRotation_f(-view->currQuakeRot.y, 1);
+    SysMatrix_RotateStateAroundXAxis(-view->currQuakeRot.x);
+    SysMatrix_GetStateAsRSPMatrix(matrix);
 
     return 1;
 }
@@ -310,7 +311,7 @@ s32 View_RenderToPerspectiveMatrix(View* view) {
     guPerspective(projection, &view->normal, view->fovy, aspect, view->zNear, view->zFar, view->scale);
     view->projection = *projection;
     //! @bug: This cast of `projection` is invalid
-    View_StepQuake(view, (Mtx*)projection);
+    View_StepQuake(view, (RSPMatrix*)projection);
 
     gSPPerspNormalize(POLY_OPA_DISP++, view->normal);
     gSPMatrix(POLY_OPA_DISP++, projection, G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_PROJECTION);
@@ -320,12 +321,12 @@ s32 View_RenderToPerspectiveMatrix(View* view) {
     viewing = GRAPH_ALLOC(gfxCtx, sizeof(*viewing));
     view->viewingPtr = viewing;
 
-    if (view->eye.x == view->at.x && view->eye.y == view->at.y && view->eye.z == view->at.z) {
+    if (view->eye.x == view->focalPoint.x && view->eye.y == view->focalPoint.y && view->eye.z == view->focalPoint.z) {
         view->eye.z += 2.0f;
     }
 
-    guLookAt(viewing, view->eye.x, view->eye.y, view->eye.z, view->at.x, view->at.y, view->at.z, view->up.x, view->up.y,
-             view->up.z);
+    guLookAt(viewing, view->eye.x, view->eye.y, view->eye.z, view->focalPoint.x, view->focalPoint.y, view->focalPoint.z,
+             view->upDir.x, view->upDir.y, view->upDir.z);
 
     view->viewing = *viewing;
 
@@ -454,12 +455,12 @@ s32 func_8013FD74(View* view) {
     viewing = GRAPH_ALLOC(gfxCtx, sizeof(*viewing));
     view->viewingPtr = viewing;
 
-    if (view->eye.x == view->at.x && view->eye.y == view->at.y && view->eye.z == view->at.z) {
+    if (view->eye.x == view->focalPoint.x && view->eye.y == view->focalPoint.y && view->eye.z == view->focalPoint.z) {
         view->eye.z += 2.0f;
     }
 
-    guLookAt(viewing, view->eye.x, view->eye.y, view->eye.z, view->at.x, view->at.y, view->at.z, view->up.x, view->up.y,
-             view->up.z);
+    guLookAt(viewing, view->eye.x, view->eye.y, view->eye.z, view->focalPoint.x, view->focalPoint.y, view->focalPoint.z,
+             view->upDir.x, view->upDir.y, view->upDir.z);
 
     view->viewing = *viewing;
 
@@ -471,8 +472,8 @@ s32 func_8013FD74(View* view) {
 }
 
 s32 func_80140024(View* view) {
-    guLookAt(view->viewingPtr, view->eye.x, view->eye.y, view->eye.z, view->at.x, view->at.y, view->at.z, view->up.x,
-             view->up.y, view->up.z);
+    guLookAt(view->viewingPtr, view->eye.x, view->eye.y, view->eye.z, view->focalPoint.x, view->focalPoint.y,
+             view->focalPoint.z, view->upDir.x, view->upDir.y, view->upDir.z);
 
     view->unkE0 = *view->viewingPtr;
     view->viewingPtr = &view->unkE0;

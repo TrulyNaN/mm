@@ -1,4 +1,5 @@
-#include "global.h"
+#include <ultra64.h>
+#include <global.h>
 
 void osViBlack(u8 active) {
     register u32 saveMask;
@@ -8,7 +9,7 @@ void osViBlack(u8 active) {
     if (active) {
         __osViNext->state |= 0x20;
     } else {
-        __osViNext->state &= ~0x20;
+        __osViNext->state &= 0xffdf;
     }
 
     __osRestoreInt(saveMask);
