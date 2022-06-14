@@ -193,7 +193,8 @@ void BgKin2Bombwall_SetupPlayCutscene(BgKin2Bombwall* this) {
 
 void BgKin2Bombwall_PlayCutscene(BgKin2Bombwall* this, GlobalContext* globalCtx) {
     if (ActorCutscene_GetCanPlayNext(this->dyna.actor.cutscene)) {
-        ActorCutscene_StartAndSetUnkLinkFields(this->dyna.actor.cutscene, &this->dyna.actor);
+        ActorCutscene_StartAndSetUnkLinkFields(-1, &this->dyna.actor);
+        //ActorCutscene_StartAndSetUnkLinkFields(this->dyna.actor.cutscene, &this->dyna.actor);
         Flags_SetSwitch(globalCtx, BG_KIN2_BOMBWALL_SWITCH_FLAG(this));
         SoundSource_PlaySfxAtFixedWorldPos(globalCtx, &this->dyna.actor.world.pos, 0x3C, NA_SE_EV_WALL_BROKEN);
         func_800C62BC(globalCtx, &globalCtx->colCtx.dyna, this->dyna.bgId);
