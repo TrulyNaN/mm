@@ -300,7 +300,7 @@ void BgIkanaMirror_Wait(BgIkanaMirror* this, PlayState* play) {
         this->isEmittingLight = 0;
 
         if (this->lightRayCharge < 400) {
-            this->lightRayCharge++;
+            this->lightRayCharge+=400;
         }
 
         if (this->lightAbsorptionAlpha < 195) {
