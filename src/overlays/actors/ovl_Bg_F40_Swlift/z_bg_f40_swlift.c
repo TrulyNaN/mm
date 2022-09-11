@@ -42,10 +42,43 @@ extern InitChainEntry D_8096F540[];
 extern UNK_TYPE D_06003B08;
 extern UNK_TYPE D_06003E80;
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Init.s")
+extern s32 D_8096F510[]; //= { 0xFF };
+extern s32 D_8096F514[];// = { 0xFF, 0xFF, 0xFF };
+extern s32 D_8096F5D0[];
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Destroy.s")
+// #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Init.s")
+
+void BgF40Swlift_Init(Actor *thisx, PlayState *play) {
+    s32 temp_v1;
+    BgF40Swlift *this = (BgF40Swlift *) thisx;
+
+    Actor_ProcessInitChain(&this->actor, D_8096F540);
+    DynaPolyActor_Init((DynaPolyActor *) this, 1);
+    temp_v1 = ((s32) this->actor.params >> 8) & 0xFF;
+    if ((temp_v1 < 0) || (temp_v1 >= 5)) {
+        Actor_MarkForDeath(&this->actor);
+    } else{
+        D_8096F5D0[temp_v1] = (s32) this->actor.world.pos.y;
+        D_8096F510[temp_v1] = this->actor.params & 0xFF;
+        if (temp_v1 != 0) {
+            Actor_MarkForDeath(&this->actor);
+        } else{
+            DynaPolyActor_LoadMesh(play, (DynaPolyActor *) this, (CollisionHeader *) &D_06003E80);
+            this->actor.params = 0;
+        }
+    }
+    
+    
+}
+
+void BgF40Swlift_Destroy(Actor *thisx, PlayState *play) {
+    BgF40Swlift *this = (BgF40Swlift *) thisx;
+    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->unk144);
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Update.s")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Draw.s")
+void BgF40Swlift_Draw(Actor *thisx, PlayState *play) {
+    BgF40Swlift *this = THIS;
+    Gfx_DrawDListOpa(play, (Gfx *) &D_06003B08);
+}
