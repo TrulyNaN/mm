@@ -70,7 +70,7 @@ void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
 void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = (BgF40Swlift*)thisx;
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->unk144);
-}
+} 
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Update.s")
 
