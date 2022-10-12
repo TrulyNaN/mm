@@ -17,7 +17,10 @@ void BgF40Swlift_Destroy(Actor* thisx, PlayState* play);
 void BgF40Swlift_Update(Actor* thisx, PlayState* play);
 void BgF40Swlift_Draw(Actor* thisx, PlayState* play);
 
-#if 0
+static s32 D_8096F510[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
+static s32 D_8096F5D0[4];
+
+#if 1
 const ActorInit Bg_F40_Swlift_InitVars = {
     ACTOR_BG_F40_SWLIFT,
     ACTORCAT_BG,
@@ -39,14 +42,12 @@ static InitChainEntry D_8096F540[] = {
 
 #endif
 
-extern InitChainEntry D_8096F540[];
+// extern InitChainEntry D_8096F540[];
 
 extern UNK_TYPE D_06003B08;
 extern UNK_TYPE D_06003E80;
 
-extern s32 D_8096F510[4]; //= { 0xFF };
-// extern s32 D_8096F514[3]; // = { 0xFF, 0xFF, 0xFF };
-extern s32 D_8096F5D0[];
+// extern s32 D_8096F510[4]; //= { 0xFF };
 
 void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
     s32 temp_v1;
