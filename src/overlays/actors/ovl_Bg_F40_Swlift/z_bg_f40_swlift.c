@@ -4,6 +4,8 @@
  * Description: Unused Stone Tower vertically-oscillating platform
  */
 
+// authors to add: petrie, Maide(?)
+
 #include "z_bg_f40_swlift.h"
 
 #define FLAGS (ACTOR_FLAG_10)
@@ -42,8 +44,8 @@ extern InitChainEntry D_8096F540[];
 extern UNK_TYPE D_06003B08;
 extern UNK_TYPE D_06003E80;
 
-extern s32 D_8096F510[];  //= { 0xFF };
-extern s32 D_8096F514[3]; // = { 0xFF, 0xFF, 0xFF };
+extern s32 D_8096F510[4]; //= { 0xFF };
+// extern s32 D_8096F514[3]; // = { 0xFF, 0xFF, 0xFF };
 extern s32 D_8096F5D0[];
 
 void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
@@ -70,38 +72,61 @@ void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
 void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = (BgF40Swlift*)thisx;
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->unk144);
-} 
+}
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_F40_Swlift/BgF40Swlift_Update.s")
+// from petrie : it checks for one of the three slots to be either 0xFF or have its switch off
+// from petrie : if one of those three slots is, then it bobs up and down at height D_8096F5D0[i] with a range of +/- 5
 
-// void BgF40Swlift_Update(Actor* thisx, PlayState* play) {
-//     f32 sp30;
-//     f32 temp_fv1;
-//     s32 temp_s3_2;
-//     s32* temp_s0;
-//     s32 temp_a1;
-//     s32 temp_t4;
-//     s32 temp_v0;
-//     s32* phi_s0;
-//     // s32 phi_s3;
-//     s32 phi_s1;
-//     f32 phi_fv1;
-//     s32 phi_v0;
-//     f32 phi_fv0;
-//     s32 i;
-//     s32 temp;
-//     BgF40Swlift* this = (BgF40Swlift*)thisx;
-//     // phi_s0 = D_8096F514;
-//     // phi_s3 = 1;
-//     phi_s1 = 4;
-    
+#define CLAMP(x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
+
+void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
+    PlayState* play = play2;
+    BgF40Swlift* this = (BgF40Swlift*)thisx;
+    s32 i;
+
+    for (i = 1; i < ARRAY_COUNT(D_8096F510); i++) {
+        if ((D_8096F510[i] == 0xFF) || (Flags_GetSwitch(play, D_8096F510[i]) == 0)) {
+            break;
+        }
+    }
+
+    i--;
+    if (i != this->actor.params) {
+        f32 phi_fv1;
+
+        this->actor.params = -1;
+        phi_fv1 = (((f32)D_8096F5D0[i]) - this->actor.world.pos.y) * 0.1f;
+        if (phi_fv1 > 0.0f) {
+            phi_fv1 = CLAMP(phi_fv1, 0.5f, 15.0f);
+        } else {
+            phi_fv1 = CLAMP(phi_fv1, -15.0f, -0.5f);
+        }
+
+        if ((Math_StepToF(&this->actor.speedXZ, phi_fv1, 1.0f) != 0) && (fabsf(phi_fv1) <= 0.5f)) {
+            if (Math_StepToF(&this->actor.world.pos.y, (f32)D_8096F5D0[i], fabsf(this->actor.speedXZ)) != 0) {
+                this->actor.params = i;
+                this->unk15C = 0x30;
+                this->actor.speedXZ = 0.0f;
+            }
+        } else {
+            this->actor.world.pos.y += this->actor.speedXZ;
+        }
+    } else {
+        if (this->unk15C == 0) {
+            this->unk15C = 0x30;
+        }
+        this->unk15C--;
+        this->actor.world.pos.y =
+            D_8096F5D0[this->actor.params] + (sin_rad(((f32)this->unk15C) * (3.14159265358979323846f / 24.0f)) * 5.0f);
+    }
+}
 
 // for(i = 1; i <= ARRAY_COUNT(D_8096F514); i++){
 //     temp = D_8096F514[i];
 //     if((temp == 0xFF) || (Flags_GetSwitch(play, temp) == 0)){
 //         break;
 //     }
-//     phi_s1 +=4;   
+//     phi_s1 +=4;
 // }
 
 // // loop_1:
@@ -117,51 +142,9 @@ void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
 // //             }
 // //         }
 // //     }
-    
+
 //     i--;
 //     phi_s1-=4;
-//     if (i!= this->actor.params) {
-//         this->actor.params = -1;
-//         temp_s0 = (phi_s1 - 4) + D_8096F5D0;
-//         temp_fv1 = (((f32)(*temp_s0)) - this->actor.world.pos.y) * 0.1f;
-//         if (temp_fv1 > 0.0f) {
-//             if (temp_fv1 < 0.5f) {
-//                 phi_fv1 = 0.5f;
-//             } else if (temp_fv1 > 15.0f) {
-//                 phi_fv1 = 15.0f;
-//             } else {
-//                 phi_fv0 = temp_fv1;
-//             }
-//         } else if (temp_fv1 < (-15.0f)) {
-//             phi_fv0 = -15.0f;
-//         } else if (temp_fv1 > (-0.5f)) {
-//             phi_fv0 = -0.5f;
-//         } else {
-//             phi_fv0 = temp_fv1;
-//         }
-//         phi_fv1 = phi_fv0;
-//         sp30 = phi_fv1;
-//         if ((Math_StepToF(&this->actor.speedXZ, phi_fv1, 1.0f) != 0) && (fabsf(phi_fv1) <= 0.5f)) {
-//             if (Math_StepToF(&this->actor.world.pos.y, (f32)(*temp_s0), fabsf(this->actor.speedXZ)) != 0) {
-//                 this->actor.params = temp_s3_2;
-//                 this->unk15C = 0x30;
-//                 this->actor.speedXZ = 0.0f;
-//             }
-//         } else {
-//             this->actor.world.pos.y += this->actor.speedXZ;
-//         }
-//     } else {
-//         temp_v0 = this->unk15C;
-//         phi_v0 = temp_v0;
-//         if (temp_v0 == 0) {
-//             this->unk15C = 0x30;
-//             phi_v0 = 0x30;
-//         }
-//         temp_t4 = phi_v0 - 1;
-//         this->unk15C = temp_t4;
-//         this->actor.world.pos.y = (sin_rad(((f32)temp_t4) * 0.1308997f) * 5.0f) + ((f32)D_8096F5D0[this->actor.params]);
-//     }
-// }
 
 void BgF40Swlift_Draw(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = THIS;
