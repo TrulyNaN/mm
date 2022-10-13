@@ -4,7 +4,7 @@
  * Description: Unused Stone Tower vertically-oscillating platform
  */
 
-// authors to add: petrie, Maide(?)
+// authors to add: Darkeye
 
 #include "z_bg_f40_swlift.h"
 
@@ -20,7 +20,6 @@ void BgF40Swlift_Draw(Actor* thisx, PlayState* play);
 static s32 D_8096F510[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
 static s32 D_8096F5D0[4];
 
-#if 1
 const ActorInit Bg_F40_Swlift_InitVars = {
     ACTOR_BG_F40_SWLIFT,
     ACTORCAT_BG,
@@ -33,27 +32,20 @@ const ActorInit Bg_F40_Swlift_InitVars = {
     (ActorFunc)BgF40Swlift_Draw,
 };
 
-// static InitChainEntry sInitChain[] = {
-static InitChainEntry D_8096F540[] = {
+static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneScale, 550, ICHAIN_CONTINUE),
     ICHAIN_F32(uncullZoneForward, 5000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-#endif
-
-// extern InitChainEntry D_8096F540[];
-
-extern UNK_TYPE D_06003B08;
-extern UNK_TYPE D_06003E80;
-
-// extern s32 D_8096F510[4]; //= { 0xFF };
+extern Gfx D_06003B08;
+extern CollisionHeader D_06003E80;
 
 void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
     s32 temp_v1;
-    BgF40Swlift* this = (BgF40Swlift*)thisx;
+    BgF40Swlift* this = THIS;
 
-    Actor_ProcessInitChain(&this->actor, D_8096F540);
+    Actor_ProcessInitChain(&this->actor, sInitChain);
     DynaPolyActor_Init((DynaPolyActor*)this, 1);
     temp_v1 = ((s32)this->actor.params >> 8) & 0xFF;
     if ((temp_v1 < 0) || (temp_v1 >= 5)) {
@@ -61,18 +53,18 @@ void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
     } else {
         D_8096F5D0[temp_v1] = (s32)this->actor.world.pos.y;
         D_8096F510[temp_v1] = this->actor.params & 0xFF;
-        if (temp_v1 != 0) {
+        if (temp_v1) {
             Actor_MarkForDeath(&this->actor);
         } else {
-            DynaPolyActor_LoadMesh(play, (DynaPolyActor*)this, (CollisionHeader*)&D_06003E80);
+            DynaPolyActor_LoadMesh(play, (DynaPolyActor*)this, &D_06003E80);
             this->actor.params = 0;
         }
     }
 }
 
 void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
-    BgF40Swlift* this = (BgF40Swlift*)thisx;
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->unk144);
+    BgF40Swlift* this = THIS;
+    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->bgId);
 }
 
 // from petrie : it checks for one of the three slots to be either 0xFF or have its switch off
@@ -82,7 +74,7 @@ void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
 
 void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    BgF40Swlift* this = (BgF40Swlift*)thisx;
+    BgF40Swlift* this = THIS;
     s32 i;
 
     for (i = 1; i < ARRAY_COUNT(D_8096F510); i++) {
@@ -118,36 +110,11 @@ void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
         }
         this->unk15C--;
         this->actor.world.pos.y =
-            D_8096F5D0[this->actor.params] + (sin_rad(((f32)this->unk15C) * (3.14159265358979323846f / 24.0f)) * 5.0f);
+            D_8096F5D0[this->actor.params] + (sin_rad(((f32)this->unk15C) * (M_PI / 24.0f)) * 5.0f);
     }
 }
 
-// for(i = 1; i <= ARRAY_COUNT(D_8096F514); i++){
-//     temp = D_8096F514[i];
-//     if((temp == 0xFF) || (Flags_GetSwitch(play, temp) == 0)){
-//         break;
-//     }
-//     phi_s1 +=4;
-// }
-
-// // loop_1:
-// //     temp_a1 = *phi_s0;
-
-// //     if (temp_a1 != 0xFF) {
-// //         phi_s0++;
-// //         if (Flags_GetSwitch(play, temp_a1) != 0) {
-// //             phi_s3 = phi_s3 + 1;
-// //             phi_s1 += 4;
-// //             if (phi_s3 < 4) {
-// //                 goto loop_1;
-// //             }
-// //         }
-// //     }
-
-//     i--;
-//     phi_s1-=4;
-
 void BgF40Swlift_Draw(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = THIS;
-    Gfx_DrawDListOpa(play, (Gfx*)&D_06003B08);
+    Gfx_DrawDListOpa(play, &D_06003B08); //gStoneTowerUnusedVerticallyOscillatingPlatform?
 }

@@ -7,7 +7,7 @@ struct BgF40Swlift;
 
 typedef struct BgF40Swlift {
     /* 0x000 */ Actor actor;
-    /* 0x144 */ s32 unk144;                         /* inferred */
+    /* 0x144 */ s32 bgId;                         /* inferred */
     /* 0x148 */ char pad148[0x14];                  /* maybe part of unk144[6]? */
     /* 0x15C */ s32 unk15C;                         /* inferred */
 } BgF40Swlift;                                      /* size = 0x160 */
