@@ -7,6 +7,7 @@
 // authors to add: Darkeye
 
 #include "z_bg_f40_swlift.h"
+#include "objects/object_f40_obj/object_f40_obj.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -39,32 +40,31 @@ static InitChainEntry sInitChain[] = {
 };
 
 extern Gfx D_06003B08;
-extern CollisionHeader D_06003E80;
 
 void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
-    s32 temp_v1;
+    s32 index;
     BgF40Swlift* this = THIS;
 
-    Actor_ProcessInitChain(&this->actor, sInitChain);
+    Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
     DynaPolyActor_Init((DynaPolyActor*)this, 1);
-    temp_v1 = ((s32)this->actor.params >> 8) & 0xFF;
-    if ((temp_v1 < 0) || (temp_v1 >= 5)) {
-        Actor_MarkForDeath(&this->actor);
+    index = ((s32)this->dyna.actor.params >> 8) & 0xFF;
+    if ((index < 0) || (index >= 5)) { //! @bug An index greater than 3 will cause an out of bounds array access.
+        Actor_MarkForDeath(&this->dyna.actor);
     } else {
-        D_8096F5D0[temp_v1] = (s32)this->actor.world.pos.y;
-        D_8096F510[temp_v1] = this->actor.params & 0xFF;
-        if (temp_v1) {
-            Actor_MarkForDeath(&this->actor);
+        D_8096F5D0[index] = this->dyna.actor.world.pos.y;
+        D_8096F510[index] = BG_F40_SWLIFT_GET_HEIGHT_INDEX(this);
+        if (index) {
+            Actor_MarkForDeath(&this->dyna.actor);
         } else {
-            DynaPolyActor_LoadMesh(play, (DynaPolyActor*)this, &D_06003E80);
-            this->actor.params = 0;
+            DynaPolyActor_LoadMesh(play, &this->dyna, &gUnusedStoneTowerVerticallyOscillatingPlatformCol);
+            this->dyna.actor.params = 0;
         }
     }
 }
 
 void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = THIS;
-    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->bgId);
+    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
 // from petrie : it checks for one of the three slots to be either 0xFF or have its switch off
@@ -84,37 +84,37 @@ void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
     }
 
     i--;
-    if (i != this->actor.params) {
+    if (i != this->dyna.actor.params) {
         f32 phi_fv1;
 
-        this->actor.params = -1;
-        phi_fv1 = (((f32)D_8096F5D0[i]) - this->actor.world.pos.y) * 0.1f;
+        this->dyna.actor.params = -1;
+        phi_fv1 = (((f32)D_8096F5D0[i]) - this->dyna.actor.world.pos.y) * 0.1f;
         if (phi_fv1 > 0.0f) {
             phi_fv1 = CLAMP(phi_fv1, 0.5f, 15.0f);
         } else {
             phi_fv1 = CLAMP(phi_fv1, -15.0f, -0.5f);
         }
 
-        if ((Math_StepToF(&this->actor.speedXZ, phi_fv1, 1.0f) != 0) && (fabsf(phi_fv1) <= 0.5f)) {
-            if (Math_StepToF(&this->actor.world.pos.y, (f32)D_8096F5D0[i], fabsf(this->actor.speedXZ)) != 0) {
-                this->actor.params = i;
-                this->unk15C = 0x30;
-                this->actor.speedXZ = 0.0f;
+        if ((Math_StepToF(&this->dyna.actor.speedXZ, phi_fv1, 1.0f) != 0) && (fabsf(phi_fv1) <= 0.5f)) {
+            if (Math_StepToF(&this->dyna.actor.world.pos.y, (f32)D_8096F5D0[i], fabsf(this->dyna.actor.speedXZ)) != 0) {
+                this->dyna.actor.params = i;
+                this->timer = 48;
+                this->dyna.actor.speedXZ = 0.0f;
             }
         } else {
-            this->actor.world.pos.y += this->actor.speedXZ;
+            this->dyna.actor.world.pos.y += this->dyna.actor.speedXZ;
         }
     } else {
-        if (this->unk15C == 0) {
-            this->unk15C = 0x30;
+        if (this->timer == 0) {
+            this->timer = 48;
         }
-        this->unk15C--;
-        this->actor.world.pos.y =
-            D_8096F5D0[this->actor.params] + (sin_rad(((f32)this->unk15C) * (M_PI / 24.0f)) * 5.0f);
+        this->timer--;
+        this->dyna.actor.world.pos.y =
+            D_8096F5D0[this->dyna.actor.params] + (sin_rad(((f32)this->timer) * (M_PI / 24.0f)) * 5.0f);
     }
 }
 
 void BgF40Swlift_Draw(Actor* thisx, PlayState* play) {
     BgF40Swlift* this = THIS;
-    Gfx_DrawDListOpa(play, &D_06003B08); //gStoneTowerUnusedVerticallyOscillatingPlatform?
+    Gfx_DrawDListOpa(play, gUnusedStoneTowerVerticallyOscillatingPlatformDL);
 }
