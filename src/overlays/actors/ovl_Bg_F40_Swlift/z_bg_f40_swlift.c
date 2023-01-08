@@ -4,8 +4,6 @@
  * Description: Unused Stone Tower vertically-oscillating platform
  */
 
-// authors to add: Darkeye
-
 #include "z_bg_f40_swlift.h"
 #include "objects/object_f40_obj/object_f40_obj.h"
 
@@ -18,8 +16,8 @@ void BgF40Swlift_Destroy(Actor* thisx, PlayState* play);
 void BgF40Swlift_Update(Actor* thisx, PlayState* play);
 void BgF40Swlift_Draw(Actor* thisx, PlayState* play);
 
-static s32 D_8096F510[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
-static s32 D_8096F5D0[4];
+static s32 sParams[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
+static s32 sHeights[4];
 
 const ActorInit Bg_F40_Swlift_InitVars = {
     ACTOR_BG_F40_SWLIFT,
@@ -39,20 +37,18 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-extern Gfx D_06003B08;
-
 void BgF40Swlift_Init(Actor* thisx, PlayState* play) {
     s32 index;
     BgF40Swlift* this = THIS;
 
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
     DynaPolyActor_Init((DynaPolyActor*)this, 1);
-    index = ((s32)this->dyna.actor.params >> 8) & 0xFF;
+    index = BG_F40_GET_SWITCHFLAG(this);
     if ((index < 0) || (index >= 5)) { //! @bug An index greater than 3 will cause an out of bounds array access.
         Actor_MarkForDeath(&this->dyna.actor);
     } else {
-        D_8096F5D0[index] = this->dyna.actor.world.pos.y;
-        D_8096F510[index] = BG_F40_SWLIFT_GET_HEIGHT_INDEX(this);
+        sHeights[index] = this->dyna.actor.world.pos.y;
+        sParams[index] = BG_F40_SWLIFT_GET_PARAMS(this);
         if (index) {
             Actor_MarkForDeath(&this->dyna.actor);
         } else {
@@ -67,36 +63,31 @@ void BgF40Swlift_Destroy(Actor* thisx, PlayState* play) {
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-// from petrie : it checks for one of the three slots to be either 0xFF or have its switch off
-// from petrie : if one of those three slots is, then it bobs up and down at height D_8096F5D0[i] with a range of +/- 5
-
-#define CLAMP(x, min, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x))
-
 void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
     BgF40Swlift* this = THIS;
     s32 i;
 
-    for (i = 1; i < ARRAY_COUNT(D_8096F510); i++) {
-        if ((D_8096F510[i] == 0xFF) || (Flags_GetSwitch(play, D_8096F510[i]) == 0)) {
+    for (i = 1; i < ARRAY_COUNT(sParams); i++) {
+        if ((sParams[i] == 0xFF) || (Flags_GetSwitch(play, sParams[i]) == 0)) {
             break;
         }
     }
 
     i--;
     if (i != this->dyna.actor.params) {
-        f32 phi_fv1;
+        f32 heightOffset;
 
         this->dyna.actor.params = -1;
-        phi_fv1 = (((f32)D_8096F5D0[i]) - this->dyna.actor.world.pos.y) * 0.1f;
-        if (phi_fv1 > 0.0f) {
-            phi_fv1 = CLAMP(phi_fv1, 0.5f, 15.0f);
+        heightOffset = (((f32)sHeights[i]) - this->dyna.actor.world.pos.y) * 0.1f;
+        if (heightOffset > 0.0f) {
+            heightOffset = CLAMP(heightOffset, 0.5f, 15.0f);
         } else {
-            phi_fv1 = CLAMP(phi_fv1, -15.0f, -0.5f);
+            heightOffset = CLAMP(heightOffset, -15.0f, -0.5f);
         }
 
-        if ((Math_StepToF(&this->dyna.actor.speedXZ, phi_fv1, 1.0f) != 0) && (fabsf(phi_fv1) <= 0.5f)) {
-            if (Math_StepToF(&this->dyna.actor.world.pos.y, (f32)D_8096F5D0[i], fabsf(this->dyna.actor.speedXZ)) != 0) {
+        if ((Math_StepToF(&this->dyna.actor.speedXZ, heightOffset, 1.0f) != 0) && (fabsf(heightOffset) <= 0.5f)) {
+            if (Math_StepToF(&this->dyna.actor.world.pos.y, (f32)sHeights[i], fabsf(this->dyna.actor.speedXZ)) != 0) {
                 this->dyna.actor.params = i;
                 this->timer = 48;
                 this->dyna.actor.speedXZ = 0.0f;
@@ -110,7 +101,7 @@ void BgF40Swlift_Update(Actor* thisx, PlayState* play2) {
         }
         this->timer--;
         this->dyna.actor.world.pos.y =
-            D_8096F5D0[this->dyna.actor.params] + (sin_rad(((f32)this->timer) * (M_PI / 24.0f)) * 5.0f);
+            sHeights[this->dyna.actor.params] + (sin_rad(((f32)this->timer) * (M_PI / 24.0f)) * 5.0f);
     }
 }
 
