@@ -5,6 +5,7 @@
  */
 
 #include "z_bg_dblue_elevator.h"
+//TODO: include object file
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -40,20 +41,53 @@ static InitChainEntry D_80B929EC[] = {
 
 extern InitChainEntry D_80B929EC[];
 
-extern UNK_TYPE D_060002C8;
+void BgDblueElevator_Destroy(Actor* thisx, PlayState* play); /* static */
+void BgDblueElevator_Draw(Actor* thisx, PlayState* play); /* static */
+void BgDblueElevator_Init(Actor *arg0, PlayState *arg1); /* static */
+void BgDblueElevator_Update(Actor* thisx, PlayState* play0);            /* static */
+s32 func_80B922C0(Actor *arg0, PlayState *arg1);       /* static */
+s32 func_80B922FC(Actor *arg0, PlayState *arg1);     /* static */
+void func_80B924DC(Actor *arg0);                    /* static */
+void func_80B924F8(Actor *arg0);                    /* static */
+void func_80B925B8(Actor *arg0);                    /* static */
+void func_80B92644(Actor *arg0);                    /* static */
+void func_80B92660(BgDblueElevator* this, PlayState *arg1);      /* static */
+extern Gfx D_060002C8; //gGreatBayTempleObjectElevatorDL
 extern UNK_TYPE D_060005C4;
+extern UNK_TYPE D_80B92960;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B92964;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B9296C;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929D0;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929D8;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929DE;                                /* unable to generate initializer */
+extern s8* D_80B929E0; //= { 0, 2 };
+extern UNK_TYPE D_80B929E3;                                /* unable to generate initializer */
+extern s8* D_80B929E4; // = { 0, 1, 2, 3, 4, 5 };
+extern UNK_TYPE D_80B929EA;                                /* unable to generate initializer */
+extern InitChainEntry D_80B929EC[];                /* unable to generate initializer */
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B91F20.s")
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B91F74.s")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B922C0.s")
+s32 func_80B922C0(Actor* thisx, PlayState *arg1) {
+    BgDblueElevator* this = THIS;
+
+    if (Flags_GetSwitch(arg1, this->dyna.actor.params & 0x7F)) { //TODO: write flag in header 
+        return 0;
+    }
+    return 1;
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B922FC.s")
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Init.s")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Destroy.s")
+void BgDblueElevator_Destroy(Actor* thisx, PlayState *play) {
+    BgDblueElevator* this = THIS;
+
+    DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B924DC.s")
 
@@ -63,10 +97,23 @@ extern UNK_TYPE D_060005C4;
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B925B8.s")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B92644.s")
+void func_80B92644(Actor *thisx) {
+    BgDblueElevator* this = THIS;
+    
+    this->actionFunc = func_80B92660;
+    this->unk160 = 0.0f;
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B92660.s")
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Update.s")
+void BgDblueElevator_Update(Actor* thisx, PlayState* play) {
+    BgDblueElevator* this = THIS;
+    
+    this->actionFunc(this, play);
+}
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Draw.s")
+void BgDblueElevator_Draw(Actor* thisx, PlayState* play) {
+    BgDblueElevator* this = THIS;
+
+    Gfx_DrawDListOpa(play, &D_060002C8);
+}
