@@ -41,6 +41,7 @@ static InitChainEntry D_80B929EC[] = {
 
 extern InitChainEntry D_80B929EC[];
 
+void func_80B91F20(BgDblueElevator *, PlayState *);
 void BgDblueElevator_Destroy(Actor* thisx, PlayState* play); /* static */
 void BgDblueElevator_Draw(Actor* thisx, PlayState* play); /* static */
 void BgDblueElevator_Init(Actor *arg0, PlayState *arg1); /* static */
@@ -66,7 +67,14 @@ extern s8* D_80B929E4; // = { 0, 1, 2, 3, 4, 5 };
 extern UNK_TYPE D_80B929EA;                                /* unable to generate initializer */
 extern InitChainEntry D_80B929EC[];                /* unable to generate initializer */
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B91F20.s")
+void func_80B91F20(BgDblueElevator* this, PlayState* play) {
+    s32 pad; //probably cast of this or play
+    WaterBox *sp30; 
+    s32 sp2C;
+  
+    this->unk168[3] = WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.z, 
+                                           &this->unk16C, &sp30, &sp2C);
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B91F74.s")
 
@@ -82,6 +90,34 @@ s32 func_80B922C0(Actor* thisx, PlayState *arg1) {
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B922FC.s")
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Init.s")
+// void BgDblueElevator_Init(Actor *thisx, PlayState *arg1) {
+//     s32 sp2C;
+//     s32 sp24;
+//     // void *sp20;
+//     s32 temp_v0;
+//     void *temp_v1;
+//     BgDblueElevator *this = THIS;
+
+//     sp2C = ((s16) this->dyna.actor.params >> 8) & 3; //TODO:macro this.
+//     Actor_ProcessInitChain(&this->dyna.actor, D_80B929EC);
+//     DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS); //dyna_transform_pos was 1 before.
+//     DynaPolyActor_LoadMesh(arg1, &this->dyna, (CollisionHeader *) &D_060005C4);
+//     temp_v1 = (sp2C * 0x1C) + &D_80B92960;
+//     // sp20 = temp_v1; 
+//     temp_v0 = temp_v1->unk4(this, arg1);
+//     if (temp_v0 == 2) {
+//         this->unk168 = -temp_v1->unkD;
+//     } else {
+//         this->unk168 = temp_v1->unkD;
+//     }
+//     // sp24 = temp_v0;
+//     func_80B91F20(this, arg1, temp_v0);
+//     if ((temp_v0 == 0) || (temp_v0 == 3)) {
+//         func_80B924DC(&this->dyna.actor); 
+//     } else{
+//         func_80B92644(&this->dyna.actor);    
+//     }
+// }
 
 void BgDblueElevator_Destroy(Actor* thisx, PlayState *play) {
     BgDblueElevator* this = THIS;
