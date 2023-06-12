@@ -48,7 +48,8 @@ s32 func_80B922C0(Actor *arg0, PlayState *play);       /* static */
 s32 func_80B922FC(Actor *arg0, PlayState *play);     /* static */
 void func_80B924DC(BgDblueElevator* arg0);                    /* static */
 void func_80B924F8(BgDblueElevator *arg0, PlayState* play);                    /* static */
-void func_80B925B8(Actor *arg0);                    /* static */
+void func_80B9257C(BgDblueElevator *arg0);
+void func_80B925B8(BgDblueElevator *arg0, PlayState* play);                    /* static */
 void func_80B92644(Actor *arg0);                    /* static */
 void func_80B92660(BgDblueElevator* this, PlayState *play);      /* static */
 extern Gfx D_060002C8; //gGreatBayTempleObjectElevatorDL
@@ -58,11 +59,11 @@ extern UNK_TYPE D_80B92964;                                /* unable to generate
 extern UNK_TYPE D_80B9296C;                                /* unable to generate initializer */
 extern UNK_TYPE D_80B929D0;                                /* unable to generate initializer */
 extern UNK_TYPE D_80B929D8;                                /* unable to generate initializer */
-extern UNK_TYPE D_80B929DE;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929DE;     //fake?                          /* unable to generate initializer */
 extern s8* D_80B929E0; //= { 0, 2 };
-extern UNK_TYPE D_80B929E3;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929E3;     //fake?                  /* unable to generate initializer */
 extern s8* D_80B929E4; // = { 0, 1, 2, 3, 4, 5 };
-extern UNK_TYPE D_80B929EA;                                /* unable to generate initializer */
+extern UNK_TYPE D_80B929EA;                //fake?                /* unable to generate initializer */
 extern InitChainEntry D_80B929EC[];                /* unable to generate initializer */
 
 void func_80B91F20(BgDblueElevator* this, PlayState* play) {
@@ -144,8 +145,31 @@ void func_80B924DC(BgDblueElevator *arg0) {
 }
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B924F8.s")
+// void func_80B924F8(BgDblueElevator *arg0, PlayState *play) {
+//     s32 temp_v0;
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B9257C.s")
+//     temp_v0 = func_80B922C0((Actor*) arg0, play);//*(&D_80B92964 + ((((s16) arg0->dyna.actor.params >> 8) & 3) * 0x1C))();
+//     if ((temp_v0 == 0) || (temp_v0 == 3)) {
+//         arg0->unk168[1] = 60;
+//     } else {
+//         arg0->unk168[1] -= 1;
+//         if (arg0->unk168[1] <= 0) {
+//             func_80B92644(&arg0->dyna.actor);
+//         }
+//     }
+    
+// }
+
+void func_80B9257C(BgDblueElevator *arg0)
+{
+  s8 *new_var2;
+  s32 new_var;
+  new_var = (arg0->dyna.actor.params >> 8) & 3;
+  new_var2 = (s8*) &D_80B9296C;
+  new_var2 = new_var2 + (new_var * 0x1C);
+  arg0->unk16A = *new_var2;
+  arg0->actionFunc = func_80B925B8;
+}
 
 #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B925B8.s")
 
