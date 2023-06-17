@@ -100,40 +100,37 @@ s32 func_80B922FC(Actor *arg0, PlayState *play) {
     return var_s0;
 }
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Init.s")
+// #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/BgDblueElevator_Init.s")
 
-// void BgDblueElevator_Init(Actor *thisx, PlayState *play)
-// {
-//   s32 sp2C;
-//   void *sp20;
-//   s32 temp_v0;
-//   BgDBlueElevatorStruct1 *temp_v1;
-//   BgDblueElevator *this = (BgDblueElevator *) thisx;
-//   sp2C = (((s16) (this->dyna.actor.params)) >> 8) & 0x3;
-//   Actor_ProcessInitChain(&this->dyna.actor, D_80B929EC);
-//   DynaPolyActor_Init(&this->dyna, 1 << 0);
-//   temp_v1 = (BgDBlueElevatorStruct1 *) ((sp2C * 0x1C) + (&D_80B92960));
-//   DynaPolyActor_LoadMesh(play, &this->dyna, (CollisionHeader *) (&D_060005C4));
-//   temp_v0 = temp_v1->unk4(this, play);
-//   if (temp_v0 == 2)
-//   { 
-//     this->unk168[0] = -temp_v1->unkD;
-//   }
-//   else
-//   {
-//     this->unk168[0] = temp_v1->unkD;
-//   }
-//   func_80B91F20(this, play);
-//   if ((temp_v0 == 0) || (temp_v0 == 3))
-//   {
-//     func_80B924DC(this);
-//   }
-//   else
-//   {
-//     func_80B92644(this);
-//   }
-// }
-
+void BgDblueElevator_Init(Actor *thisx, PlayState *play2)
+{
+  BgDblueElevator *this = (BgDblueElevator *) thisx;
+  PlayState *play = play2;
+  s32 sp2C;
+  BgDBlueElevatorStruct1 *temp_v1;
+  s32 temp_v0;
+  sp2C = (((s16) this->dyna.actor.params) >> 8) & 0x3;
+  Actor_ProcessInitChain(&this->dyna.actor, D_80B929EC);
+  DynaPolyActor_Init(&this->dyna, 1 << 0);
+  temp_v1 = &D_80B92960[sp2C];
+  DynaPolyActor_LoadMesh(play, &this->dyna, (CollisionHeader *) (&D_060005C4));
+  temp_v0 = temp_v1->unk4(this, play);
+ if (temp_v0 == 2) { this->unk168[0] = -temp_v1->unkD;
+  }
+  else
+  {
+    this->unk168[0] = temp_v1->unkD;
+  }
+  func_80B91F20(this, play);
+  if ((temp_v0 == 0) || (temp_v0 == 3))
+  {
+    func_80B924DC(this);
+  }
+  else
+  {
+    func_80B92644(this);
+  }
+}
 
 void BgDblueElevator_Destroy(Actor* thisx, PlayState *play) {
     BgDblueElevator* this = THIS;
