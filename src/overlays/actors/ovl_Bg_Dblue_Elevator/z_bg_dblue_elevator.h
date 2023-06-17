@@ -17,4 +17,15 @@ typedef struct BgDblueElevator {
     /* 0x16C */ f32 unk16C;//used
 } BgDblueElevator; // size = 0x170
 
+struct BgDBlueElevatorStruct1;
+
+typedef s32 (*BgDBlueElevatorStruct1Func)(struct BgDblueElevator*, PlayState*);
+
+typedef struct BgDBlueElevatorStruct1{
+    /* 0x000 */ s32 unk0;
+    /* 0x004 */ BgDBlueElevatorStruct1Func unk4;
+    /* 0x00C */ s8 unkC; //wrong, should be 8, not C.
+    /* 0x00D */ s32 unkD;  
+} BgDBlueElevatorStruct1;
+
 #endif // Z_BG_DBLUE_ELEVATOR_H
