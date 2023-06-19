@@ -193,87 +193,177 @@ void func_80B92644(BgDblueElevator *this) {
     this->unk160 = 0.0f;
 }
 
-#pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B92660.s")
-// void func_80B92660(BgDblueElevator *this, PlayState *play) {
-//     s32 sp5C;
-//     s32 sp58;
-//     f32 sp50;
-//     f32 sp4C;
-//     f32 sp48;
-//     Vec3f sp3C;
-//     BgDBlueElevatorStruct1 *sp30;
-//     BgDBlueElevatorStruct1 *temp_v1;
-//     f32 temp_fv0;
-//     f32 temp_fv0_2;
-//     f32 temp_fv0_3;
-//     f32 var_fa0;
-//     f32 var_fa0_2;
-//     f32 var_fv1;
-//     f32 var_fv1_2;
-//     s32 temp_v0;
+// #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B92660.s")
 
-//     temp_v1 = &D_80B92960[((s16) this->dyna.actor.params >> 8) & 3];
-//     sp30 = temp_v1;
-//     temp_v0 = temp_v1->unk4(this, play);
-//     if ((temp_v0 == 0) || (temp_v0 == 3)) {
-//         sp30 = temp_v1;
-//         sp58 = Math_StepToF(&this->unk160, 0.0f, ( f32) temp_v1->unk14);
-//     } else {
-//         sp58 = 0;
-//         sp30 = temp_v1;
-//         Math_StepToF(&this->unk160, (f32) temp_v1->unk18, (f32) temp_v1->unk10);
+void func_80B92660(BgDblueElevator *this, PlayState *play)
+{
+  
+  
+  BgDBlueElevatorStruct1 *temp_v1;
+  s32 new_var2;
+  s32 temp_v0;
+  
+  
+  f32 var_fa0;
+//   f32 var_fa0_2;
+  s32 sp5C;
+    s32 sp58;
+  f32 var_fv1;
+  
+  Vec3f sp48;
+  Vec3f sp3C;
+  f32 var_fv1_2;
+
+  s32 pad;
+  new_var2 = (this->dyna.actor.params >> 8) & 3;
+  temp_v1 = &D_80B92960[new_var2];
+  temp_v0 = (temp_v1)->unk4(this, play);
+  if ((temp_v0 == 0) || (temp_v0 == 3))
+  {
+    sp58 = Math_StepToF(&this->unk160, 0.0f, temp_v1->unk14);
+  }
+  else
+  { 
+    sp58 = 0;
+    Math_StepToF(&this->unk160, temp_v1->unk18, temp_v1->unk10);
+  }
+  var_fa0 = this->unk168[0] > 0 ? temp_v1->unk8 : -temp_v1->unk8;
+  var_fv1 = this->unk160 <= 1.1f ? 1.1f : this->unk160;
+  sp5C = Math_SmoothStepToF(&this->unk164, var_fa0, 0.4f, var_fv1, 1.0f) < 0.001f ? 1 : 0;
+
+  if (temp_v1->unk0 == 0)
+  {
+    this->dyna.actor.world.pos.y = this->unk164 + this->dyna.actor.home.pos.y;
+    if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->unk16B != 0))
+    {
+      if (this->unk168[0] > 0)
+      {
+        // var_fa0_2 = -10.0f;
+        var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->unk16C) * ((this->dyna.actor.prevPos.y + (-10.0f)) - this->unk16C);
+      }
+      else
+      {
+        // var_fa0_2 = -30.0f;
+        var_fv1_2 = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->unk16C) * ((this->dyna.actor.prevPos.y + (-30.0f)) - this->unk16C);
+      }
+      if (var_fv1_2 <= 0.0f)
+      {
+        func_80B91F74((Actor *) this, play);
+      }
+    }
+  }
+  else
+  {
+    Matrix_RotateYS(this->dyna.actor.shape.rot.y, MTXMODE_NEW);
+    sp48.x = this->unk164;
+    sp48.y = 0.0f;
+    sp48.z = 0.0f;
+    Matrix_MultVec3f(&sp48, &sp3C);
+    Math_Vec3f_Sum(&this->dyna.actor.home.pos, &sp3C, &this->dyna.actor.world.pos);
+  }
+  if (sp58 != 0)
+  {
+    func_80B924DC(this);
+    return;
+  }
+  if (sp5C != 0)
+  {
+    this->unk168[0] = -this->unk168[0];
+    func_80B9257C(this);
+  }
+}
+
+// void func_80B92660(BgDblueElevator *this, PlayState *play)
+// {
+//   s32 sp5C;
+//   Vec3f sp3C;
+// //   BgDBlueElevatorStruct1 *sp30;
+//   BgDBlueElevatorStruct1 *temp_v1;
+//   s32 new_var2;
+//   s32 sp58;
+//   Vec3f sp48;
+//   f32 var_fa0;
+//   f32 var_fa0_2;
+//   f32 var_fv1;
+//   f32 var_fv1_2;
+//   s32 temp_v0;
+//   new_var2 = (this->dyna.actor.params >> 8) & 3;
+//   temp_v1 = &D_80B92960[new_var2];
+//   temp_v0 = temp_v1->unk4(this, play);
+//   if ((temp_v0 == 0) || (temp_v0 == 3))
+//   {
+//     sp58 = Math_StepToF(&this->unk160, 0.0f, temp_v1->unk14);
+//   }
+//   else
+//   {
+//     sp58 = 0;
+//     Math_StepToF(&this->unk160, temp_v1->unk18, temp_v1->unk10);
+//   }
+//   if (this->unk168[0] > 0)
+//   {
+//     var_fa0 = temp_v1->unk8;
+//   }
+//   else
+//   {
+//     var_fa0 = -temp_v1->unk8;
+//   }
+//   if (this->unk160 <= 1.1f)
+//   {
+//     var_fv1 = 1.1f;
+//   }
+//   else
+//   {
+//     var_fv1 = this->unk160;
+//   }
+//   if (Math_SmoothStepToF(&this->unk164, var_fa0, 0.4f, var_fv1, 1.0f) < 0.001f)
+//   {
+//     sp5C = 1;
+//   }
+//   else
+//   {
+//     sp5C = 0;
+//   }
+//   if (temp_v1->unk0 == 0)
+//   {
+//     this->dyna.actor.world.pos.y = this->unk164 + this->dyna.actor.home.pos.y;
+//     if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->unk16B != 0))
+//     {
+//       if (this->unk168[0] > 0)
+//       {
+//         // var_fa0_2 = -10.0f;
+//         var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->unk16C) * ((this->dyna.actor.prevPos.y + (-10.0f)) - this->unk16C);
+//       }
+//       else
+//       {
+//         // var_fa0_2 = -30.0f;
+//         var_fv1_2 = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->unk16C) * ((this->dyna.actor.prevPos.y + (-30.0f)) - this->unk16C);
+//       }
+//       if (var_fv1_2 <= 0.0f)
+//       {
+//         func_80B91F74((Actor *) this, play);
+//       }
 //     }
-//     if (this->unk168[0] > 0) {
-//         var_fa0 = temp_v1->unk8;
-//     } else {
-//         var_fa0 = -temp_v1->unk8;
-//     }
-//     temp_fv0 = this->unk160;
-//     if (temp_fv0 <= 1.1f) {
-//         var_fv1 = 1.1f;
-//     } else {
-//         var_fv1 = temp_fv0;
-//     }
-//     sp30 = temp_v1;
-//     if (Math_SmoothStepToF(&this->unk164, var_fa0, 0.4f, var_fv1, 1.0f) < 0.001f) {
-//         sp5C = 1;
-//     } else {
-//         sp5C = 0;
-//     }
-//     if (temp_v1->unk0 == 0) {
-//         this->dyna.actor.world.pos.y = this->unk164 + this->dyna.actor.home.pos.y;
-//         if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->unk16B != 0)) {
-//             if (this->unk168[0] > 0) {
-//                 var_fa0_2 = -10.0f;
-//                 temp_fv0_2 = this->unk16C;
-//                 var_fv1_2 = ((this->dyna.actor.world.pos.y + -10.0f) - temp_fv0_2) * ((this->dyna.actor.prevPos.y + -10.0f) - temp_fv0_2);
-//             } else {
-//                 var_fa0_2 = -30.0f;
-//                 temp_fv0_3 = this->unk16C;
-//                 var_fv1_2 = ((this->dyna.actor.world.pos.y + -30.0f) - temp_fv0_3) * ((this->dyna.actor.prevPos.y + -30.0f) - temp_fv0_3);
-//             }
-//             if (var_fv1_2 <= 0.0f) {
-//                 func_80B91F74((Actor*) this, play);
-//             }
-//         }
-//     } else {
-//         Matrix_RotateYS(this->dyna.actor.shape.rot.y, MTXMODE_NEW);
-//         sp48 = this->unk164;
-//         sp4C = 0.0f;
-//         sp50 = 0.0f;
-//         Matrix_MultVec3f((Vec3f *) &sp48, &sp3C);
-//         Math_Vec3f_Sum(&this->dyna.actor.home.pos, &sp3C, &this->dyna.actor.world.pos);
-//     }
-//     if (sp58 != 0) {
-//         func_80B924DC(this);
-//         return;
-//     }
-//     if (sp5C != 0) {
-//         this->unk168[0] = -this->unk168[0];
-//         func_80B9257C(this);
-//     }
+//   }
+//   else
+//   {
+//     Matrix_RotateYS(this->dyna.actor.shape.rot.y, MTXMODE_NEW);
+//     sp48.x = this->unk164;
+//     sp48.y = 0.0f;
+//     sp48.z = 0.0f;
+//     Matrix_MultVec3f((&sp48), &sp3C);
+//     Math_Vec3f_Sum(&this->dyna.actor.home.pos, &sp3C, &this->dyna.actor.world.pos);
+//   }
+//   if (sp58 != 0)
+//   {
+//     func_80B924DC(this);
+//     return;
+//   }
+//   if (sp5C != 0)
+//   {
+//     this->unk168[0] = -this->unk168[0];
+//     func_80B9257C(this);
+//   }
 // }
-
 
 void BgDblueElevator_Update(Actor* thisx, PlayState* play) {
     BgDblueElevator* this = THIS;
