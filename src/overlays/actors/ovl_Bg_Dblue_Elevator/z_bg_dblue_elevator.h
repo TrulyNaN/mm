@@ -34,12 +34,4 @@ typedef struct BgDBlueElevatorStruct1
   f32 unk18;
 } BgDBlueElevatorStruct1;
 
-struct BgDblueElevatorStruct2;
-
-typedef struct BgDblueElevatorStruct2
-{
-  s16 unk0;
-  s16 unk2;
-} BgDblueElevatorStruct2;
-
 #endif // Z_BG_DBLUE_ELEVATOR_H

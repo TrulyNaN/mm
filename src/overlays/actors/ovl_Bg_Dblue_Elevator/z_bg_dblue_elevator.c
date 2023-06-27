@@ -4,6 +4,8 @@
  * Description: Great Bay Temple - Elevator
  */
 
+//authors : anon, isghf, maide, petrie
+
 #include "z_bg_dblue_elevator.h"
 //TODO: include object file
 
@@ -58,13 +60,13 @@ extern UNK_TYPE D_060005C4;
 extern BgDBlueElevatorStruct1 D_80B92960[4];                                /* unable to generate initializer */
 // extern UNK_TYPE D_80B92964;                                /* unable to generate initializer */
 // extern UNK_TYPE D_80B9296C;                                /* unable to generate initializer */
-extern BgDblueElevatorStruct2 D_80B929D0[2];                                /* unable to generate initializer */
-extern BgDblueElevatorStruct2 D_80B929D8[2];                                /* unable to generate initializer */
-extern UNK_TYPE D_80B929DE;     //fake?                          /* unable to generate initializer */
+extern s16 D_80B929D0[4];                                /* unable to generate initializer */
+extern s16 D_80B929D8[4];                                /* unable to generate initializer */
+extern s32 D_80B929DE;     //fake?                          /* unable to generate initializer */
 extern s8 D_80B929E0[4]; //= { 0, 2 };
 // extern UNK_TYPE D_80B929E3;     //fake?                  /* unable to generate initializer */
 extern s8 D_80B929E4[6]; // = { 0, 1, 2, 3, 4, 5 };
-extern s8 D_80B929EA[2];                //fake?                /* unable to generate initializer */
+// extern s8 D_80B929EA[2];                //fake?                /* unable to generate initializer */
 extern InitChainEntry D_80B929EC[];                /* unable to generate initializer */
 
 void func_80B91F20(BgDblueElevator* this, PlayState* play) {
@@ -76,60 +78,49 @@ void func_80B91F20(BgDblueElevator* this, PlayState* play) {
                                            &this->unk16C, &sp30, &sp2C);
 }
 
-// #pragma GLOBAL_ASM("asm/non_matchings/overlays/ovl_Bg_Dblue_Elevator/func_80B91F74.s")
-// extern ? D_80B929DE;
-// extern ? D_80B929E3;
-// extern ? D_80B929EA;
-
-void func_80B91F74(BgDblueElevator* thisx, PlayState* play2)
+void func_80B91F74(BgDblueElevator* arg0, PlayState* arg1)
 {
-  BgDblueElevator *arg0 = THIS;
-  PlayState* arg1 = play2;
-  Vec3f spA4;
-  Vec3f spB0;
-  BgDblueElevatorStruct2 *var_s7;
-  BgDblueElevatorStruct2 *var_s6;
-  f32 sp98;
+  // BgDblueElevator *arg0 = THIS;
   s32 i;
+  Vec3f spB0;
+  Vec3f spA4;
+  
   s32 j;
-  f32 temp_fs5;
-  f32 temp_fs3;
-  f32 temp_fv0_2;
+  f32 d1; 
+  f32 d2;
+  f32 v1;
+  f32 v2;
   f32 var_fs0;
-  s32 temp_v1;
-  s32 temp_v0;
-  // if (!temp_v1) {}
- Matrix_Push(); 
- Matrix_RotateYS(arg0->dyna.actor.shape.rot.y, MTXMODE_NEW);
-  var_s6 = D_80B929D8;
-  // if (0) { }
-  var_s7 = D_80B929D0;
-  do
+  s32 rn;
+  
+  Matrix_Push(); 
+  Matrix_RotateYS(arg0->dyna.actor.shape.rot.y, MTXMODE_NEW);
+
+  for(i = 0; i < 3; i++)
   {
-    temp_v1 = var_s6->unk0;
-    temp_v0 = var_s7->unk0;
-    temp_fs5 = var_s7->unk2 - temp_v0;//keep
-    sp98 = var_s6->unk2 - temp_v1;
-    temp_fs3 = temp_v0;
+    v1 = D_80B929D0[i];
+    v2 = D_80B929D8[i];
+    d1 = D_80B929D0[i+1] - D_80B929D0[i];//keep
+    d2 = D_80B929D8[i+1] - D_80B929D8[i];
+    
     for (j = 0; j < 7; j++)
     {
-      spB0.x = ((j * temp_fs5) * (1.0f / 7.0f)) + temp_fs3;
+      spB0.x = (( d1 * j) * (1.0f / 7.0f)) + v1;
       spB0.y = arg0->unk16C;
- 
-    temp_fs3 = temp_v1; 
-    spB0.z = ((j * sp98) * (1.0f / 7.0f)) + temp_fs3; 
-    spB0.x += (Rand_ZeroOne() - 0.5f) * 20.0f; 
-    spB0.z += (Rand_ZeroOne() - 0.5f) * 20.0f; 
-    Matrix_MultVec3f(&spB0, &spA4); 
-    spA4.x += arg0->dyna.actor.world.pos.x; 
-    spA4.z += arg0->dyna.actor.world.pos.z; 
-    EffectSsGSplash_Spawn(arg1, &spA4, NULL, NULL, 0, (s32) ( ((Rand_ZeroOne() * 400.0f) + 210.0f)));
+      spB0.z = ((d2 * j) * (1.0f / 7.0f)) + v2; 
+
+      spB0.x += (Rand_ZeroOne() - 0.5f) * 20.0f; 
+      spB0.z += (Rand_ZeroOne() - 0.5f) * 20.0f; 
+      Matrix_MultVec3f(&spB0, &spA4); 
+      spA4.x += arg0->dyna.actor.world.pos.x; 
+      spA4.z += arg0->dyna.actor.world.pos.z; 
+      EffectSsGSplash_Spawn(arg1, &spA4, NULL, NULL, 0,  (Rand_ZeroOne() * 400.0f) + 210.0f);
     }
 
-    var_s6++;
-    var_s7++;
+    // var_s6++;
+    // var_s7++;
   }
-  while (((u32) var_s6) < ((u32) (&D_80B929DE)));
+  // while (((u32) var_s6) < ((u32) (&D_80B929DE)));
 
   for (i = 0; i < 3; i++)//4?
   {
@@ -141,22 +132,24 @@ void func_80B91F74(BgDblueElevator* thisx, PlayState* play2)
 
   for (i = 0; i < 6; i++)
   {
-    temp_fv0_2 = Rand_ZeroOne();
-    var_fs0 = 1.0f - (temp_fv0_2 * temp_fv0_2);
-    if ((s32) Rand_Next() > 0)
+    var_fs0 = Rand_ZeroOne();
+    var_fs0 = 1.0f - (var_fs0 * var_fs0);
+    rn = Rand_Next();
+    if (rn > 0)
     {
       var_fs0 = -var_fs0;
     }
     spB0.x = (var_fs0 * 100.0f) + arg0->dyna.actor.world.pos.x;
     spB0.y = arg0->unk16C;
-    temp_fv0_2 = Rand_ZeroOne();
-    var_fs0 = 1.0f - (temp_fv0_2 * temp_fv0_2);
-    if ((s32) Rand_Next() > 0)
+    var_fs0 = Rand_ZeroOne();
+    var_fs0 = 1.0f - (var_fs0 * var_fs0);
+    rn = Rand_Next();
+    if (rn > 0)
     {
       var_fs0 = -var_fs0;
     }
     spB0.z = (var_fs0 * 100.0f) + arg0->dyna.actor.world.pos.z;
-    EffectSsGRipple_Spawn(arg1, &spB0, 0x190, 0x320, (s16) D_80B929E4[i]);
+    EffectSsGRipple_Spawn(arg1, &spB0, 0x190, 0x320, D_80B929E4[i]);
   }
   Matrix_Pop();
 }
