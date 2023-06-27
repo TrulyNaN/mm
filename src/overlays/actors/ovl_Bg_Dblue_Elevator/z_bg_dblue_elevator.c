@@ -63,7 +63,7 @@ extern BgDblueElevatorStruct2 D_80B929D8[2];                                /* u
 extern UNK_TYPE D_80B929DE;     //fake?                          /* unable to generate initializer */
 extern s8 D_80B929E0[4]; //= { 0, 2 };
 // extern UNK_TYPE D_80B929E3;     //fake?                  /* unable to generate initializer */
-extern s8 D_80B929E4[16]; // = { 0, 1, 2, 3, 4, 5 };
+extern s8 D_80B929E4[6]; // = { 0, 1, 2, 3, 4, 5 };
 extern s8 D_80B929EA[2];                //fake?                /* unable to generate initializer */
 extern InitChainEntry D_80B929EC[];                /* unable to generate initializer */
 
@@ -87,14 +87,14 @@ void func_80B91F74(BgDblueElevator *arg0, PlayState *arg1)
   Vec3f spA4;
   BgDblueElevatorStruct2 *s7;
   BgDblueElevatorStruct2 *s6;
-  s32 new_var;
+  // s32 new_var;
   f32 sp98;
   s32 i_s6;
-  f32 temp_fs3;
   f32 temp_fs5;
   f32 temp_fv0;
+  f32 temp_fs3;
   f32 temp_fv0_2;
-  BgDblueElevator *new_var2;
+  BgDblueElevator *new_var2 = arg0; 
   f32 temp_fv0_3;
   f32 var_fs0;
   f32 var_fs0_2;
@@ -104,6 +104,7 @@ void func_80B91F74(BgDblueElevator *arg0, PlayState *arg1)
  Matrix_Push(); 
  Matrix_RotateYS(arg0->dyna.actor.shape.rot.y, MTXMODE_NEW);
   s6 = D_80B929D8;
+  if (0) { }
   s7 = D_80B929D0;
   do
   {
@@ -117,8 +118,15 @@ void func_80B91F74(BgDblueElevator *arg0, PlayState *arg1)
       temp_fv0 = (f32) var_s0;
       spB0.x = ((temp_fv0 * temp_fs5) * (1.0f / 7.0f)) + temp_fs3;
       spB0.y = arg0->unk16C;
- new_var2 = arg0; 
- temp_fs3 = (f32) temp_v1; spB0.z = ((temp_fv0 * sp98) * (1.0f / 7.0f)) + temp_fs3; spB0.x += (Rand_ZeroOne() - 0.5f) * 20.0f; spB0.z += (Rand_ZeroOne() - 0.5f) * 20.0f; Matrix_MultVec3f(&spB0, &spA4); spA4.x = spA4.x + new_var2->dyna.actor.world.pos.x; spA4.z += new_var2->dyna.actor.world.pos.z; EffectSsGSplash_Spawn(arg1, &spA4, NULL, NULL, (s16) 0, (s16) ((s32) ((Rand_ZeroOne() * 400.0f) + 210.0f)));
+ 
+    temp_fs3 = (f32) temp_v1; 
+    spB0.z = ((temp_fv0 * sp98) * (1.0f / 7.0f)) + temp_fs3; 
+    spB0.x += (Rand_ZeroOne() - 0.5f) * 20.0f; 
+    spB0.z += (Rand_ZeroOne() - 0.5f) * 20.0f; 
+    Matrix_MultVec3f(&spB0, &spA4); 
+    spA4.x += new_var2->dyna.actor.world.pos.x; 
+    spA4.z += new_var2->dyna.actor.world.pos.z; 
+    EffectSsGSplash_Spawn(arg1, &spA4, NULL, NULL, (s16) 0, (s16) ((s32) ((Rand_ZeroOne() * 400.0f) + 210.0f)));
     }
 
     s6++;
@@ -137,7 +145,7 @@ void func_80B91F74(BgDblueElevator *arg0, PlayState *arg1)
   {
     temp_fv0_2 = Rand_ZeroOne();
     var_fs0 = 1.0f - (temp_fv0_2 * temp_fv0_2);
-    if (Rand_Next() > 0)
+    if ((s32) Rand_Next() > 0)
     {
       var_fs0 = -var_fs0;
     }
@@ -145,14 +153,14 @@ void func_80B91F74(BgDblueElevator *arg0, PlayState *arg1)
     spB0.y = arg0->unk16C;
     temp_fv0_3 = Rand_ZeroOne();
     var_fs0_2 = 1.0f - (temp_fv0_3 * temp_fv0_3);
-    if (Rand_Next() > 0)
+    if ((s32) Rand_Next() > 0)
     {
       var_fs0_2 = -var_fs0_2;
     }
     spB0.z = (var_fs0_2 * 100.0f) + arg0->dyna.actor.world.pos.z;
     EffectSsGRipple_Spawn(arg1, &spB0, 0x190, 0x320, (s16) D_80B929E4[i_s6]);
   }
-
+  Matrix_Pop();
 }
 
 
