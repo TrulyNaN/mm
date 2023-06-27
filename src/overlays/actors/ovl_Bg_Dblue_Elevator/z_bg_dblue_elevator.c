@@ -5,6 +5,7 @@
  */
 
 #include "z_bg_dblue_elevator.h"
+#include "objects/object_dblue_object/object_dblue_object.h"
 // TODO: include object file
 
 #define FLAGS (ACTOR_FLAG_10)
@@ -28,7 +29,6 @@ void func_80B925B8(BgDblueElevator* arg0, PlayState* play); /* static */
 void func_80B92644(BgDblueElevator* this);                  /* static */
 void func_80B92660(BgDblueElevator* this, PlayState* play); /* static */
 
-#if 0
 ActorInit Bg_Dblue_Elevator_InitVars = {
     ACTOR_BG_DBLUE_ELEVATOR,
     ACTORCAT_BG,
@@ -40,32 +40,6 @@ ActorInit Bg_Dblue_Elevator_InitVars = {
     (ActorFunc)BgDblueElevator_Update,
     (ActorFunc)BgDblueElevator_Draw,
 };
-
-// static InitChainEntry sInitChain[] = {
-static InitChainEntry D_80B929EC[] = {
-    ICHAIN_F32(uncullZoneForward, 4000, ICHAIN_CONTINUE),
-    ICHAIN_F32(uncullZoneScale, 250, ICHAIN_CONTINUE),
-    ICHAIN_F32(uncullZoneDownward, 250, ICHAIN_CONTINUE),
-    ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
-};
-
-#endif
-
-ActorInit Bg_Dblue_Elevator_InitVars = {
-    ACTOR_BG_DBLUE_ELEVATOR,
-    ACTORCAT_BG,
-    FLAGS,
-    OBJECT_DBLUE_OBJECT,
-    sizeof(BgDblueElevator),
-    (ActorFunc)BgDblueElevator_Init,
-    (ActorFunc)BgDblueElevator_Destroy,
-    (ActorFunc)BgDblueElevator_Update,
-    (ActorFunc)BgDblueElevator_Draw,
-};
-extern Gfx D_060002C8;                                      // gGreatBayTempleObjectElevatorDL
-extern CollisionHeader D_060005C4;
-// static InitChainEntry sInitChain[] = {
-
 
 static BgDBlueElevatorStruct1 D_80B92960[4] = {
     {
@@ -124,60 +98,6 @@ static InitChainEntry D_80B929EC[] = {
     ICHAIN_F32(uncullZoneDownward, 250, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
-
-/*  D_80B92960[4] = {
-    {
-        0,
-        ((s32 (*)(BgDblueElevator *, PlayState *)) func_80B922C0),
-        320.0f,
-        0x1E,
-        1,
-        { 0, 0 },
-        1.0f,
-        0.1f,
-        6.0f,
-    },
-    {
-        1,
-        ((s32 (*)(BgDblueElevator *, PlayState *)) func_80B922C0),
-        195.0f,
-        0x1E,
-        1,
-        { 0, 0 },
-        1.0f,
-        0.1f,
-        5.0f,
-    },
-    {
-        0,
-        ((s32 (*)(BgDblueElevator *, PlayState *)) func_80B922FC),
-        280.0f,
-        0x1E,
-        1,
-        { 0, 0 },
-        1.0f,
-        0.1f,
-        6.0f,
-    },
-    {
-        0,
-        ((s32 (*)(BgDblueElevator *, PlayState *)) func_80B922FC),
-        280.0f,
-        0x1E,
-        -1,
-        { 0, 0 },
-        1.0f,
-        0.1f,
-        6.0f,
-    },
-}; */
-// extern BgDBlueElevatorStruct1 D_80B92960[4]; 
-// extern s16 D_80B929D0[4]; //{ -0x5A, -0x5A, 0x5A, 0x5A }
-// extern s16 D_80B929D8[4]; // s16 D_80B929D8[4] = { -0x64, 0x5A, 0x5A0, -0x64 }; 
-// extern s8 D_80B929E0[4]; //= { 0, 2 };
-// extern s8 D_80B929E4[6]; // = { 0, 1, 2, 3, 4, 5 };
-
-// extern InitChainEntry D_80B929EC[]; /* unable to generate initializer */
 
 void func_80B91F20(BgDblueElevator* this, PlayState* play) {
     s32 pad; // probably cast of this or play
@@ -288,7 +208,7 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     Actor_ProcessInitChain(&this->dyna.actor, D_80B929EC);
     DynaPolyActor_Init(&this->dyna, 1 << 0);
     temp_v1 = &D_80B92960[sp2C];
-    DynaPolyActor_LoadMesh(play, &this->dyna, (&D_060005C4));
+    DynaPolyActor_LoadMesh(play, &this->dyna, &gGreatBayTempleObjectElevatorCol);
     temp_v0 = temp_v1->unk4(this, play);
     if (temp_v0 == 2) {
         this->unk168[0] = -temp_v1->unkD;
@@ -433,5 +353,5 @@ void BgDblueElevator_Update(Actor* thisx, PlayState* play) {
 void BgDblueElevator_Draw(Actor* thisx, PlayState* play) {
     BgDblueElevator* this = THIS;
 
-    Gfx_DrawDListOpa(play, &D_060002C8);
+    Gfx_DrawDListOpa(play, gGreatBayTempleObjectElevatorDL);
 }

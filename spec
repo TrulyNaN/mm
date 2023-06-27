@@ -4034,7 +4034,6 @@ beginseg
     name "ovl_Bg_Dblue_Elevator"
     compress
     include "build/src/overlays/actors/ovl_Bg_Dblue_Elevator/z_bg_dblue_elevator.o"
-    // include "build/data/ovl_Bg_Dblue_Elevator/ovl_Bg_Dblue_Elevator.data.o"
     include "build/data/ovl_Bg_Dblue_Elevator/ovl_Bg_Dblue_Elevator.reloc.o"
 endseg
 
