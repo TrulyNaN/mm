@@ -29,9 +29,10 @@ typedef struct BgDBlueElevatorStruct1
   f32 unk8;
   s8 unkC;
   s8 unkD;
+  s8 pad_E[2];
   f32 unk10;
   f32 unk14;
   f32 unk18;
-} BgDBlueElevatorStruct1;
+} BgDBlueElevatorStruct1; // size = 0x1C
 
 #endif // Z_BG_DBLUE_ELEVATOR_H
