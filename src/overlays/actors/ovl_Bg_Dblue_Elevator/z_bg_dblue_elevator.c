@@ -6,13 +6,12 @@
 
 #include "z_bg_dblue_elevator.h"
 #include "objects/object_dblue_object/object_dblue_object.h"
-// TODO: include object file
 
 #define FLAGS (ACTOR_FLAG_10)
 
 #define THIS ((BgDblueElevator*)thisx)
 
-void func_80B91F74(BgDblueElevator* arg0, PlayState* arg1);
+void BgDblueElevator_SpawnRipple(BgDblueElevator* arg0, PlayState* arg1);
 void func_80B91F20(BgDblueElevator*, PlayState*);
 s32 func_80B922C0(Actor* thisx, PlayState* play);            /* static */
 
@@ -40,7 +39,7 @@ ActorInit Bg_Dblue_Elevator_InitVars = {
     (ActorFunc)BgDblueElevator_Update,
     (ActorFunc)BgDblueElevator_Draw,
 };
-
+//TODO : tell which elevator is which in this struct.
 static BgDBlueElevatorStruct1 D_80B92960[4] = {
     {
         0,
@@ -87,8 +86,8 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
         6.0f,
     },
 }; 
-static s16 D_80B929D0[4] = { -0x5A, -0x5A, 0x5A, 0x5A };
-static s16 D_80B929D8[4] = { -0x64, 0x5A, 0x5A, -0x64 }; 
+static s16 D_80B929D0[4] = { -90, -90, 90, 90 };
+static s16 D_80B929D8[4] = { -100, 90, 90, -100 }; 
 static s8 D_80B929E0[4] = { 0, 2, 4, 0 };
 static s8 D_80B929E4[6] = { 0, 1, 2, 3, 4, 5 };
 
@@ -108,7 +107,7 @@ void func_80B91F20(BgDblueElevator* this, PlayState* play2) {
                                            this->dyna.actor.world.pos.z, &this->unk16C, &waterBox, &bgId);
 }
 
-void func_80B91F74(BgDblueElevator* this, PlayState* play) {
+void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) {
     s32 i;
     Vec3f ripplePos;
     Vec3f splashPos;
@@ -176,20 +175,21 @@ void func_80B91F74(BgDblueElevator* this, PlayState* play) {
 s32 func_80B922C0(Actor* thisx, PlayState* play) {//some boolean? no since other Struct1 function can return 2 and 3.
     BgDblueElevator* this = THIS;
 
-    if (Flags_GetSwitch(play, this->dyna.actor.params & 0x7F)) { // TODO: write flag in header
+    if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 0))) {
         return 0;
-    }
+    } 
     return 1;
 }
 
-s32 func_80B922FC(Actor* this, PlayState* play) {//counts something?
+s32 func_80B922FC(Actor* this, PlayState* play) {
+//counts something? finds which elevator type is used? //looks like ObjMakeoshihiki_GetChildSpawnPointIndex(
     s32 var_s0 = 0;
 
-    if (!Flags_GetSwitch(play, this->params & 0x7F)) {
+    if (!Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 0))) {
         var_s0 = 1;
     }
-    if (Flags_GetSwitch(play, (this->params + 1) & 0x7F) && Flags_GetSwitch(play, (this->params + 2) & 0x7F) &&
-        Flags_GetSwitch(play, (this->params + 3) & 0x7F)) {
+    if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 1)) && Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 2)) &&
+        Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 3))) {
         var_s0 += 2;
     }
     return var_s0;
@@ -199,18 +199,19 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     BgDblueElevator* this = THIS;
     PlayState* play = play2;
     s32 index;
-    BgDBlueElevatorStruct1* temp_v1;
+    BgDBlueElevatorStruct1* ptr;
     s32 temp_v0;
-    index = ((this->dyna.actor.params) >> 8) & 0x3;
+    index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
+    
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
     DynaPolyActor_Init(&this->dyna, 1); //run symbol scripts
-    temp_v1 = &D_80B92960[index];
+    ptr = &D_80B92960[index];
     DynaPolyActor_LoadMesh(play, &this->dyna, &gGreatBayTempleObjectElevatorCol);
-    temp_v0 = temp_v1->unk4(this, play);
+    temp_v0 = ptr->unk4(this, play);
     if (temp_v0 == 2) {
-        this->unk168 = -temp_v1->unkD;
-    } else {
-        this->unk168 = temp_v1->unkD;
+        this->direction = -ptr->initialDirection;
+    } else { 
+        this->direction = ptr->initialDirection;
     }
     func_80B91F20(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
@@ -227,7 +228,7 @@ void BgDblueElevator_Destroy(Actor* thisx, PlayState* play) {
 }
 
 void func_80B924DC(BgDblueElevator* this) {
-    this->unk169 = 60;
+    this->timer = 60;
     this->actionFunc = func_80B924F8;
 }
 
@@ -237,10 +238,10 @@ void func_80B924F8(BgDblueElevator* this, PlayState* play) {
 
     temp_v0 = (&D_80B92960[index])->unk4(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
-        this->unk169 = 60;
+        this->timer = 60;
     } else {
-        this->unk169 -= 1;
-        if (this->unk169 <= 0) {
+        this->timer -= 1;
+        if (this->timer <= 0) {
             func_80B92644(this);
         }
     }
@@ -251,7 +252,7 @@ void func_80B9257C(BgDblueElevator* this) { //weird.
     s32 new_var;
 
     new_var = (this->dyna.actor.params >> 8) & 3; // would % 4 work too instead of & 3?
-    new_var2 = &(D_80B92960[0].unkC)+(new_var * 0x1C);
+    new_var2 = &(D_80B92960[0].unkC)+(new_var * 0x1C); //rewrite
     this->unk16A = *new_var2;
     this->actionFunc = func_80B925B8;
 }
@@ -278,7 +279,7 @@ void func_80B92644(BgDblueElevator* this) {
     this->unk160 = 0.0f;
 }
 
-void func_80B92660(BgDblueElevator* this, PlayState* play) {
+void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement action func?
     BgDBlueElevatorStruct1* temp_v1;
     s32 index;
     s32 temp_v0;
@@ -303,14 +304,14 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) {
         Math_StepToF(&this->unk160, temp_v1->unk18, temp_v1->unk10);
     }
 
-    if(this->unk168 > 0){
+    if(this->direction > 0){
         var_fa0 = temp_v1->unk8;
     } 
     else {
         var_fa0 = -temp_v1->unk8;
     }
 
-    //makes sure var_fv1 at least 1.1.
+    //makes sure var_fv1 stays at least 1.1 when unk160 is copied to it.
     if(this->unk160 <= 1.1f){
         var_fv1 = 1.1f;
     } 
@@ -318,17 +319,17 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) {
         var_fv1 = this->unk160;
     }
 
-    if(Math_SmoothStepToF(&this->unk164, var_fa0, 0.4f, var_fv1, 1.0f) < 0.001f){
+    if(Math_SmoothStepToF(&this->speed, var_fa0, 0.4f, var_fv1, 1.0f) < 0.001f){//try to condense
         sp5C = true;
     } 
     else {
         sp5C = false;
     }
 
-    if (temp_v1->unk0 == 0) {
-        this->dyna.actor.world.pos.y = this->unk164 + this->dyna.actor.home.pos.y;
+    if (temp_v1->unk0 == 0) { //vertical
+        this->dyna.actor.world.pos.y = this->speed + this->dyna.actor.home.pos.y;
         if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->unk16B != 0)) {
-            if (this->unk168 > 0) {
+            if (this->direction > 0) {
                 var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->unk16C) *
                             ((this->dyna.actor.prevPos.y + (-10.0f)) - this->unk16C);
             } else {
@@ -336,12 +337,12 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) {
                             ((this->dyna.actor.prevPos.y + (-30.0f)) - this->unk16C);
             }
             if (var_fv1_2 <= 0.0f) {
-                func_80B91F74(this, play);
+                BgDblueElevator_SpawnRipple(this, play);
             }
         }
-    } else {
+    } else { //horizontal
         Matrix_RotateYS(this->dyna.actor.shape.rot.y, MTXMODE_NEW);
-        sp48.x = this->unk164;
+        sp48.x = this->speed;
         sp48.y = 0.0f;
         sp48.z = 0.0f;
         Matrix_MultVec3f(&sp48, &sp3C);
@@ -350,8 +351,8 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) {
     if (sp58) {
         func_80B924DC(this);
     } else {
-        if (sp5C) {
-            this->unk168 = -this->unk168;
+        if (sp5C) { //flips direction
+            this->direction = -this->direction;
             func_80B9257C(this);
         }
     }

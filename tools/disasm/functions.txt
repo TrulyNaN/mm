@@ -14820,7 +14820,7 @@
     0x80B91DB4:("ObjTokeiTurret_Update",),
     0x80B91DC4:("ObjTokeiTurret_Draw",),
     0x80B91F20:("func_80B91F20",),
-    0x80B91F74:("func_80B91F74",),
+    0x80B91F74:("BgDblueElevator_SpawnRipple",),
     0x80B922C0:("func_80B922C0",),
     0x80B922FC:("func_80B922FC",),
     0x80B923A4:("BgDblueElevator_Init",),
