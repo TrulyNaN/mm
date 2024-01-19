@@ -12,7 +12,7 @@
 #define THIS ((BgDblueElevator*)thisx)
 
 void BgDblueElevator_SpawnRipple(BgDblueElevator* arg0, PlayState* arg1);
-void func_80B91F20(BgDblueElevator*, PlayState*);
+void BgDblueElevator_SetIsInWater(BgDblueElevator*, PlayState*);
 s32 func_80B922C0(Actor* thisx, PlayState* play);            /* static */
 
 s32 func_80B922FC(Actor* arg0, PlayState* play);            /* static */
@@ -88,8 +88,8 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
 }; 
 static s16 D_80B929D0[4] = { -90, -90, 90, 90 };
 static s16 D_80B929D8[4] = { -100, 90, 90, -100 }; 
-static s8 D_80B929E0[4] = { 0, 2, 4, 0 };
-static s8 D_80B929E4[6] = { 0, 1, 2, 3, 4, 5 };
+static s8 D_80B929E0[4] = { 0, 2, 4, 0 }; //ripple lives
+static s8 D_80B929E4[6] = { 0, 1, 2, 3, 4, 5 }; //ripple lives
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneForward, 4000, ICHAIN_CONTINUE),
@@ -98,12 +98,12 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void func_80B91F20(BgDblueElevator* this, PlayState* play2) {
+void BgDblueElevator_SetIsInWater(BgDblueElevator* this, PlayState* play2) {
     PlayState *play = play2;
     WaterBox* waterBox;
     s32 bgId;
 
-    this->unk16B = WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x,
+    this->isInWater = WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x,
                                            this->dyna.actor.world.pos.z, &this->unk16C, &waterBox, &bgId);
 }
 
@@ -152,7 +152,7 @@ void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) {
     }
 
     for (i = 0; i < 6; i++) {
-        var_fs0 = Rand_ZeroOne();
+        var_fs0 = Rand_ZeroOne();//offset?
         var_fs0 = 1.0f - (var_fs0 * var_fs0);
         rn = Rand_Next();
         if (rn > 0) {
@@ -172,7 +172,7 @@ void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) {
     Matrix_Pop();
 }
 
-s32 func_80B922C0(Actor* thisx, PlayState* play) {//some boolean? no since other Struct1 function can return 2 and 3.
+s32 func_80B922C0(Actor* thisx, PlayState* play) {//finds paired elevator for horizontal elevator room
     BgDblueElevator* this = THIS;
 
     if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 0))) {
@@ -181,8 +181,7 @@ s32 func_80B922C0(Actor* thisx, PlayState* play) {//some boolean? no since other
     return 1;
 }
 
-s32 func_80B922FC(Actor* this, PlayState* play) {
-//counts something? finds which elevator type is used? //looks like ObjMakeoshihiki_GetChildSpawnPointIndex(
+s32 func_80B922FC(Actor* this, PlayState* play) { //finds paired elevator index for first waterwheel room
     s32 var_s0 = 0;
 
     if (!Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 0))) {
@@ -207,13 +206,13 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     DynaPolyActor_Init(&this->dyna, 1); //run symbol scripts
     ptr = &D_80B92960[index];
     DynaPolyActor_LoadMesh(play, &this->dyna, &gGreatBayTempleObjectElevatorCol);
-    temp_v0 = ptr->unk4(this, play);
+    temp_v0 = ptr->unk4(this, play); //between 0 and 4. Index again? Index for paired elevator?
     if (temp_v0 == 2) {
         this->direction = -ptr->initialDirection;
     } else { 
         this->direction = ptr->initialDirection;
     }
-    func_80B91F20(this, play);
+    BgDblueElevator_SetIsInWater(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
         func_80B924DC(this);
     } else {
@@ -234,7 +233,7 @@ void func_80B924DC(BgDblueElevator* this) {
 
 void func_80B924F8(BgDblueElevator* this, PlayState* play) {
     s32 temp_v0;
-    s32 index = ((s16)this->dyna.actor.params >> 8) & 3;
+    s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
 
     temp_v0 = (&D_80B92960[index])->unk4(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
@@ -247,12 +246,10 @@ void func_80B924F8(BgDblueElevator* this, PlayState* play) {
     }
 }
 
-void func_80B9257C(BgDblueElevator* this) { //weird.
+void func_80B9257C(BgDblueElevator* this) {
     s8* new_var2;
-    s32 new_var;
-
-    new_var = (this->dyna.actor.params >> 8) & 3; // would % 4 work too instead of & 3?
-    new_var2 = &(D_80B92960[0].unkC)+(new_var * 0x1C); //rewrite
+    s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
+    new_var2 = &(D_80B92960[0].unkC)+(index * 0x1C); //rewrite
     this->unk16A = *new_var2;
     this->actionFunc = func_80B925B8;
 }
@@ -260,7 +257,7 @@ void func_80B9257C(BgDblueElevator* this) { //weird.
 void func_80B925B8(BgDblueElevator* this, PlayState* play) {
     s32 temp_v0;
 
-    s32 index = (this->dyna.actor.params >> 8) & 3;
+    s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
 
     temp_v0 = (&D_80B92960[index])->unk4(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
@@ -279,7 +276,7 @@ void func_80B92644(BgDblueElevator* this) {
     this->unk160 = 0.0f;
 }
 
-void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement action func?
+void func_80B92660(BgDblueElevator* this, PlayState* play) { //in vertical movement action func
     BgDBlueElevatorStruct1* temp_v1;
     s32 index;
     s32 temp_v0;
@@ -296,7 +293,7 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement actio
     s32 pad;
     index = (this->dyna.actor.params >> 8) & 3;
     temp_v1 = &D_80B92960[index];
-    temp_v0 = (temp_v1)->unk4(this, play);
+    temp_v0 = (temp_v1)->unk4(this, play); //index for paired elevator
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
         sp58 = Math_StepToF(&this->unk160, 0.0f, temp_v1->unk14);
     } else {
@@ -326,9 +323,9 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement actio
         sp5C = false;
     }
 
-    if (temp_v1->unk0 == 0) { //vertical
+    if (!temp_v1->isHorizontal) {
         this->dyna.actor.world.pos.y = this->speed + this->dyna.actor.home.pos.y;
-        if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->unk16B != 0)) {
+        if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->isInWater != 0)) {
             if (this->direction > 0) {
                 var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->unk16C) *
                             ((this->dyna.actor.prevPos.y + (-10.0f)) - this->unk16C);
@@ -340,7 +337,7 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement actio
                 BgDblueElevator_SpawnRipple(this, play);
             }
         }
-    } else { //horizontal
+    } else {
         Matrix_RotateYS(this->dyna.actor.shape.rot.y, MTXMODE_NEW);
         sp48.x = this->speed;
         sp48.y = 0.0f;
@@ -351,7 +348,7 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //in movement actio
     if (sp58) {
         func_80B924DC(this);
     } else {
-        if (sp5C) { //flips direction
+        if (sp5C) {
             this->direction = -this->direction;
             func_80B9257C(this);
         }
