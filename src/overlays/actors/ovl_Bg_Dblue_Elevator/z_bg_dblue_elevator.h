@@ -14,10 +14,10 @@ typedef void (*BgDblueElevatorActionFunc)(struct BgDblueElevator*, PlayState*);
 typedef struct BgDblueElevator {
     /* 0x000 */ DynaPolyActor dyna;
     /* 0x15C */ BgDblueElevatorActionFunc actionFunc;
-    /* 0x160 */ f32 unk160; //related to y axis
-    /* 0x164 */ f32 speed;
+    /* 0x160 */ f32 step;
+    /* 0x164 */ f32 offset;
     /* 0x168 */ s8 direction; 
-    /* 0x169 */ s8 timer;
+    /* 0x169 */ s8 timer; //how long to come to a stop?
     /* 0x16A */ s8 unk16A; //related to unkC in Struct1
     /* 0x16B */ s8 isInWater;
     /* 0x16C */ f32 unk16C;//y? height? water height? used as a y value in a Vec3f. Linked to ripples
@@ -31,7 +31,7 @@ typedef struct BgDBlueElevatorStruct1
 {
   s32 isHorizontal;
   BgDBlueElevatorStruct1Func unk4;
-  f32 unk8;
+  f32 targetOffset;
   s8 unkC;
   s8 initialDirection; 
   s8 pad_E[2];
