@@ -14,11 +14,11 @@ typedef void (*BgDblueElevatorActionFunc)(struct BgDblueElevator*, PlayState*);
 typedef struct BgDblueElevator {
     /* 0x000 */ DynaPolyActor dyna;
     /* 0x15C */ BgDblueElevatorActionFunc actionFunc;
-    /* 0x160 */ f32 step;
-    /* 0x164 */ f32 offset;
+    /* 0x160 */ f32 step; //rename
+    /* 0x164 */ f32 offset; //rename
     /* 0x168 */ s8 direction; 
-    /* 0x169 */ s8 timer; //how long to come to a stop?
-    /* 0x16A */ s8 unk16A; //related to unkC in Struct1
+    /* 0x169 */ s8 activationTimer;
+    /* 0x16A */ s8 pauseTimer;
     /* 0x16B */ s8 isInWater;
     /* 0x16C */ f32 ySurface;
 } BgDblueElevator; // size = 0x170
@@ -30,9 +30,9 @@ typedef s32 (*BgDBlueElevatorStruct1Func)(struct BgDblueElevator*, PlayState*);
 typedef struct BgDBlueElevatorStruct1
 {
   s32 isHorizontal;
-  BgDBlueElevatorStruct1Func unk4;
+  BgDBlueElevatorStruct1Func unk4; //
   f32 targetOffset;
-  s8 unkC;
+  s8 pauseDuration; //initalized to 0x1E, which is 30 in DEC.
   s8 initialDirection; 
   s8 pad_E[2];
   f32 accelerationStep;//rename steps variables
