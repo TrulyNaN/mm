@@ -21,8 +21,8 @@ void BgDblueElevator_Destroy(Actor* thisx, PlayState* play);
 void BgDblueElevator_Update(Actor* thisx, PlayState* play);
 void BgDblueElevator_Draw(Actor* thisx, PlayState* play);
 
-void func_80B924DC(BgDblueElevator* arg0);                  /* static */
-void func_80B924F8(BgDblueElevator* arg0, PlayState* play); /* static */
+void BgDblueElevator_SetupUpdateTimer(BgDblueElevator* arg0);                  /* static */
+void BgDblueElevator_UpdateTimer(BgDblueElevator* arg0, PlayState* play); /* static */
 void func_80B9257C(BgDblueElevator* arg0);
 void func_80B925B8(BgDblueElevator* arg0, PlayState* play); /* static */
 void func_80B92644(BgDblueElevator* this);                  /* static */
@@ -39,7 +39,7 @@ ActorInit Bg_Dblue_Elevator_InitVars = {
     (ActorFunc)BgDblueElevator_Update,
     (ActorFunc)BgDblueElevator_Draw,
 };
-//TODO : tell which elevator is which in this struct.
+
 static BgDBlueElevatorStruct1 D_80B92960[4] = {
     {
         0,
@@ -104,7 +104,7 @@ void BgDblueElevator_SetIsInWater(BgDblueElevator* this, PlayState* play2) {
     s32 bgId;
 
     this->isInWater = WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x,
-                                           this->dyna.actor.world.pos.z, &this->unk16C, &waterBox, &bgId);
+                                           this->dyna.actor.world.pos.z, &this->ySurface, &waterBox, &bgId);
 }
 
 void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) { //rename 
@@ -130,7 +130,7 @@ void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) { //ren
 
         for (j = 0; j < 7; j++) {
             ripplePos.x = ((d1 * j) * (1.0f / 7.0f)) + v1;
-            ripplePos.y = this->unk16C;
+            ripplePos.y = this->ySurface;
             ripplePos.z = ((d2 * j) * (1.0f / 7.0f)) + v2;
 
             ripplePos.x += (Rand_ZeroOne() - 0.5f) * 20.0f;
@@ -146,7 +146,7 @@ void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) { //ren
     for (i = 0; i < 3; i++)
     {
         ripplePos.x = ((Rand_ZeroOne() - 0.5f) * 60.0f) + this->dyna.actor.world.pos.x;
-        ripplePos.y = this->unk16C;
+        ripplePos.y = this->ySurface;
         ripplePos.z = ((Rand_ZeroOne() - 0.5f) * 60.0f) + this->dyna.actor.world.pos.z;
         EffectSsGRipple_Spawn(play, &ripplePos, 0x3E8, 0xBB8, D_80B929E0[i]);
     }
@@ -159,7 +159,7 @@ void BgDblueElevator_SpawnRipple(BgDblueElevator* this, PlayState* play) { //ren
             var_fs0 = -var_fs0;
         }
         ripplePos.x = (var_fs0 * 100.0f) + this->dyna.actor.world.pos.x;
-        ripplePos.y = this->unk16C;
+        ripplePos.y = this->ySurface;
         var_fs0 = Rand_ZeroOne();
         var_fs0 = 1.0f - (var_fs0 * var_fs0);
         rn = Rand_Next();
@@ -181,14 +181,14 @@ s32 func_80B922C0(Actor* thisx, PlayState* play) {//finds paired elevator for ho
     return 1;
 }
 
-s32 func_80B922FC(Actor* this, PlayState* play) { //finds paired elevator index for first waterwheel room
+s32 func_80B922FC(Actor* this, PlayState* play) { //finds paired elevator index for first waterwheel room?
     s32 var_s0 = 0;
 
     if (!Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 0))) {
         var_s0 = 1;
     }
-    if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 1)) && Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 2)) &&
-        Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 3))) {
+    if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 1)) && Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 2)) 
+        && Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(this, 3))) {
         var_s0 += 2;
     }
     return var_s0;
@@ -206,7 +206,9 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     DynaPolyActor_Init(&this->dyna, 1); //run symbol scripts
     ptr = &D_80B92960[index];
     DynaPolyActor_LoadMesh(play, &this->dyna, &gGreatBayTempleObjectElevatorCol);
-    temp_v0 = ptr->unk4(this, play); //Index for paired elevator?
+
+    //ensures opposing directions for first waterwheel room elevators
+    temp_v0 = ptr->unk4(this, play);
     if (temp_v0 == 2) {
         this->direction = -ptr->initialDirection;
     } else { 
@@ -214,7 +216,7 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     }
     BgDblueElevator_SetIsInWater(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) { 
-        func_80B924DC(this); //sets timer
+        BgDblueElevator_SetupUpdateTimer(this); //sets timer
     } else {
         func_80B92644(this);
     }
@@ -226,12 +228,12 @@ void BgDblueElevator_Destroy(Actor* thisx, PlayState* play) {
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-void func_80B924DC(BgDblueElevator* this) {
+void BgDblueElevator_SetupUpdateTimer(BgDblueElevator* this) {
     this->timer = 60;
-    this->actionFunc = func_80B924F8;
+    this->actionFunc = BgDblueElevator_UpdateTimer;
 }
 
-void func_80B924F8(BgDblueElevator* this, PlayState* play) {
+void BgDblueElevator_UpdateTimer(BgDblueElevator* this, PlayState* play) { //updates timer so it can stop
     s32 temp_v0;
     s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
 
@@ -261,7 +263,7 @@ void func_80B925B8(BgDblueElevator* this, PlayState* play) {
 
     temp_v0 = (&D_80B92960[index])->unk4(this, play);
     if ((temp_v0 == 0) || (temp_v0 == 3)) {
-        func_80B924DC(this);
+        BgDblueElevator_SetupUpdateTimer(this);
     } else {
         this->unk16A--;
         if (this->unk16A <= 0) {
@@ -294,11 +296,11 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //action function f
     index = BG_DBLUE_ELEVATOR_GET_INDEX(&(this->dyna.actor));
     ptr = &D_80B92960[index];
     temp_v0 = (ptr)->unk4(this, play); //index for paired elevator
-    if ((temp_v0 == 0) || (temp_v0 == 3)) {
-        sp58 = Math_StepToF(&this->step, 0.0f, ptr->unk14);
+    if ((temp_v0 == 0) || (temp_v0 == 3)) { //related to stopping
+        sp58 = Math_StepToF(&this->step, 0.0f, ptr->decelerationStep); //decelerate
     } else {
         sp58 = 0;
-        Math_StepToF(&this->step, ptr->unk18, ptr->unk10);
+        Math_StepToF(&this->step, ptr->unk18, ptr->accelerationStep); //accelerate
     }
 
     if(this->direction > 0){
@@ -327,11 +329,11 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //action function f
         this->dyna.actor.world.pos.y = this->offset + this->dyna.actor.home.pos.y;
         if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->isInWater != 0)) {
             if (this->direction > 0) {
-                var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->unk16C) *
-                            ((this->dyna.actor.prevPos.y + (-10.0f)) - this->unk16C);
+                var_fv1_2 = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->ySurface) *
+                            ((this->dyna.actor.prevPos.y + (-10.0f)) - this->ySurface);
             } else {
-                var_fv1_2 = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->unk16C) *
-                            ((this->dyna.actor.prevPos.y + (-30.0f)) - this->unk16C);
+                var_fv1_2 = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->ySurface) *
+                            ((this->dyna.actor.prevPos.y + (-30.0f)) - this->ySurface);
             }
             if (var_fv1_2 <= 0.0f) {
                 BgDblueElevator_SpawnRipple(this, play);
@@ -345,8 +347,8 @@ void func_80B92660(BgDblueElevator* this, PlayState* play) { //action function f
         Matrix_MultVec3f(&basePosOffset, &posOffset);
         Math_Vec3f_Sum(&this->dyna.actor.home.pos, &posOffset, &this->dyna.actor.world.pos);
     }
-    if (sp58) {
-        func_80B924DC(this);
+    if (sp58) { //if decelerating
+        BgDblueElevator_SetupUpdateTimer(this);
     } else {
         if (hasReachedEnd) {
             this->direction = -this->direction;

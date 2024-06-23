@@ -20,7 +20,7 @@ typedef struct BgDblueElevator {
     /* 0x169 */ s8 timer; //how long to come to a stop?
     /* 0x16A */ s8 unk16A; //related to unkC in Struct1
     /* 0x16B */ s8 isInWater;
-    /* 0x16C */ f32 unk16C;//y? height? water height? used as a y value in a Vec3f. Linked to ripples
+    /* 0x16C */ f32 ySurface;
 } BgDblueElevator; // size = 0x170
 
 struct BgDBlueElevatorStruct1;
@@ -35,8 +35,8 @@ typedef struct BgDBlueElevatorStruct1
   s8 unkC;
   s8 initialDirection; 
   s8 pad_E[2];
-  f32 unk10;
-  f32 unk14;
+  f32 accelerationStep;//rename steps variables
+  f32 decelerationStep;
   f32 unk18;
 } BgDBlueElevatorStruct1; // size = 0x1C
 
