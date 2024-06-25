@@ -14820,7 +14820,7 @@
     0x80B91DB4:("ObjTokeiTurret_Update",),
     0x80B91DC4:("ObjTokeiTurret_Draw",),
     0x80B91F20:("BgDblueElevator_SetIsInWater",),
-    0x80B91F74:("BgDblueElevator_SpawnRipple",),
+    0x80B91F74:("BgDblueElevator_SpawnRipplesAndSplashes",),
     0x80B922C0:("BgDblueElevator_IsWaterFlowing",),
     0x80B922FC:("BgDblueElevator_CalculatePipesFlags",),
     0x80B923A4:("BgDblueElevator_Init",),
