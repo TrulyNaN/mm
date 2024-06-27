@@ -17,13 +17,13 @@ typedef void (*BgDblueElevatorActionFunc)(struct BgDblueElevator*, PlayState*);
 typedef struct BgDblueElevator {
     /* 0x000 */ DynaPolyActor dyna;
     /* 0x15C */ BgDblueElevatorActionFunc actionFunc;
-    /* 0x160 */ f32 posStep;  
+    /* 0x160 */ f32 posStep;
     /* 0x164 */ f32 posOffset;
     /* 0x168 */ s8 direction;
     /* 0x169 */ s8 activationTimer;
     /* 0x16A */ s8 pauseTimer;
     /* 0x16B */ s8 isWithinWaterBoxXZ;
-    /* 0x16C */ f32 ySurface;
+    /* 0x16C */ f32 waterSurfaceYPos;
 } BgDblueElevator; // size = 0x170
 
 struct BgDBlueElevatorStruct1;
@@ -31,15 +31,15 @@ struct BgDBlueElevatorStruct1;
 typedef s32 (*BgDBlueElevatorStruct1Func)(struct BgDblueElevator*, PlayState*);
 
 typedef struct BgDBlueElevatorStruct1 {
-    s32 isHorizontal;
-    BgDBlueElevatorStruct1Func getWaterFlow; //checks flags to know when to halt elevator
-    f32 targetPosOffset;
-    s8 pauseDuration;
-    s8 initialDirection;
-    s8 pad_E[2];
-    f32 accelerationStep; //1.0
-    f32 decelerationStep; // 0.1
-    f32 targetPosStep;//5.0 or 6.0
+    /* 0x000 */ s32 isHorizontal;
+    /* 0x000 */ BgDBlueElevatorStruct1Func getWaterFlow;
+    /* 0x000 */ f32 targetPosOffset;
+    /* 0x000 */ s8 pauseDuration;
+    /* 0x000 */ s8 initialDirection;
+    /* 0x000 */ s8 pad_E[2];
+    /* 0x000 */ f32 accelerationStep;
+    /* 0x000 */ f32 decelerationStep;
+    /* 0x000 */ f32 targetPosStep;
 } BgDBlueElevatorStruct1; // size = 0x1C
 
 #endif // Z_BG_DBLUE_ELEVATOR_H

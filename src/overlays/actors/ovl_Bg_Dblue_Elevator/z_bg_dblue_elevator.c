@@ -12,9 +12,9 @@
 #define THIS ((BgDblueElevator*)thisx)
 
 void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* play);
-void BgDblueElevator_SetIsWithinWaterBoxXZ(BgDblueElevator*, PlayState*);
-s32 BgDblueElevator_IsWaterFlowing(Actor* thisx, PlayState* play);
-s32 BgDblueElevator_CalculatePipesFlags(Actor* thisx, PlayState* play);
+void BgDblueElevator_CheckWaterBoxInfo(BgDblueElevator*, PlayState*);
+s32 BgDblueElevator_GetWaterFlowFromCeiling(Actor* thisx, PlayState* play);
+s32 BgDblueElevator_GetWaterFlowFromPipes(Actor* thisx, PlayState* play);
 
 void BgDblueElevator_Init(Actor* thisx, PlayState* play2);
 void BgDblueElevator_Destroy(Actor* thisx, PlayState* play);
@@ -43,7 +43,7 @@ ActorInit Bg_Dblue_Elevator_InitVars = {
 static BgDBlueElevatorStruct1 D_80B92960[4] = {
     {
         0,
-        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_IsWaterFlowing),
+        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_GetWaterFlowFromCeiling),
         320.0f,
         30,
         1,
@@ -54,7 +54,7 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
     },
     {
         1,
-        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_IsWaterFlowing),
+        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_GetWaterFlowFromCeiling),
         195.0f,
         30,
         1,
@@ -65,7 +65,7 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
     },
     {
         0,
-        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_CalculatePipesFlags),
+        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_GetWaterFlowFromPipes),
         280.0f,
         30,
         1,
@@ -76,7 +76,7 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
     },
     {
         0,
-        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_CalculatePipesFlags),
+        ((s32(*)(BgDblueElevator*, PlayState*))BgDblueElevator_GetWaterFlowFromPipes),
         280.0f,
         30,
         -1,
@@ -87,10 +87,10 @@ static BgDBlueElevatorStruct1 D_80B92960[4] = {
     },
 };
 
-static s16 D_80B929D0[4] = { -90, -90, 90, 90 };   // related to splash x pos
-static s16 D_80B929D8[4] = { -100, 90, 90, -100 }; // related to splash z pos
+static s16 D_80B929D0[4] = { -90, -90, 90, 90 };   // Related to splash x pos
+static s16 D_80B929D8[4] = { -100, 90, 90, -100 }; // Related to splash z pos
 static s8 sLargeRipplesLives[4] = { 0, 2, 4, 0 };
-static s8 sSmallRipplesLives[6] = { 0, 1, 2, 3, 4, 5 }; // ripple lives
+static s8 sSmallRipplesLives[6] = { 0, 1, 2, 3, 4, 5 };
 
 static InitChainEntry sInitChain[] = {
     ICHAIN_F32(uncullZoneForward, 4000, ICHAIN_CONTINUE),
@@ -99,16 +99,17 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_VEC3F_DIV1000(scale, 100, ICHAIN_STOP),
 };
 
-void BgDblueElevator_SetIsWithinWaterBoxXZ(BgDblueElevator* this, PlayState* play2) {
+void BgDblueElevator_CheckWaterBoxInfo(BgDblueElevator* this, PlayState* play2) {
     PlayState* play = play2;
     WaterBox* waterBox;
     s32 bgId;
 
-    this->isWithinWaterBoxXZ = WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x,
-                                                       this->dyna.actor.world.pos.z, &this->ySurface, &waterBox, &bgId);
+    this->isWithinWaterBoxXZ =
+        WaterBox_GetSurfaceImpl(play, &play->colCtx, this->dyna.actor.world.pos.x, this->dyna.actor.world.pos.z,
+                                &this->waterSurfaceYPos, &waterBox, &bgId);
 }
 
-void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* play) { // rename
+void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* play) {
     s32 i;
     Vec3f ripplePos;
     Vec3f splashPos;
@@ -131,7 +132,7 @@ void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* p
 
         for (j = 0; j < 7; j++) {
             ripplePos.x = ((d1 * j) * (1.0f / 7.0f)) + v1;
-            ripplePos.y = this->ySurface;
+            ripplePos.y = this->waterSurfaceYPos;
             ripplePos.z = ((d2 * j) * (1.0f / 7.0f)) + v2;
 
             ripplePos.x += (Rand_ZeroOne() - 0.5f) * 20.0f;
@@ -145,7 +146,7 @@ void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* p
 
     for (i = 0; i < 3; i++) {
         ripplePos.x = ((Rand_ZeroOne() - 0.5f) * 60.0f) + this->dyna.actor.world.pos.x;
-        ripplePos.y = this->ySurface;
+        ripplePos.y = this->waterSurfaceYPos;
         ripplePos.z = ((Rand_ZeroOne() - 0.5f) * 60.0f) + this->dyna.actor.world.pos.z;
         EffectSsGRipple_Spawn(play, &ripplePos, 1000, 3000, sLargeRipplesLives[i]);
     }
@@ -158,7 +159,7 @@ void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* p
             var_fs0 = -var_fs0;
         }
         ripplePos.x = (var_fs0 * 100.0f) + this->dyna.actor.world.pos.x;
-        ripplePos.y = this->ySurface;
+        ripplePos.y = this->waterSurfaceYPos;
         var_fs0 = Rand_ZeroOne();
         var_fs0 = 1.0f - (var_fs0 * var_fs0);
         rn = Rand_Next();
@@ -171,26 +172,25 @@ void BgDblueElevator_SpawnRipplesAndSplashes(BgDblueElevator* this, PlayState* p
     Matrix_Pop();
 }
 
-// rename CalculatesPipesFlags to something similar to IsWaterFlowing and distinguish the two functions
-s32 BgDblueElevator_IsWaterFlowing(Actor* thisx, PlayState* play) { // checks flags for last waterwheel room
+s32 BgDblueElevator_GetWaterFlowFromCeiling(Actor* thisx, PlayState* play) {
     BgDblueElevator* this = THIS;
 
-    // checks water stopped flowing
     if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 0))) {
         return 0;
     }
     return 1;
 }
 
-s32 BgDblueElevator_CalculatePipesFlags(Actor* thisx, PlayState* play) { // checks flags for first waterwheel room
+s32 BgDblueElevator_GetWaterFlowFromPipes(Actor* thisx, PlayState* play) {
     BgDblueElevator* this = THIS;
     s32 var_s0 = 0;
 
-    // checks if first yellow tank turnkey is open.
+    // This checks if first the yellow tank turnkey is open.
     if (!Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 0))) {
         var_s0 = 1;
     }
-    // checks if water is flowing from red pipes.
+
+    // This checks if water is flowing from the red pipes.
     if (Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 1)) &&
         Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 2)) &&
         Flags_GetSwitch(play, BG_DBLUE_ELEVATOR_GET_7F(&this->dyna.actor, 3))) {
@@ -211,15 +211,14 @@ void BgDblueElevator_Init(Actor* thisx, PlayState* play2) {
     DynaPolyActor_Init(&this->dyna, DYNA_TRANSFORM_POS);
     ptr = &D_80B92960[index];
     DynaPolyActor_LoadMesh(play, &this->dyna, &gGreatBayTempleObjectElevatorCol);
-
     waterFlow = ptr->getWaterFlow(this, play);
-    // if water is flowing from red tanks, reverse direction.
+
     if (waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_REVERSED) {
         this->direction = -ptr->initialDirection;
     } else {
         this->direction = ptr->initialDirection;
     }
-    BgDblueElevator_SetIsWithinWaterBoxXZ(this, play);
+    BgDblueElevator_CheckWaterBoxInfo(this, play);
     if ((waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_STOPPED) ||
         (waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_BOTH_DIRECTIONS)) {
         BgDblueElevator_SetupWaitForMove(this);
@@ -234,12 +233,14 @@ void BgDblueElevator_Destroy(Actor* thisx, PlayState* play) {
     DynaPoly_DeleteBgActor(play, &play->colCtx.dyna, this->dyna.bgId);
 }
 
-// distinguish WaitForMove and Pause better.
 void BgDblueElevator_SetupWaitForMove(BgDblueElevator* this) {
     this->activationTimer = 60;
     this->actionFunc = BgDblueElevator_WaitForMove;
 }
 
+/**
+ * The elevator waits for 3 seconds (60 frames) when water restarts flowing before resuming its halted cycle.
+ */
 void BgDblueElevator_WaitForMove(BgDblueElevator* this, PlayState* play) {
     s32 waterFlow;
     s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
@@ -263,6 +264,10 @@ void BgDblueElevator_SetupPause(BgDblueElevator* this) {
     this->actionFunc = BgDblueElevator_Pause;
 }
 
+/**
+ * As the elevator cycles up and down or sideways, it will pause for a set amount of time at each end of its path
+ * before moving again.
+ */
 void BgDblueElevator_Pause(BgDblueElevator* this, PlayState* play) {
     s32 waterFlow;
     s32 index = BG_DBLUE_ELEVATOR_GET_INDEX(&this->dyna.actor);
@@ -296,13 +301,14 @@ void BgDblueElevator_Move(BgDblueElevator* this, PlayState* play) {
 
     Vec3f basePosOffset;
     Vec3f posOffset;
-    f32 crossedWaterCheck;
+    f32 nearWaterSurfaceCheck;
 
     s32 pad;
     index = BG_DBLUE_ELEVATOR_GET_INDEX(&(this->dyna.actor));
     ptr = &D_80B92960[index];
     waterFlow = (ptr)->getWaterFlow(this, play); // flag stuff
-    if ((waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_STOPPED) || (waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_BOTH_DIRECTIONS)) {  // related to stopping
+    if ((waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_STOPPED) ||
+        (waterFlow == BG_DBLUE_ELEVATOR_WATER_FLOW_BOTH_DIRECTIONS)) { // related to stopping
         isDeactivated = Math_StepToF(&this->posStep, 0.0f, ptr->decelerationStep);
     } else {
         isDeactivated = 0;
@@ -321,7 +327,7 @@ void BgDblueElevator_Move(BgDblueElevator* this, PlayState* play) {
         posStep = this->posStep;
     }
 
-    if (Math_SmoothStepToF(&this->posOffset, targetPosOffset, 0.4f, posStep, 1.0f) < 0.001f) { // try to condense
+    if (Math_SmoothStepToF(&this->posOffset, targetPosOffset, 0.4f, posStep, 1.0f) < 0.001f) {
         hasReachedEnd = true;
     } else {
         hasReachedEnd = false;
@@ -331,13 +337,13 @@ void BgDblueElevator_Move(BgDblueElevator* this, PlayState* play) {
         this->dyna.actor.world.pos.y = this->posOffset + this->dyna.actor.home.pos.y;
         if (((this->dyna.actor.flags & 0x40) == 0x40) && (this->isWithinWaterBoxXZ)) { // macro to write
             if (this->direction > 0) {
-                crossedWaterCheck = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->ySurface) *
-                                    ((this->dyna.actor.prevPos.y + (-10.0f)) - this->ySurface);
+                nearWaterSurfaceCheck = ((this->dyna.actor.world.pos.y + (-10.0f)) - this->waterSurfaceYPos) *
+                                        ((this->dyna.actor.prevPos.y + (-10.0f)) - this->waterSurfaceYPos);
             } else {
-                crossedWaterCheck = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->ySurface) *
-                                    ((this->dyna.actor.prevPos.y + (-30.0f)) - this->ySurface);
+                nearWaterSurfaceCheck = ((this->dyna.actor.world.pos.y + (-30.0f)) - this->waterSurfaceYPos) *
+                                        ((this->dyna.actor.prevPos.y + (-30.0f)) - this->waterSurfaceYPos);
             }
-            if (crossedWaterCheck <= 0.0f) {
+            if (nearWaterSurfaceCheck <= 0.0f) {
                 BgDblueElevator_SpawnRipplesAndSplashes(this, play);
             }
         }
