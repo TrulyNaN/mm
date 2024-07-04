@@ -17,14 +17,14 @@ void EnDinofos_Update(Actor* thisx, PlayState* play2);
 void EnDinofos_Draw(Actor* thisx, PlayState* play);
 
 void func_8089B834(EnDinofos* this, PlayState* play);
-void func_8089D318(EnDinofos* this, PlayState* play);
+void EnDinofos_PlayCutscene(EnDinofos* this, PlayState* play);
 void func_8089BBB4(EnDinofos* this, PlayState* play);
 void func_8089B8B0(EnDinofos* this, PlayState* play);
 void func_8089C56C(EnDinofos* this, PlayState* play);
 void func_8089C44C(EnDinofos* this, PlayState* play);
 void func_8089BB60(EnDinofos* this, PlayState* play);
 void func_8089C0DC(EnDinofos* this, PlayState* play);
-void func_8089D018(EnDinofos* this, PlayState* play);
+void EnDinofos_Die(EnDinofos* this, PlayState* play);
 void func_8089B288(EnDinofos* this, PlayState* play);
 void func_8089BD28(EnDinofos* this, PlayState* play);
 void func_8089D1E0(EnDinofos* this, PlayState* play);
@@ -40,19 +40,19 @@ void func_8089B72C(EnDinofos* this, PlayState* play);
 void func_8089C2A8(EnDinofos* this, PlayState* play);
 void func_8089C1F8(EnDinofos* this, PlayState* play);
 void func_8089C724(EnDinofos* this, PlayState* play);
-void func_8089C7B8(EnDinofos* this, PlayState* play);
+void EnDinofos_Stunned(EnDinofos* this, PlayState* play);
 void func_8089C938(EnDinofos* this, PlayState* play);
 void func_8089C4F8(EnDinofos* this);
 void func_8089BAC0(EnDinofos* this);
 void func_8089C024(EnDinofos* this, s32 arg1);
 void func_8089D11C(EnDinofos* this, s16 arg1);
 void func_8089B7B0(EnDinofos* this);
-void func_8089D2E0(EnDinofos* this);
+void EnDinofos_SetupPlayCutscene(EnDinofos* this);
 void func_8089CA14(EnDinofos* this);
 void func_8089B320(EnDinofos* this);
 void func_8089B4A4(EnDinofos* this);
 void func_8089B6E8(EnDinofos* this);
-void func_8089CFAC(EnDinofos* this);
+void EnDinofos_SetupDie(EnDinofos* this);
 void func_8089C398(EnDinofos* this);
 void func_8089C164(EnDinofos* this);
 void func_8089C244(EnDinofos* this);
@@ -204,39 +204,49 @@ static ColliderQuadInit sQuadInit = {
     { { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } } },
 };
 
+typedef enum {
+    /* 0x0 */ DINOLFOS_DMGEFF_NONE,
+    /* 0x1 */ DINOLFOS_DMGEFF_STUN,
+    /* 0x2 */ DINOLFOS_DMGEFF_FIRE,
+    /* 0x3 */ DINOLFOS_DMGEFF_ICE,
+    /* 0x4 */ DINOLFOS_DMGEFF_LIGHT_SPARKS,
+    /* 0x5 */ DINOLFOS_DMGEFF_ZORA_MAGIC,
+    /* 0xF */ DINOLFOS_DMGEFF_IMMUNE = 0xF
+} EnDinofosDamageEffect;
+
 static DamageTable sDamageTable = {
-    /* Deku Nut       */ DMG_ENTRY(0, 0x1),
-    /* Deku Stick     */ DMG_ENTRY(1, 0x0),
-    /* Horse trample  */ DMG_ENTRY(0, 0x0),
-    /* Explosives     */ DMG_ENTRY(1, 0x0),
-    /* Zora boomerang */ DMG_ENTRY(1, 0x0),
-    /* Normal arrow   */ DMG_ENTRY(1, 0x0),
-    /* UNK_DMG_0x06   */ DMG_ENTRY(0, 0x0),
-    /* Hookshot       */ DMG_ENTRY(0, 0xF),
-    /* Goron punch    */ DMG_ENTRY(1, 0x0),
-    /* Sword          */ DMG_ENTRY(1, 0x0),
-    /* Goron pound    */ DMG_ENTRY(1, 0x0),
-    /* Fire arrow     */ DMG_ENTRY(1, 0x2),
-    /* Ice arrow      */ DMG_ENTRY(2, 0x3),
-    /* Light arrow    */ DMG_ENTRY(2, 0x4),
-    /* Goron spikes   */ DMG_ENTRY(1, 0x0),
-    /* Deku spin      */ DMG_ENTRY(0, 0x1),
-    /* Deku bubble    */ DMG_ENTRY(1, 0x0),
-    /* Deku launch    */ DMG_ENTRY(2, 0x0),
-    /* UNK_DMG_0x12   */ DMG_ENTRY(0, 0x1),
-    /* Zora barrier   */ DMG_ENTRY(0, 0x5),
-    /* Normal shield  */ DMG_ENTRY(0, 0x0),
-    /* Light ray      */ DMG_ENTRY(0, 0x0),
-    /* Thrown object  */ DMG_ENTRY(1, 0x0),
-    /* Zora punch     */ DMG_ENTRY(1, 0x0),
-    /* Spin attack    */ DMG_ENTRY(1, 0x0),
-    /* Sword beam     */ DMG_ENTRY(1, 0x0),
-    /* Normal Roll    */ DMG_ENTRY(0, 0x0),
-    /* UNK_DMG_0x1B   */ DMG_ENTRY(0, 0x0),
-    /* UNK_DMG_0x1C   */ DMG_ENTRY(0, 0x0),
-    /* Unblockable    */ DMG_ENTRY(0, 0x0),
-    /* UNK_DMG_0x1E   */ DMG_ENTRY(0, 0x0),
-    /* Powder Keg     */ DMG_ENTRY(1, 0x0),
+    /* Deku Nut       */ DMG_ENTRY(0, DINOLFOS_DMGEFF_STUN),
+    /* Deku Stick     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Horse trample  */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Explosives     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Zora boomerang */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Normal arrow   */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* UNK_DMG_0x06   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Hookshot       */ DMG_ENTRY(0, DINOLFOS_DMGEFF_IMMUNE),
+    /* Goron punch    */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Sword          */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Goron pound    */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Fire arrow     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_FIRE),
+    /* Ice arrow      */ DMG_ENTRY(2, DINOLFOS_DMGEFF_ICE),
+    /* Light arrow    */ DMG_ENTRY(2, DINOLFOS_DMGEFF_LIGHT_SPARKS),
+    /* Goron spikes   */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Deku spin      */ DMG_ENTRY(0, DINOLFOS_DMGEFF_STUN),
+    /* Deku bubble    */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Deku launch    */ DMG_ENTRY(2, DINOLFOS_DMGEFF_NONE),
+    /* UNK_DMG_0x12   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_STUN),
+    /* Zora barrier   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_ZORA_MAGIC),
+    /* Normal shield  */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Light ray      */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Thrown object  */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Zora punch     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Spin attack    */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Sword beam     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
+    /* Normal Roll    */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* UNK_DMG_0x1B   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* UNK_DMG_0x1C   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Unblockable    */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* UNK_DMG_0x1E   */ DMG_ENTRY(0, DINOLFOS_DMGEFF_NONE),
+    /* Powder Keg     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
 };
 
 static CollisionCheckInfoInit sColChkInfoInit = { 4, 40, 100, 80 };
@@ -260,7 +270,7 @@ static InitChainEntry sInitChain[] = {
 
 void EnDinofos_Init(Actor* thisx, PlayState* play) {
     static s32 sTexturesDesegmented = false;
-    static EffectBlureInit2 D_8089E368 = {
+    static EffectBlureInit2 sBlureInit = {
         0,
         EFFECT_BLURE_ELEMENT_FLAG_8,
         0,
@@ -281,7 +291,7 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawFeet, 90.0f);
-    Effect_Add(play, &this->unk_2A0, EFFECT_BLURE2, 0, 0, &D_8089E368);
+    Effect_Add(play, &this->effectIndex, EFFECT_BLURE2, 0, 0, &sBlureInit);
     Collider_InitAndSetJntSph(play, &this->colliderJntSph, &this->actor, &sJntSphInit, this->colliderJntSphElement);
     Collider_InitAndSetQuad(play, &this->colliderQuad, &this->actor, &sQuadInit);
     CollisionCheck_SetInfo(&this->actor.colChkInfo, &sDamageTable, &sColChkInfoInit);
@@ -295,7 +305,7 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
         sTexturesDesegmented = true;
     }
 
-    this->unk_288 = 255;
+    this->envColorAlpha = 255;
     for (i = 6; i < ARRAY_COUNT(this->colliderJntSphElement); i++) {
         dim = &this->colliderJntSph.elements[i].dim;
         dim->worldSphere.radius = dim->modelSphere.radius;
@@ -309,7 +319,7 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
         this->actor.gravity = 0.0f;
         this->actor.velocity.y = 0.0f;
         sCsId = thisx->csId;
-        func_8089D2E0(this);
+        EnDinofos_SetupPlayCutscene(this);
     }
 
     D_8089E350++;
@@ -318,19 +328,19 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
 void EnDinofos_Destroy(Actor* thisx, PlayState* play) {
     EnDinofos* this = THIS;
 
-    Effect_Destroy(play, this->unk_2A0);
+    Effect_Destroy(play, this->effectIndex);
     Collider_DestroyJntSph(play, &this->colliderJntSph);
     Collider_DestroyQuad(play, &this->colliderQuad);
 }
 
-void func_8089A900(EnDinofos* this) {
-    if (this->unk_289 != 0) {
-        this->unk_289++;
-        if (this->unk_289 == 4) {
-            this->unk_289 = 0;
+void EnDinofos_Blink(EnDinofos* this) {
+    if (this->eyeTexIndex != 0) {
+        this->eyeTexIndex++;
+        if (this->eyeTexIndex == 4) {
+            this->eyeTexIndex = 0;
         }
     } else if (Rand_ZeroOne() < 0.05f) {
-        this->unk_289 = 1;
+        this->eyeTexIndex = 1;
     }
 }
 
@@ -409,7 +419,7 @@ void func_8089ACEC(EnDinofos* this, PlayState* play) {
 void func_8089AD70(EnDinofos* this) {
     s32 i;
 
-    if (this->unk_28B != 0) {
+    if (this->unk_28B) {
         for (i = 0; i < ARRAY_COUNT(this->colliderJntSphElement) - 3; i++) {
             this->colliderJntSph.elements[i].info.bumper.dmgFlags |= 0x400;
         }
@@ -600,7 +610,7 @@ void func_8089B72C(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089B7B0(EnDinofos* this) {
+void func_8089B7B0(EnDinofos* this) { //setup idle?
     Animation_MorphToLoop(&this->skelAnime, &gDinolfosIdleAnim, -4.0f);
     this->unk_290 = (s32)Rand_ZeroFloat(20.0f) + 40;
     this->unk_292 = 30;
@@ -610,7 +620,7 @@ void func_8089B7B0(EnDinofos* this) {
     this->actionFunc = func_8089B834;
 }
 
-void func_8089B834(EnDinofos* this, PlayState* play) {
+void func_8089B834(EnDinofos* this, PlayState* play) { //Idle?
     SkelAnime_Update(&this->skelAnime);
     if (this->unk_292 != 0) {
         this->unk_292--;
@@ -682,7 +692,7 @@ void func_8089B98C(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089BAC0(EnDinofos* this) {
+void func_8089BAC0(EnDinofos* this) { //to face actor or rotate
     if (this->actionFunc != func_8089BB60) {
         Animation_MorphToLoop(&this->skelAnime, &gDinolfosWalkAnim, -4.0f);
         this->actor.speed = 0.0f;
@@ -723,9 +733,9 @@ void func_8089BBB4(EnDinofos* this, PlayState* play) {
         }
 
         if (this->actionFunc == func_8089D1E0) {
-            this->skelAnime.playSpeed = this->actor.speed * 0.166666671634f;
+            this->skelAnime.playSpeed = this->actor.speed * (1.0f / 6.0f);
         } else {
-            Animation_Change(&this->skelAnime, &gDinolfosSidestepAnim, this->actor.speed * 0.166666671634f, 0.0f, 0.0f,
+            Animation_Change(&this->skelAnime, &gDinolfosSidestepAnim, this->actor.speed * (1.0f / 6.0f), 0.0f, 0.0f,
                              ANIMMODE_LOOP, -4.0f);
         }
 
@@ -930,7 +940,7 @@ void func_8089C56C(EnDinofos* this, PlayState* play) {
     Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x800);
     this->actor.world.rot.y = this->actor.shape.rot.y;
     if (SkelAnime_Update(&this->skelAnime)) {
-        EffectBlure_AddSpace(Effect_GetByIndex(this->unk_2A0));
+        EffectBlure_AddSpace(Effect_GetByIndex(this->effectIndex));
         this->colliderQuad.base.atFlags &= ~AT_ON;
         func_8089A9B0(this, play);
     } else if (Animation_OnFrame(&this->skelAnime, 7.0f)) {
@@ -967,15 +977,15 @@ void func_8089C724(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089C784(EnDinofos* this) {
+void EnDinofos_SetupStunned(EnDinofos* this) {
     this->actor.speed = 0.0f;
     if (this->actor.velocity.y > 0.0f) {
         this->actor.velocity.y = 0.0f;
     }
-    this->actionFunc = func_8089C7B8;
+    this->actionFunc = EnDinofos_Stunned;
 }
 
-void func_8089C7B8(EnDinofos* this, PlayState* play) {
+void EnDinofos_Stunned(EnDinofos* this, PlayState* play) {
     if (this->unk_290 != 0) {
         this->unk_290--;
     }
@@ -984,9 +994,9 @@ void func_8089C7B8(EnDinofos* this, PlayState* play) {
         func_8089ACEC(this, play);
         if (this->actor.colChkInfo.health == 0) {
             if (this->actor.csId == CS_ID_NONE) {
-                func_8089CFAC(this);
+                EnDinofos_SetupDie(this);
             } else {
-                func_8089D2E0(this);
+                EnDinofos_SetupPlayCutscene(this);
             }
         } else if (func_8089A968(this) && (this->actor.xzDistToPlayer < 100.0f)) {
             func_8089CA14(this);
@@ -1016,9 +1026,9 @@ void func_8089C938(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
         if (this->actor.colChkInfo.health == 0) {
             if (this->actor.csId == CS_ID_NONE) {
-                func_8089CFAC(this);
+                EnDinofos_SetupDie(this);
             } else {
-                func_8089D2E0(this);
+                EnDinofos_SetupPlayCutscene(this);
             }
         } else if (this->actor.xzDistToPlayer < 280.0f) {
             func_8089CA14(this);
@@ -1029,7 +1039,7 @@ void func_8089C938(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089CA14(EnDinofos* this) {
+void func_8089CA14(EnDinofos* this) { //breathe fire towards player
     Animation_MorphToPlayOnce(&this->skelAnime, &gDinolfosFireStartAnim, -5.0f);
     this->colliderJntSph.base.acFlags |= AC_ON;
     this->actor.speed = 0.0f;
@@ -1047,7 +1057,7 @@ void func_8089CA74(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089CB10(EnDinofos* this, PlayState* play) {
+void func_8089CB10(EnDinofos* this, PlayState* play) { //sets up fire breathing function
     s32 i;
     Sphere16* worldSphere;
 
@@ -1071,7 +1081,7 @@ void func_8089CB10(EnDinofos* this, PlayState* play) {
     this->actionFunc = func_8089CBEC;
 }
 
-void func_8089CBEC(EnDinofos* this, PlayState* play) {
+void func_8089CBEC(EnDinofos* this, PlayState* play) { //related to breathing fire
     s16 temp_s3 = ((s32)Rand_CenteredFloat(0x1000) + this->actor.shape.rot.y) + this->unk_28E;
     Vec3f sp88;
     Vec3f sp7C;
@@ -1140,18 +1150,18 @@ void func_8089CF70(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089CFAC(EnDinofos* this) {
+void EnDinofos_SetupDie(EnDinofos* this) {
     Animation_PlayOnce(&this->skelAnime, &gDinolfosDieAnim);
     this->actor.flags &= ~ACTOR_FLAG_TARGETABLE;
     Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_DEAD);
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
-    this->actionFunc = func_8089D018;
+    this->actionFunc = EnDinofos_Die;
 }
 
-void func_8089D018(EnDinofos* this, PlayState* play) {
+void EnDinofos_Die(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
-        s32 temp_v0 = this->unk_288 - 10;
+        s32 temp_v0 = this->envColorAlpha - 10;
 
         if (this->actor.category == ACTORCAT_ENEMY) {
             Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
@@ -1160,22 +1170,22 @@ void func_8089D018(EnDinofos* this, PlayState* play) {
 
         if (temp_v0 <= 0) {
             Actor_Kill(&this->actor);
-            this->unk_288 = 0;
+            this->envColorAlpha = 0;
         } else {
-            this->unk_288 = temp_v0;
+            this->envColorAlpha = temp_v0;
         }
 
         if (this->drawDmgEffAlpha > 0.0f) {
-            this->drawDmgEffAlpha = this->unk_288 * (1.0f / 255.0f);
+            this->drawDmgEffAlpha = this->envColorAlpha * (1.0f / 255.0f);
         }
 
-        this->actor.shape.shadowAlpha = this->unk_288;
+        this->actor.shape.shadowAlpha = this->envColorAlpha;
     } else if (Animation_OnFrame(&this->skelAnime, 26.0f)) {
-        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_DOWN);
+        Actor_PlaySfx(&this->actor, NA_SE_EN_GERUDOFT_DOWN);//wrong symbol.
     }
 }
 
-void func_8089D11C(EnDinofos* this, s16 arg1) {
+void func_8089D11C(EnDinofos* this, s16 arg1) { //setup circlearoundplayer?
     if (arg1 >= 0) {
         this->actor.speed = -15.0f;
     } else {
@@ -1190,7 +1200,7 @@ void func_8089D11C(EnDinofos* this, s16 arg1) {
     this->actionFunc = func_8089D1E0;
 }
 
-void func_8089D1E0(EnDinofos* this, PlayState* play) {
+void func_8089D1E0(EnDinofos* this, PlayState* play) { //circlearoundplayer?
     Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0xBB8);
     Math_StepToF(&this->actor.speed, 0.0f, 2.0f);
 
@@ -1209,12 +1219,12 @@ void func_8089D1E0(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089D2E0(EnDinofos* this) {
+void EnDinofos_SetupPlayCutscene(EnDinofos* this) {
     CutsceneManager_Queue(this->actor.csId);
-    this->actionFunc = func_8089D318;
+    this->actionFunc = EnDinofos_PlayCutscene;
 }
 
-void func_8089D318(EnDinofos* this, PlayState* play) {
+void EnDinofos_PlayCutscene(EnDinofos* this, PlayState* play) {
     Vec3f subCamEye;
 
     if (CutsceneManager_IsNext(this->actor.csId)) {
@@ -1230,7 +1240,7 @@ void func_8089D318(EnDinofos* this, PlayState* play) {
             subCamEye.y = this->actor.focus.pos.y;
             subCamEye.z = (Math_CosS(this->actor.shape.rot.y) * 150.0f) + this->actor.focus.pos.z;
             Play_SetCameraAtEye(play, this->subCamId, &this->actor.focus.pos, &subCamEye);
-            func_8089CFAC(this);
+            EnDinofos_SetupDie(this);
         } else {
             func_8089B100(this, play);
         }
@@ -1257,7 +1267,7 @@ void func_8089D42C(EnDinofos* this, PlayState* play) {
     }
 }
 
-s32 func_8089D60C(EnDinofos* this, PlayState* play) {
+s32 func_8089D60C(EnDinofos* this, PlayState* play) { //gets hit
     s32 i;
 
     if (this->colliderJntSph.base.acFlags & AC_HIT) {
@@ -1279,7 +1289,7 @@ s32 func_8089D60C(EnDinofos* this, PlayState* play) {
             return false;
         }
 
-        if (this->actor.colChkInfo.damageEffect == 0xF) {
+        if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_IMMUNE) {
             return false;
         }
 
@@ -1305,40 +1315,40 @@ s32 func_8089D60C(EnDinofos* this, PlayState* play) {
 
         this->colliderQuad.base.atFlags &= ~(AT_ON | AT_BOUNCED);
         this->colliderJntSph.base.atFlags &= ~AT_ON;
-        if (this->actor.colChkInfo.damageEffect == 3) {
+        if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_ICE) {
             func_8089AC70(this);
             if (this->actor.colChkInfo.health == 0) {
                 this->unk_290 = 3;
                 this->colliderJntSph.base.acFlags &= ~AC_ON;
             }
-            func_8089C784(this);
+            EnDinofos_SetupStunned(this);
             return true;
         }
 
-        if (this->actor.colChkInfo.damageEffect == 1) {
+        if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_STUN) {
             this->unk_290 = 40;
             Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 40);
             Actor_PlaySfx(&this->actor, NA_SE_EN_COMMON_FREEZE);
-            func_8089C784(this);
+            EnDinofos_SetupStunned(this);
             return true;
         }
 
-        if (this->actor.colChkInfo.damageEffect == 5) {
+        if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_ZORA_MAGIC) {
             this->unk_290 = 40;
             Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 40);
             this->drawDmgEffScale = 0.55f;
             this->drawDmgEffAlpha = 2.0f;
             this->drawDmgEffType = ACTOR_DRAW_DMGEFF_ELECTRIC_SPARKS_MEDIUM;
             Actor_PlaySfx(&this->actor, NA_SE_EN_COMMON_FREEZE);
-            func_8089C784(this);
+            EnDinofos_SetupStunned(this);
             return true;
         }
 
-        if (this->actor.colChkInfo.damageEffect == 2) {
+        if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_FIRE) {
             this->drawDmgEffAlpha = 4.0f;
             this->drawDmgEffScale = 0.55f;
             this->drawDmgEffType = ACTOR_DRAW_DMGEFF_FIRE;
-        } else if (this->actor.colChkInfo.damageEffect == 4) {
+        } else if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_LIGHT_SPARKS) {
             this->drawDmgEffAlpha = 4.0f;
             this->drawDmgEffScale = 0.55f;
             this->drawDmgEffType = ACTOR_DRAW_DMGEFF_LIGHT_ORBS;
@@ -1361,10 +1371,12 @@ void EnDinofos_Update(Actor* thisx, PlayState* play2) {
     s32 pad;
     Vec3f bodyPartPos;
 
-    if (this->actionFunc != func_8089C7B8) {
-        func_8089A900(this);
+    if (this->actionFunc != EnDinofos_Stunned) {
+        EnDinofos_Blink(this);
     }
 
+    // Had an AT collision with an AC_HARD collider is what AT_BOUNCED is for
+    //probably after player's shield got hit
     if (!func_8089D60C(this, play) && (this->colliderQuad.base.atFlags & AT_BOUNCED)) {
         func_8089C690(this);
     }
@@ -1374,7 +1386,7 @@ void EnDinofos_Update(Actor* thisx, PlayState* play2) {
     Actor_UpdateBgCheckInfo(play, &this->actor, 25.0f, 30.0f, 60.0f,
                             UPDBGCHECKINFO_FLAG_1 | UPDBGCHECKINFO_FLAG_4 | UPDBGCHECKINFO_FLAG_8 |
                                 UPDBGCHECKINFO_FLAG_10 | UPDBGCHECKINFO_FLAG_40);
-    if (this->actionFunc != func_8089C7B8) {
+    if (this->actionFunc != EnDinofos_Stunned) {
         if ((this->actor.depthInWater > 0.0f) && (this->actor.depthInWater < 10.0f)) {
             if (((play->gameplayFrames % 4) & 1) == 0) {
                 Math_Vec3f_Copy(&bodyPartPos,
@@ -1383,12 +1395,12 @@ void EnDinofos_Update(Actor* thisx, PlayState* play2) {
                 EffectSsGRipple_Spawn(play, &bodyPartPos, 100, 320, 0);
             }
         }
-        if (this->actionFunc != func_8089D018) {
+        if (this->actionFunc != EnDinofos_Die) {
             func_8089D42C(this, play);
         }
     }
 
-    if ((this->actionFunc == func_8089D018) || (this->actionFunc == func_8089C938)) {
+    if ((this->actionFunc == EnDinofos_Die) || (this->actionFunc == func_8089C938)) {
         Math_ScaledStepToS(&this->unk_28E, 0, 2000);
     }
 
@@ -1412,7 +1424,7 @@ void EnDinofos_Update(Actor* thisx, PlayState* play2) {
             Math_StepToF(&this->drawDmgEffAlpha, 0.0f, 0.05f);
             this->drawDmgEffScale = (this->drawDmgEffAlpha + 1.0f) * (11.0f / 40.0f);
             this->drawDmgEffScale = CLAMP_MAX(this->drawDmgEffScale, 0.55f);
-        } else if (!Math_StepToF(&this->drawDmgEffFrozenSteamScale, 0.55f, 0.01375f)) {
+        } else if (!Math_StepToF(&this->drawDmgEffFrozenSteamScale, 0.55f, (11.0f/ 800.0f))) {
             Actor_PlaySfx_Flagged(&this->actor, NA_SE_EV_ICE_FREEZE - SFX_FLAG);
         }
     }
@@ -1480,7 +1492,7 @@ void EnDinofos_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* 
         Matrix_MultVec3f(&D_8089E398, &sp5C);
         Collider_SetQuadVertices(&this->colliderQuad, &sp5C, &sp68, &sp74, &sp80);
         if (this->colliderQuad.base.atFlags & AT_ON) {
-            EffectBlure_AddVertex(Effect_GetByIndex(this->unk_2A0), &sp68, &sp5C);
+            EffectBlure_AddVertex(Effect_GetByIndex(this->effectIndex), &sp68, &sp5C);
         }
         this->unk_292 = this->unk_290;
     }
@@ -1513,11 +1525,11 @@ void EnDinofos_Draw(Actor* thisx, PlayState* play) {
 
     OPEN_DISPS(play->state.gfxCtx);
 
-    if (this->unk_288 == 255) {
+    if (this->envColorAlpha == 255) {
         Gfx_SetupDL25_Opa(play->state.gfxCtx);
         func_800B8050(&this->actor, play, 0);
 
-        gSPSegment(POLY_OPA_DISP++, 0x08, sEyeTextures[this->unk_289]);
+        gSPSegment(POLY_OPA_DISP++, 0x08, sEyeTextures[this->eyeTexIndex]);
         gDPSetEnvColor(POLY_OPA_DISP++, 20, 40, 40, 255);
 
         Scene_SetRenderModeXlu(play, 0, 1);
@@ -1528,8 +1540,8 @@ void EnDinofos_Draw(Actor* thisx, PlayState* play) {
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
         func_800B8118(&this->actor, play, 0);
 
-        gSPSegment(POLY_XLU_DISP++, 0x08, sEyeTextures[this->unk_289]);
-        gDPSetEnvColor(POLY_XLU_DISP++, 20, 40, 40, this->unk_288);
+        gSPSegment(POLY_XLU_DISP++, 0x08, sEyeTextures[this->eyeTexIndex]);
+        gDPSetEnvColor(POLY_XLU_DISP++, 20, 40, 40, this->envColorAlpha);
 
         Scene_SetRenderModeXlu(play, 1, 2);
         POLY_XLU_DISP =
