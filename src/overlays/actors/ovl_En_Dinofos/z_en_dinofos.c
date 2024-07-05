@@ -311,7 +311,7 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
         dim->worldSphere.radius = dim->modelSphere.radius;
     }
 
-    this->unk_28B = 0;
+    this->unk_28B = false;
     if (thisx->csId == CS_ID_NONE) {
         func_8089B7B0(this);
     } else {
@@ -423,7 +423,7 @@ void func_8089AD70(EnDinofos* this) {
         for (i = 0; i < ARRAY_COUNT(this->colliderJntSphElement) - 3; i++) {
             this->colliderJntSph.elements[i].info.bumper.dmgFlags |= 0x400;
         }
-        this->unk_28B = 0;
+        this->unk_28B = false;
     }
 }
 
@@ -473,7 +473,7 @@ s32 func_8089AE00(EnDinofos* this, PlayState* play) {
 
     if ((GET_PLAYER_FORM == PLAYER_FORM_GORON) && (player->actor.velocity.y < -5.0f) && (player->av1.actionVar1 == 1) &&
         (this->unk_28B == 0)) {
-        this->unk_28B = 1;
+        this->unk_28B = true;
         for (i = 0; i < ARRAY_COUNT(this->colliderJntSphElement) - 3; i++) {
             this->colliderJntSph.elements[i].info.bumper.dmgFlags &= ~0x400;
         }
