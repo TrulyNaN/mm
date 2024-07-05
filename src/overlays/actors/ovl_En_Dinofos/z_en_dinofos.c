@@ -472,7 +472,7 @@ s32 func_8089AE00(EnDinofos* this, PlayState* play) {
     }
 
     if ((GET_PLAYER_FORM == PLAYER_FORM_GORON) && (player->actor.velocity.y < -5.0f) && (player->av1.actionVar1 == 1) &&
-        (this->unk_28B == 0)) {
+        (!this->unk_28B)) {
         this->unk_28B = true;
         for (i = 0; i < ARRAY_COUNT(this->colliderJntSphElement) - 3; i++) {
             this->colliderJntSph.elements[i].info.bumper.dmgFlags &= ~0x400;
