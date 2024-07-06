@@ -33,11 +33,11 @@ typedef struct EnDinofos {
     /* 0x288 */ u8 envColorAlpha;
     /* 0x289 */ u8 eyeTexIndex;
     /* 0x28A */ u8 drawDmgEffType;
-    /* 0x28B */ u8 unk_28B;
+    /* 0x28B */ u8 isPlayerGoronPounding; //able to dodge Goron Pound bool
     /* 0x28C */ s16 unk_28C;
-    /* 0x28E */ s16 unk_28E;
-    /* 0x290 */ s16 unk_290; //stun or idle timer
-    /* 0x292 */ s16 unk_292; //attack timer?
+    /* 0x28E */ s16 unk_28E; //related to rotations
+    /* 0x290 */ s16 unk_290; //many timers. (choose action timer) certain(cry for start cutscene-, breathe fire-, stunned-, slash+). animationTimer?
+    /* 0x292 */ s16 unk_292; //will pick some random action when 292 hits 0. idle- timer? jump forward timer
     /* 0x294 */ UNK_TYPE1 unk_294[4];
     /* 0x298 */ s16 subCamId;
     /* 0x29A */ Vec3s unk_29A;
