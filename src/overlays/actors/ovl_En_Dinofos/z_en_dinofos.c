@@ -36,7 +36,7 @@ void EnDinofos_SpawnFire(EnDinofos* this, PlayState* play);
 void EnDinofos_SetupEndBreatheFire(EnDinofos* this, PlayState* play);
 void EnDinofos_EndBreatheFire(EnDinofos* this, PlayState* play);
 void EnDinofos_IntroCutsceneLandAndBreatheFire(EnDinofos* this, PlayState* play);
-void func_8089B72C(EnDinofos* this, PlayState* play);
+void EnDinofos_IntroCutsceneYell(EnDinofos* this, PlayState* play);
 void func_8089C2A8(EnDinofos* this, PlayState* play);
 void func_8089C1F8(EnDinofos* this, PlayState* play);
 void func_8089C724(EnDinofos* this, PlayState* play);
@@ -51,7 +51,7 @@ void EnDinofos_SetupPlayCutscene(EnDinofos* this);
 void EnDinofos_SetupBreatheFire(EnDinofos* this);
 void EnDinofos_SetupIntroCutsceneFall(EnDinofos* this);
 void EnDinofos_SetupIntroCutsceneLandAndBreatheFire(EnDinofos* this);
-void func_8089B6E8(EnDinofos* this);
+void EnDinofos_SetupIntroCutsceneYell(EnDinofos* this);
 void EnDinofos_SetupDie(EnDinofos* this);
 void func_8089C398(EnDinofos* this);
 void func_8089C164(EnDinofos* this);
@@ -382,7 +382,7 @@ void EnDinofos_ChooseAction(EnDinofos* this, PlayState* play) {
     }
 }
 
-void func_8089ABF4(EnDinofos* this, PlayState* play) { //returns camera to player
+void EnDinofos_EndIntroCutscene(EnDinofos* this, PlayState* play) {
     if (this->subCamId != SUB_CAM_ID_DONE) {
         Camera* subCam = Play_GetCamera(play, this->subCamId);
 
@@ -588,22 +588,22 @@ void EnDinofos_IntroCutsceneLandAndBreatheFire(EnDinofos* this, PlayState* play)
     }
 
     if (SkelAnime_Update(&this->skelAnime)) {
-        func_8089B6E8(this);
+        EnDinofos_SetupIntroCutsceneYell(this);
     }
 }
 
-void func_8089B6E8(EnDinofos* this) {
+void EnDinofos_SetupIntroCutsceneYell(EnDinofos* this) { //may find better name since Dinolfos cries before landing too.
     Animation_MorphToPlayOnce(&this->skelAnime, &gDinolfosCryAnim, -3.0f);
-    this->actionFunc = func_8089B72C;
+    this->actionFunc = EnDinofos_IntroCutsceneYell;
 }
 
-void func_8089B72C(EnDinofos* this, PlayState* play) {
+void EnDinofos_IntroCutsceneYell(EnDinofos* this, PlayState* play) { //maybe introcutscenecry or yell
     if (Animation_OnFrame(&this->skelAnime, 2.0f)) {
         Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_ATTACK);
     }
 
     if (SkelAnime_Update(&this->skelAnime)) {
-        func_8089ABF4(this, play); //return camera to player
+        EnDinofos_EndIntroCutscene(this, play); //return camera to player
         this->actor.flags &= ~ACTOR_FLAG_100000;
         this->actor.csId = CS_ID_NONE;
         EnDinofos_SetupIdle(this);
@@ -1165,7 +1165,7 @@ void EnDinofos_Die(EnDinofos* this, PlayState* play) {
 
         if (this->actor.category == ACTORCAT_ENEMY) {
             Actor_ChangeCategory(play, &play->actorCtx, &this->actor, ACTORCAT_PROP);
-            func_8089ABF4(this, play);
+            EnDinofos_EndIntroCutscene(this, play);
         }
 
         if (temp_v0 <= 0) {
