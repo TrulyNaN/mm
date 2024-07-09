@@ -33,7 +33,7 @@ typedef struct EnDinofos {
     /* 0x288 */ u8 envColorAlpha;
     /* 0x289 */ u8 eyeTexIndex;
     /* 0x28A */ u8 drawDmgEffType;
-    /* 0x28B */ u8 isPlayerGoronPounding; //able to dodge Goron Pound bool
+    /* 0x28B */ u8 isDodgingGoronPound; //able to dodge Goron Pound bool
     /* 0x28C */ s16 targetRotY;
     /* 0x28E */ s16 headRotY;
     /* 0x290 */ s16 unk_290; //many timers. (choose action timer) certain(cry for start cutscene-, breathe fire-, stunned-, slash+). animationTimer?
