@@ -5547,7 +5547,7 @@
     0x8089A900:("EnDinofos_Blink",),
     0x8089A968:("EnDinofos_IsFacingPlayer",),
     0x8089A9B0:("EnDinofos_ChooseAction",),
-    0x8089ABF4:("EnDinofos_EndIntroCutscene",),
+    0x8089ABF4:("EnDinofos_EndCutscene",),
     0x8089AC70:("EnDinofos_Freeze",),
     0x8089ACEC:("EnDinofos_ThawIfFrozen",),
     0x8089AD70:("func_8089AD70",),
