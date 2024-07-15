@@ -31,6 +31,21 @@ typedef enum EnDinofosJumpType {
     /* 3 */ DINOFOS_JUMP_TYPE_SLASH
 } EnDinofosJumpType;
 
+/**
+ * unk_294 explanation :
+ *
+ * The best way to compare is to look from timer1 to circlingRate in this current actor struct and from
+ * 0x03F0 to 0x0408 in OoT's struct for Lizalfos/Dinolfos.
+ *
+ * In OoT, an additionnal ice timer, booleans related to the platforms fight and platforms indices are stored
+ * after the two timers EnDinofos still has (all integers). Moreover, the alpha value (envColorAlpha) has been moved up
+ * in MM.
+ *
+ * In MM, subCamId and subCamRot were added to handle the new cutscenes. Also, the effectIndex for blur is new.
+ *
+ * All in all, unk_294 is probably remnants of the now unnecessary variables mentioned above.
+ */
+
 typedef struct EnDinofos {
     /* 0x000 */ Actor actor;
     /* 0x144 */ SkelAnime skelAnime;
@@ -42,24 +57,27 @@ typedef struct EnDinofos {
     /* 0x28A */ u8 drawDmgEffType;
     /* 0x28B */ u8 isDodgingGoronPound;
     /* 0x28C */ s16 targetRotY;
-    /* 0x28E */ s16 headRotY; //double-check or ask if this should be headRotY or just headRot
-    //certain(idle-, slashfromground+). animationTimer?
+    /* 0x28E */ s16 headRotY;
     /* 0x290 */ union { // multi-use timer
-                    s16 unk_290;
-                    s16 cutsceneTimer;
-                    s16 attackTimer;
-                    s16 stunTimer;
-                    s16 freezeTimer;
-                    s16 jumpType;
-                    s16 isJumpingBackward;
-                };
-    /* 0x292 */ union {
-                    s16 unk_292; //set to -1 once. idle when unaware of player
-                    s16 sidestepTimer;
-                }; //will pick some random action when 292 hits 0. idle- timer. jump forward timer. walk-, chooseaction-, sidestep-, dodgeprojectile-, also checks not equal to unk_290 for slashing
-    /* 0x294 */ UNK_TYPE1 unk_294[4]; //TODO: compare to oot.
+        s16 timer1;
+        s16 cutsceneTimer;
+        s16 attackTimer;
+        s16 actionTimer;
+        s16 headTimer;
+        s16 stunTimer;
+        s16 jumpType;
+        s16 isJumpingBackward;
+    };
+    /* 0x292 */ union { // second multi-use timer
+        s16 timer2;
+        s16 sidestepTimer;
+        s16 walkTimer;
+        s16 idleTimer;
+    };
+    // unk_294 is all zeroes in-game. Leftovers from OoT.
+    /* 0x294 */ UNK_TYPE1 unk_294[4];
     /* 0x298 */ s16 subCamId;
-    /* 0x29A */ Vec3s unk_29A;
+    /* 0x29A */ Vec3s subCamRot;
     /* 0x2A0 */ s32 effectIndex;
     /* 0x2A4 */ f32 circlingRate;
     /* 0x2A8 */ f32 subCamAtStep;
@@ -70,8 +88,8 @@ typedef struct EnDinofos {
     /* 0x2BC */ Vec3f subCamEye;
     /* 0x2C8 */ Vec3f subCamAt;
     /* 0x2D4 */ Vec3f bodyPartsPos[DINOFOS_BODYPART_MAX];
-    /* 0x364 */ ColliderJntSph colliderJntSph; //damage spheres
-    /* 0x384 */ ColliderJntSphElement colliderJntSphElements[9]; //body to take damage? flames?
+    /* 0x364 */ ColliderJntSph colliderJntSph;
+    /* 0x384 */ ColliderJntSphElement colliderJntSphElements[9];
     /* 0x5C4 */ ColliderQuad knifeCollider;
 } EnDinofos; // size = 0x644
 
