@@ -16,6 +16,8 @@ struct EnDinofos;
 #define DINOFOS_PROB_JUMP_FROM_PLAYER_MELEE_ATTACK 0.85f
 #define DINOFOS_PROB_JUMP_BACKWARD_FROM_PLAYER_MELEE_ATTACK 0.35f
 
+#define DINOFOS_PROB_RECOIL_TO_FIRE 0.25f
+
 #define DINOFOS_IDLE_TIMER1_MAX_OFFSET 10.0f
 #define DINOFOS_IDLE_TIMER1_MIN 20
 
@@ -41,24 +43,21 @@ struct EnDinofos;
 
 #define DINOFOS_WALK_SPEED_START 7.0f
 #define DINOFOS_WALK_SPEED_MAX 14.0f
-#define DINOFOS_CIRCLING_SPEED 12.0f
+#define DINOFOS_CIRCLING_SPEED 9.0f
 
 #define DINOFOS_JUMP_BACKWARD_SPEED 8.0f //original: 10f.
 #define DINOFOS_JUMP_FORWARD_SPEED 9.0f
-#define DINOFOS_SLASH_FROM_GROUND_SPEED 1.75f //original: 0.0f. 3.5f is too strange-looking. Maybe I just want a step forward.
+#define DINOFOS_SLASH_FROM_GROUND_SPEED 1.75f
 
 #define DINOFOS_RECOIL_SPEED 1.5f
 #define DINOFOS_DAMAGED_SPEED 5.0f
-#define DINOFOS_DODGE_PROJECTILE_SPEED 30.0f
+#define DINOFOS_DODGE_PROJECTILE_SPEED 15.0f
 
 #define DINOFOS_JUMP_BACKWARD_VELOCITY_Y 9.0f
 #define DINOFOS_JUMP_NOT_BACKWARD_VELOCITY_Y 12.5f
 #define DINOFOS_JUMP_SLASH_VELOCITY_Y 16.0f
 
 #define DINOFOS_SLASH_ANIM_LAST_FRAME_TO_DODGE 11.0f //original: 7.0f
-
-#define DINOFOS_FIRE_EFFECT_SPEED 22.0f
-#define DINOFOS_FIRE_EFFECT_ACCEL 1.8f
 
 typedef void (*EnDinofosActionFunc)(struct EnDinofos*, PlayState*);
 
@@ -127,9 +126,8 @@ typedef struct EnDinofos {
         s16 sidestepTimer;
         s16 walkTimer;
         s16 idleTimer;
-    };
-    // unk_294 is all zeroes in-game. Leftovers from OoT.
-    /* 0x294 */ UNK_TYPE1 unk_294[4];
+    }; 
+    /* 0x294*/ f32 flameMultiplier;
     /* 0x298 */ s16 subCamId;
     /* 0x29A */ Vec3s subCamRot;
     /* 0x2A0 */ s32 effectIndex;

@@ -324,6 +324,7 @@ void EnDinofos_Init(Actor* thisx, PlayState* play) {
         EnDinofos_SetupPlayCutscene(this);
     }
 
+    this->flameMultiplier = 2.0f;
     sNumAlive++;
 }
 
@@ -361,7 +362,12 @@ void EnDinofos_ChooseAction(EnDinofos* this, PlayState* play) {
             if (
                 (((this->actionFunc != EnDinofos_SlashFromGround) && (Rand_ZeroOne() > DINOFOS_PROB_COMPL_CHOOSE_ACTION_NOT_SLASHING_TO_SLASHING)) ||
                  ((this->actionFunc == EnDinofos_SlashFromGround) && (Rand_ZeroOne() > DINOFOS_PROB_COMPL_CHOOSE_ACTION_SLASHING_TO_SLASHING)))) {
-                EnDinofos_SetupSlashFromGround(this); 
+                if (Rand_ZeroOne() < 0.5f) {
+                    EnDinofos_SetupSlashFromGround(this); 
+                } else {
+                    this->flameMultiplier = 1;
+                    EnDinofos_SetupStartBreatheFire(this);
+                }
             } else {
                 EnDinofos_SetupCircleAroundPlayer(this, play); 
             }
@@ -934,6 +940,7 @@ void EnDinofos_Land(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
         if ((this->isJumpingBackward == true) && (this->actor.xzDistToPlayer < 280.0f) &&
             EnDinofos_IsFacingPlayer(this) && (Rand_ZeroOne() < DINOFOS_PROB_JUMP_BACKWARD_TO_FIRE)) {
+            this->flameMultiplier = 1.5f;
             EnDinofos_SetupStartBreatheFire(this);
         } else {
             EnDinofos_ChooseAction(this, play);
@@ -959,6 +966,7 @@ void EnDinofos_SlashFromGround(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
         EffectBlure_AddSpace(Effect_GetByIndex(this->effectIndex));
         this->knifeCollider.base.atFlags &= ~AT_ON;
+        this->actor.speed = 0.0f; //to fix awkward sliding after slashing (attempt)
         EnDinofos_ChooseAction(this, play);
     } else if (Animation_OnFrame(&this->skelAnime, 7.0f)) {
         this->knifeCollider.base.atFlags |= AT_ON;
@@ -990,6 +998,10 @@ void EnDinofos_RecoilFromBlockedSlash(EnDinofos* this, PlayState* play) {
     }
 
     if (SkelAnime_Update(&this->skelAnime)) {
+        if (Rand_ZeroOne() < DINOFOS_PROB_RECOIL_TO_FIRE){
+            this->flameMultiplier = 0.5f;
+            EnDinofos_SetupStartBreatheFire(this);
+        }
         EnDinofos_ChooseAction(this, play);
     }
 }
@@ -1016,6 +1028,7 @@ void EnDinofos_Stunned(EnDinofos* this, PlayState* play) {
                 EnDinofos_SetupPlayCutscene(this);
             }
         } else if (EnDinofos_IsFacingPlayer(this) && (this->actor.xzDistToPlayer < 100.0f)) {
+            this->flameMultiplier = 1.5f;
             EnDinofos_SetupStartBreatheFire(this);
         } else {
             EnDinofos_ChooseAction(this, play);
@@ -1048,6 +1061,7 @@ void EnDinofos_Damaged(EnDinofos* this, PlayState* play) {
                 EnDinofos_SetupPlayCutscene(this);
             }
         } else if (this->actor.xzDistToPlayer < 280.0f) {
+            this->flameMultiplier = 1.9f;
             EnDinofos_SetupStartBreatheFire(this);
         } else {
             this->colliderJntSph.base.acFlags |= AC_ON;
@@ -1117,12 +1131,12 @@ void EnDinofos_BreatheFire(EnDinofos* this, PlayState* play) {
     temp_s0 = 10 - this->attackTimer;
     temp_s0 = CLAMP_MIN(temp_s0, 0);
 
-    velocity.x = DINOFOS_FIRE_EFFECT_SPEED * sin;
+    velocity.x = 11.0f * sin * this->flameMultiplier;
     velocity.y = Rand_CenteredFloat(2.0f) + -5.4f;
-    velocity.z = DINOFOS_FIRE_EFFECT_SPEED * cos;
-    accel.x = DINOFOS_FIRE_EFFECT_ACCEL * sin;
+    velocity.z = 11.0f * cos * this->flameMultiplier;
+    accel.x = this->flameMultiplier * 0.9f * sin;
     accel.y = Rand_CenteredFloat(0.6f) + 1.4f;
-    accel.z = DINOFOS_FIRE_EFFECT_ACCEL * cos;
+    accel.z = this->flameMultiplier * 0.9f * cos;
     Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_DODO_J_FIRE - SFX_FLAG);
     EffectSsDFire_Spawn(play, &this->bodyPartsPos[DINOFOS_BODYPART_JAW], &velocity, &accel, 30, 22,
                         255 - (temp_s0 * 20), 20, 3, 8);
@@ -1142,10 +1156,10 @@ void EnDinofos_BreatheFire(EnDinofos* this, PlayState* play) {
             (s32)(Math_CosF((this->attackTimer + ((i - 5) << 1)) * (M_PIf / DINOFOS_FIRE_TIMER)) * 0x2C00) + this->actor.shape.rot.y;
 
         dim->worldSphere.center.x =
-            (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].x + 2*(s32)(Math_SinS(fireRotY) * dim->modelSphere.center.z);
+            (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].x + this->flameMultiplier * (s32)(Math_SinS(fireRotY) * dim->modelSphere.center.z);
         dim->worldSphere.center.y = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].y + (s32)dim->modelSphere.center.y;
         dim->worldSphere.center.z =
-            (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].z + 2*(s32)(Math_CosS(fireRotY) * dim->modelSphere.center.z);
+            (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].z + this->flameMultiplier * (s32)(Math_CosS(fireRotY) * dim->modelSphere.center.z);
     }
 
     if (this->attackTimer != 0) {
