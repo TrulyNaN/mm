@@ -966,7 +966,7 @@ void EnDinofos_SlashFromGround(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
         EffectBlure_AddSpace(Effect_GetByIndex(this->effectIndex));
         this->knifeCollider.base.atFlags &= ~AT_ON;
-        this->actor.speed = 0.0f; //to fix awkward sliding after slashing (attempt)
+        this->actor.speed = 0.0f; //to fix awkward sliding after slashing
         EnDinofos_ChooseAction(this, play);
     } else if (Animation_OnFrame(&this->skelAnime, 7.0f)) {
         this->knifeCollider.base.atFlags |= AT_ON;
@@ -1037,7 +1037,10 @@ void EnDinofos_Stunned(EnDinofos* this, PlayState* play) {
 }
 
 void EnDinofos_SetupDamaged(EnDinofos* this, s32 colliderIndex) {
-    Animation_PlayOnce(&this->skelAnime, &gDinolfosHitAnim);
+    // Animation_PlayOnce(&this->skelAnime, &gDinolfosHitAnim);
+    // Animation_Change(SkelAnime* skelAnime, AnimationHeader* animation, f32 playSpeed, f32 startFrame, f32 endFrame,
+                    //   u8 mode, f32 morphFrames)
+    Animation_Change(&this->skelAnime, &gDinolfosHitAnim, 2.0f, 0.0f, Animation_GetLastFrame(&gDinolfosHitAnim), ANIMMODE_ONCE, 0.0f);
     func_800BE5CC(&this->actor, &this->colliderJntSph, colliderIndex);
     this->actor.shape.rot.y = BINANG_ROT180(this->actor.world.rot.y);
     this->actor.speed = DINOFOS_DAMAGED_SPEED;
