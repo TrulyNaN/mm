@@ -249,7 +249,7 @@ static DamageTable sDamageTable = {
     /* Powder Keg     */ DMG_ENTRY(1, DINOLFOS_DMGEFF_NONE),
 };
 
-static CollisionCheckInfoInit sColChkInfoInit = { 4, 40, 100, 80 };
+static CollisionCheckInfoInit sColChkInfoInit = { DINOFOS_HEALTH, 40, 100, 80 };
 
 static TexturePtr sEyeTextures[] = {
     gDinolfosEyeOpenTex,
@@ -266,7 +266,7 @@ static InitChainEntry sInitChain[] = {
     ICHAIN_S8(hintId, TATL_HINT_ID_DINOLFOS, ICHAIN_CONTINUE),
     ICHAIN_F32_DIV1000(gravity, -2000, ICHAIN_CONTINUE),
     ICHAIN_VEC3F_DIV1000(scale, 15, ICHAIN_STOP),
-};
+}; 
 
 void EnDinofos_Init(Actor* thisx, PlayState* play) {
     static s32 sTexturesDesegmented = false;

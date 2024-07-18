@@ -6,6 +6,8 @@
 
 struct EnDinofos;
 
+#define DINOFOS_HEALTH 40 //didn't beat it yet with 40 health. This is so fun.
+
 #define DINOFOS_PROB_BLINK 0.05f
 #define DINOFOS_PROB_COMPL_CHOOSE_ACTION_NOT_SLASHING_TO_SLASHING 0.1f
 #define DINOFOS_PROB_COMPL_CHOOSE_ACTION_SLASHING_TO_SLASHING 0.4f
@@ -30,7 +32,7 @@ struct EnDinofos;
 #define DINOFOS_SIDESTEP_TIMER_MAX_OFFSET 5.0f
 #define DINOFOS_SIDESTEP_TIMER_MIN 2
 
-#define DINOFOS_PROB_JUMP_BACKWARD_TO_FIRE 0.95f
+#define DINOFOS_PROB_JUMP_BACKWARD_TO_FIRE 0.90f //0.95f for most of testing, trying 0.90f
 
 #define DINOFOS_FREEZE_TIMER 40
 #define DINOFOS_IDLE_TIMER 15
