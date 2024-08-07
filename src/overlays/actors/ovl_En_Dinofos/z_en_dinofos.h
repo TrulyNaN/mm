@@ -6,7 +6,7 @@
 
 struct EnDinofos;
 
-#define DINOFOS_HEALTH 40 //didn't beat it yet with 40 health. This is so fun.
+#define DINOFOS_HEALTH 40 //beat it with 40 health with arrows and deku nuts. Can I prevent spam slash+nuts?
 
 #define DINOFOS_PROB_BLINK 0.05f
 #define DINOFOS_PROB_COMPL_CHOOSE_ACTION_NOT_SLASHING_TO_SLASHING 0.1f
