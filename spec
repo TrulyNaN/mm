@@ -2074,8 +2074,7 @@ beginseg
     name "ovl_En_Zl4"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl4/z_en_zl4.o"
-    include "$(BUILD_DIR)/data/ovl_En_Zl4/ovl_En_Zl4.data.o"
-    include "$(BUILD_DIR)/data/ovl_En_Zl4/ovl_En_Zl4.reloc.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Zl4/ovl_En_Zl4_reloc.o"
 endseg
 
 beginseg
@@ -2187,9 +2186,7 @@ beginseg
     name "ovl_En_Knight"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Knight/z_en_knight.o"
-    include "$(BUILD_DIR)/data/ovl_En_Knight/ovl_En_Knight.data.o"
-    include "$(BUILD_DIR)/data/ovl_En_Knight/ovl_En_Knight.bss.o"
-    include "$(BUILD_DIR)/data/ovl_En_Knight/ovl_En_Knight.reloc.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Knight/ovl_En_Knight_reloc.o"
 endseg
 
 beginseg
@@ -4739,8 +4736,7 @@ beginseg
     name "ovl_En_Bsb"
     compress
     include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Bsb/z_en_bsb.o"
-    include "$(BUILD_DIR)/data/ovl_En_Bsb/ovl_En_Bsb.data.o"
-    include "$(BUILD_DIR)/data/ovl_En_Bsb/ovl_En_Bsb.reloc.o"
+    include "$(BUILD_DIR)/src/overlays/actors/ovl_En_Bsb/ovl_En_Bsb_reloc.o"
 endseg
 
 beginseg
