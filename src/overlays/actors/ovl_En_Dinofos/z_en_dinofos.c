@@ -1078,8 +1078,14 @@ void EnDinofos_SetupStartBreatheFire(EnDinofos* this) {
     // Animation_MorphToPlayOnce(&this->skelAnime, &gDinolfosFireStartAnim, -5.0f);
     // Animation_Change(&this->skelAnime, &gDinolfosFireStartAnim, 1.0f/sqrtf(this->flameMultiplier), 0, Animation_GetLastFrame(&gDinolfosFireStartAnim), ANIMMODE_ONCE,
                     //  -5.0f);
+    if (Rand_ZeroOne() < 0.5f){
+        this->headRotSign = 1.0f;
+    }
+    else{
+        this->headRotSign = -1.0f;
+    }                     
     Animation_Change(&this->skelAnime, &gDinolfosFireStartAnim, 1.0f, 0, Animation_GetLastFrame(&gDinolfosFireStartAnim), ANIMMODE_ONCE,
-                     -5.0f);                     
+                    -5.0f);    
     this->colliderJntSph.base.acFlags |= AC_ON;
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
@@ -1161,7 +1167,7 @@ void EnDinofos_BreatheFire(EnDinofos* this, PlayState* play) {
     // The fire balls sweep in front of Dinolfos.
     for (i = DINOFOS_COLLIDER_FIRE_START_INDEX; i < end; i++) {
         dim = &this->colliderJntSph.elements[i].dim;
-        fireRotY = (s32)(Math_CosF((this->attackTimer + ((i - 5) << 1)) * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00) +
+        fireRotY = this->headRotSign * (s32)(Math_CosF((this->attackTimer + ((i - 5) << 1)) * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00) +
                    this->actor.shape.rot.y;
 
         dim->worldSphere.center.x = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].x +
@@ -1293,19 +1299,19 @@ void EnDinofos_PlayCutscene(EnDinofos* this, PlayState* play) {
 }
 
 void EnDinofos_RotateHead(EnDinofos* this, PlayState* play) {
-    s16 headRotYDelta;
+    s16 headRotYDiff;
 
     if ((this->actionFunc == EnDinofos_Idle) && (this->headTimer != 0)) {
         Math_ScaledStepToS(&this->headRotY, Math_SinS(this->headTimer * 1400) * 0x2C00, 0x300);
     } else if (this->actionFunc == EnDinofos_StartBreatheFire) {
-        Math_ScaledStepToS(&this->headRotY, Math_CosF(M_PIf) * 0x2C00, 0x2C00 / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)));
+        Math_ScaledStepToS(&this->headRotY, this->headRotSign * 0x2C00, 0x2C00 / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)));
     } else if (this->actionFunc == EnDinofos_BreatheFire) {
-        this->headRotY = Math_CosF(this->headTimer * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00;
+        this->headRotY = this->headRotSign * Math_CosF(this->headTimer * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00;
     } else if (!Play_InCsMode(play)) {
-        headRotYDelta = this->headRotY + this->actor.shape.rot.y;
-        headRotYDelta = BINANG_SUB(this->actor.yawTowardsPlayer, headRotYDelta);
-        headRotYDelta = CLAMP(headRotYDelta, -0x300, 0x300);
-        this->headRotY += headRotYDelta;
+        headRotYDiff = this->headRotY + this->actor.shape.rot.y;
+        headRotYDiff = BINANG_SUB(this->actor.yawTowardsPlayer, headRotYDiff);
+        headRotYDiff = CLAMP(headRotYDiff, -0x300, 0x300);
+        this->headRotY += headRotYDiff;
         this->headRotY = CLAMP(this->headRotY, -0x2C00, 0x2C00);
     }
 }
@@ -1370,7 +1376,7 @@ s32 EnDinofos_UpdateDamage(EnDinofos* this, PlayState* play) {
 
         if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_STUN) {
             this->stunTimer = DINOFOS_DMGEFF_STUN_TIMER;
-            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 40);
+            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 20); //duration was 40 before
             Actor_PlaySfx(&this->actor, NA_SE_EN_COMMON_FREEZE);
             EnDinofos_SetupStunned(this);
             return true;
@@ -1378,7 +1384,7 @@ s32 EnDinofos_UpdateDamage(EnDinofos* this, PlayState* play) {
 
         if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_ZORA_MAGIC) {
             this->stunTimer = DINOLFOS_DMGEFF_ZORA_MAGIC_TIMER;
-            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 40);
+            Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_BLUE, 255, COLORFILTER_BUFFLAG_OPA, 20); //duration was 40 before
             this->drawDmgEffScale = 0.55f;
             this->drawDmgEffAlpha = 2.0f;
             this->drawDmgEffType = ACTOR_DRAW_DMGEFF_ELECTRIC_SPARKS_MEDIUM;

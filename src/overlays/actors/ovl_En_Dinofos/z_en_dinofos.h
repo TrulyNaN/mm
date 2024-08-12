@@ -151,6 +151,7 @@ typedef struct EnDinofos {
     /* 0x364 */ ColliderJntSph colliderJntSph;
     /* 0x384 */ ColliderJntSphElement bodyAndFireColliderElements[9];
     /* 0x5C4 */ ColliderQuad knifeCollider;
+    /**/ s8 headRotSign;
 } EnDinofos; // size = 0x644
 
 #endif // Z_EN_DINOFOS_H
