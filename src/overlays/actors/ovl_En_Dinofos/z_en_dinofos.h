@@ -87,6 +87,12 @@ typedef enum EnDinofosJumpType {
 } EnDinofosJumpType;
 
 /**
+ * The elements before DINOFOS_COLLIDER_FIRE_START_INDEX are for a Dinofos' body in the actor's collider.
+ * The last three elements are for the flame.
+ */
+#define DINOFOS_COLLIDER_FIRE_START_INDEX 6
+
+/**
  * unk_294 explanation :
  *
  * The best way to compare is to look from timer1 to circlingRate in this current actor struct and from
@@ -143,7 +149,7 @@ typedef struct EnDinofos {
     /* 0x2C8 */ Vec3f subCamAt;
     /* 0x2D4 */ Vec3f bodyPartsPos[DINOFOS_BODYPART_MAX];
     /* 0x364 */ ColliderJntSph colliderJntSph;
-    /* 0x384 */ ColliderJntSphElement colliderJntSphElements[9];
+    /* 0x384 */ ColliderJntSphElement bodyAndFireColliderElements[9];
     /* 0x5C4 */ ColliderQuad knifeCollider;
 } EnDinofos; // size = 0x644
 
