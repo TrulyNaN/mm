@@ -1075,7 +1075,11 @@ void EnDinofos_Damaged(EnDinofos* this, PlayState* play) {
 }
 
 void EnDinofos_SetupStartBreatheFire(EnDinofos* this) {
-    Animation_MorphToPlayOnce(&this->skelAnime, &gDinolfosFireStartAnim, -5.0f);
+    // Animation_MorphToPlayOnce(&this->skelAnime, &gDinolfosFireStartAnim, -5.0f);
+    // Animation_Change(&this->skelAnime, &gDinolfosFireStartAnim, 1.0f/sqrtf(this->flameMultiplier), 0, Animation_GetLastFrame(&gDinolfosFireStartAnim), ANIMMODE_ONCE,
+                    //  -5.0f);
+    Animation_Change(&this->skelAnime, &gDinolfosFireStartAnim, 1.0f, 0, Animation_GetLastFrame(&gDinolfosFireStartAnim), ANIMMODE_ONCE,
+                     -5.0f);                     
     this->colliderJntSph.base.acFlags |= AC_ON;
     this->actor.speed = 0.0f;
     this->actor.world.rot.y = this->actor.shape.rot.y;
@@ -1128,7 +1132,7 @@ void EnDinofos_BreatheFire(EnDinofos* this, PlayState* play) {
     s32 temp_s0;
 
     SkelAnime_Update(&this->skelAnime);
-    Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x800);
+    Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x800/(4.0f * this->flameMultiplier));
     sin = Math_SinS(fireRotY);
     cos = Math_CosS(fireRotY);
 
