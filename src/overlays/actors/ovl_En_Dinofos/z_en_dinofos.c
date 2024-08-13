@@ -445,9 +445,11 @@ s32 EnDinofos_Dodge(EnDinofos* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 angleToProjectile;
     s16 angleToBombchu;
+    s16 angleToBomb;
     Actor* actor;
     s32 i;
 
+    
     // Subtracts headRotY from angleToProjectile to then add it back.
     actor = func_800BC270(play, &this->actor, 80.0f, 0x138B0);
     if (actor != NULL) {
@@ -459,15 +461,35 @@ s32 EnDinofos_Dodge(EnDinofos* this, PlayState* play) {
         }
     }
 
-    actor = func_800BC444(play, &this->actor, 80.0f);
-    if ((actor != NULL) && (actor->id == ACTOR_EN_BOM_CHU)) {
-        angleToBombchu = (Actor_WorldYawTowardActor(&this->actor, actor) - this->actor.shape.rot.y) - this->headRotY;
-        if (ABS_ALT(angleToBombchu) < 0x3000) {
-            EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_IN_PLACE);
-            Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WARAU);
-            return true;
+    // if (this->actionFunc != EnDinofos_BreatheFire) {
+        actor = func_800BC444(play, &this->actor, 80.0f);
+        if ((actor != NULL) && (actor->id == ACTOR_EN_BOM_CHU)) {
+            angleToBombchu = (Actor_WorldYawTowardActor(&this->actor, actor) - this->actor.shape.rot.y) - this->headRotY;
+            if (ABS_ALT(angleToBombchu) < 0x3000) {
+                EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_IN_PLACE);
+                Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WARAU);
+                return true;
+            }
         }
-    }
+
+        actor = play->actorCtx.actorLists[ACTORCAT_EXPLOSIVES].first;
+
+        while (actor != NULL) {
+            if (sqrtf(SQ(actor->world.pos.x - this->actor.world.pos.x) +
+                    SQ(actor->world.pos.y - this->actor.world.pos.y) +
+                    SQ(actor->world.pos.z - this->actor.world.pos.z)) < 150.0f
+                && (actor->id != ACTOR_EN_BOM_CHU) ) {
+                angleToBombchu = (Actor_WorldYawTowardActor(&this->actor, actor) - this->actor.shape.rot.y) - this->headRotY;
+                if (ABS_ALT(angleToBombchu) < 0x3000) {
+                    EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_BACKWARD);
+                    Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WARAU);
+                    return true;
+                }
+            }
+            actor = actor->next;
+        }
+    // }
+    
 
     if (play->actorCtx.unk2 != 0) {
         EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_IN_PLACE);
@@ -493,6 +515,13 @@ s32 EnDinofos_Dodge(EnDinofos* this, PlayState* play) {
             this->colliderJntSph.elements[i].info.bumper.dmgFlags &= ~0x400;
         }
     }
+
+        //PLAYER_MWA_SPIN_ATTACK_1H
+    // if (player->meleeWeaponAnimation >= PLAYER_MWA_SPIN_ATTACK_1H) {
+    //     EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_IN_PLACE);
+    //     Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WARAU);
+    //     return true;
+    // }
 
     return false;
 }
@@ -1098,6 +1127,7 @@ void EnDinofos_StartBreatheFire(EnDinofos* this, PlayState* play) {
     if (SkelAnime_Update(&this->skelAnime)) {
         EnDinofos_SetupBreatheFire(this, play);
     } else if (!EnDinofos_Dodge(this, play) && Animation_OnFrame(&this->skelAnime, 12.0f)) {
+        Actor_PlaySfx(&this->actor, NA_SE_VO_FR_LAUGH_0); //FOR TESTING ONLY. REMOVE AFTER!
         this->actor.speed = 8.0f;
     }
 }
@@ -1136,52 +1166,65 @@ void EnDinofos_BreatheFire(EnDinofos* this, PlayState* play) {
     f32 sin;
     f32 cos;
     s32 temp_s0;
+    s16 tempHeadRotY;
 
-    SkelAnime_Update(&this->skelAnime);
-    Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x800/(4.0f * this->flameMultiplier));
-    sin = Math_SinS(fireRotY);
-    cos = Math_CosS(fireRotY);
-
-    temp_s0 = 10 - this->attackTimer;
-    temp_s0 = CLAMP_MIN(temp_s0, 0);
-
-    velocity.x = 11.0f * sin * this->flameMultiplier;
-    velocity.y = Rand_CenteredFloat(2.0f) + -5.4f;
-    velocity.z = 11.0f * cos * this->flameMultiplier;
-    accel.x = this->flameMultiplier * 0.9f * sin;
-    accel.y = Rand_CenteredFloat(0.6f) + 1.4f;
-    accel.z = this->flameMultiplier * 0.9f * cos;
-    Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_DODO_J_FIRE - SFX_FLAG);
-    EffectSsDFire_Spawn(play, &this->bodyPartsPos[DINOFOS_BODYPART_JAW], &velocity, &accel, 30, 22,
-                        255 - (temp_s0 * 20), 20, 3, 8);
-
-    // This lets the fire balls go away from Dinolfos' jaw one after the other.
-    end = DINOFOS_COLLIDER_FIRE_START_INDEX;
-    for (i = ARRAY_COUNT(this->bodyAndFireColliderElements) - DINOFOS_COLLIDER_FIRE_START_INDEX; i > 0; i--) {
-        if (this->attackTimer < (((s32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)) + -(i * 2))) {
-            end = i + DINOFOS_COLLIDER_FIRE_START_INDEX;
-            break;
+    if (this->skelAnime.curFrame < 4.0f) {
+        tempHeadRotY = this->headRotY;
+        this->headRotY = 0;
+        if (EnDinofos_Dodge(this, play)) {
+            EnDinofos_SetupEndBreatheFire(this, play);
+            return;
         }
-    }
+        this->headRotY = tempHeadRotY;
+    } 
+        SkelAnime_Update(&this->skelAnime);
+        Math_ScaledStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 0x800/(4.0f * this->flameMultiplier));
+        sin = Math_SinS(fireRotY);
+        cos = Math_CosS(fireRotY);
 
-    // The fire balls sweep in front of Dinolfos.
-    for (i = DINOFOS_COLLIDER_FIRE_START_INDEX; i < end; i++) {
-        dim = &this->colliderJntSph.elements[i].dim;
-        fireRotY = this->headRotSign * (s32)(Math_CosF((this->attackTimer + ((i - 5) << 1)) * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00) +
-                   this->actor.shape.rot.y;
+        temp_s0 = 10 - this->attackTimer;
+        temp_s0 = CLAMP_MIN(temp_s0, 0);
 
-        dim->worldSphere.center.x = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].x +
-                                    this->flameMultiplier * (s32)(Math_SinS(fireRotY) * dim->modelSphere.center.z);
-        dim->worldSphere.center.y = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].y + (s32)dim->modelSphere.center.y;
-        dim->worldSphere.center.z = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].z +
-                                    this->flameMultiplier * (s32)(Math_CosS(fireRotY) * dim->modelSphere.center.z);
-    }
+        velocity.x = 11.0f * sin * this->flameMultiplier;
+        velocity.y = Rand_CenteredFloat(2.0f) + -5.4f;
+        velocity.z = 11.0f * cos * this->flameMultiplier;
+        accel.x = this->flameMultiplier * 0.9f * sin;
+        accel.y = Rand_CenteredFloat(0.6f) + 1.4f;
+        accel.z = this->flameMultiplier * 0.9f * cos;
+        Actor_PlaySfx_Flagged(&this->actor, NA_SE_EN_DODO_J_FIRE - SFX_FLAG);
+        EffectSsDFire_Spawn(play, &this->bodyPartsPos[DINOFOS_BODYPART_JAW], &velocity, &accel, 30, 22,
+                            255 - (temp_s0 * 20), 20, 3, 8);
 
-    if (this->attackTimer != 0) {
-        this->attackTimer--;
-    } else {
-        EnDinofos_SetupEndBreatheFire(this, play);
-    }
+        // This lets the fire balls go away from Dinolfos' jaw one after the other.
+        end = DINOFOS_COLLIDER_FIRE_START_INDEX;
+        for (i = ARRAY_COUNT(this->bodyAndFireColliderElements) - DINOFOS_COLLIDER_FIRE_START_INDEX; i > 0; i--) {
+            if (this->attackTimer < (((s32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)) + -(i * 2))) {
+                end = i + DINOFOS_COLLIDER_FIRE_START_INDEX;
+                break;
+            }
+        }
+
+        // The fire balls sweep in front of Dinolfos.
+        for (i = DINOFOS_COLLIDER_FIRE_START_INDEX; i < end; i++) {
+            dim = &this->colliderJntSph.elements[i].dim;
+            fireRotY = this->headRotSign * (s32)(Math_CosF((this->attackTimer + ((i - 5) << 1)) * (M_PIf / ((f32) (DINOFOS_FIRE_TIMER * this->flameMultiplier)))) * 0x2C00) +
+                    this->actor.shape.rot.y;
+
+            dim->worldSphere.center.x = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].x +
+                                        this->flameMultiplier * (s32)(Math_SinS(fireRotY) * dim->modelSphere.center.z);
+            dim->worldSphere.center.y = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].y + (s32)dim->modelSphere.center.y;
+            dim->worldSphere.center.z = (s32)this->bodyPartsPos[DINOFOS_BODYPART_JAW].z +
+                                        this->flameMultiplier * (s32)(Math_CosS(fireRotY) * dim->modelSphere.center.z);
+        }
+
+        if (this->attackTimer != 0) {
+            this->attackTimer--;
+        } else {
+            EnDinofos_SetupEndBreatheFire(this, play);
+        }
+    
+
+    
 }
 
 void EnDinofos_SetupEndBreatheFire(EnDinofos* this, PlayState* play) {
