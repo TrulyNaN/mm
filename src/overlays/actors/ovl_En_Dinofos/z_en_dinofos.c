@@ -400,7 +400,7 @@ void EnDinofos_EndCutscene(EnDinofos* this, PlayState* play) {
         Play_SetCameraAtEye(play, CAM_ID_MAIN, &subCam->at, &subCam->eye);
         this->subCamId = SUB_CAM_ID_DONE;
         CutsceneManager_Stop(this->actor.csId);
-        if (this->actor.colChkInfo.health == 254) {
+        if (this->actor.colChkInfo.health == 0) {
             Player_SetCsAction(play, &this->actor, PLAYER_CSACTION_END);
         }
     }
@@ -445,7 +445,7 @@ s32 EnDinofos_Dodge(EnDinofos* this, PlayState* play) {
     Player* player = GET_PLAYER(play);
     s16 angleToProjectile;
     s16 angleToBombchu;
-    s16 angleToBomb;
+    // s16 angleToBomb;
     Actor* actor;
     s32 i;
 
@@ -517,7 +517,7 @@ s32 EnDinofos_Dodge(EnDinofos* this, PlayState* play) {
     }
 
         //PLAYER_MWA_SPIN_ATTACK_1H
-    // if (player->meleeWeaponAnimation >= PLAYER_MWA_SPIN_ATTACK_1H) {
+    // if ((player->meleeWeaponState != PLAYER_MELEE_WEAPON_STATE_0) && (player->meleeWeaponAnimation >= PLAYER_MWA_SPIN_ATTACK_1H)) {
     //     EnDinofos_SetupChooseJump(this, DINOFOS_JUMP_TYPE_IN_PLACE);
     //     Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_WARAU);
     //     return true;
@@ -1053,7 +1053,7 @@ void EnDinofos_Stunned(EnDinofos* this, PlayState* play) {
 
     if (this->stunTimer == 0) {
         EnDinofos_ThawIfFrozen(this, play);
-        if (this->actor.colChkInfo.health == 254) {
+        if (this->actor.colChkInfo.health == 0) {
             if (this->actor.csId == CS_ID_NONE) {
                 EnDinofos_SetupDie(this);
             } else {
@@ -1080,14 +1080,14 @@ void EnDinofos_SetupDamaged(EnDinofos* this, s32 colliderIndex) {
     this->headRotY = 0;
     Actor_PlaySfx(&this->actor, NA_SE_EN_RIZA_DAMAGE);
     this->colliderJntSph.base.acFlags &= ~AC_ON;
-    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 9); //set to 9 from 18 for faster hit animation
+    Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 9); //set to 6 from 9.set to 9 from 18 for faster hit animation
     this->actionFunc = EnDinofos_Damaged;
 }
 
 void EnDinofos_Damaged(EnDinofos* this, PlayState* play) {
     Math_StepToF(&this->actor.speed, 0.0f, 0.5f);
     if (SkelAnime_Update(&this->skelAnime) && (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND)) {
-        if (this->actor.colChkInfo.health == 254) {
+        if (this->actor.colChkInfo.health == 0) {
             if (this->actor.csId == CS_ID_NONE) {
                 EnDinofos_SetupDie(this);
             } else {
@@ -1320,14 +1320,14 @@ void EnDinofos_PlayCutscene(EnDinofos* this, PlayState* play) {
     Vec3f subCamEye;
 
     if (CutsceneManager_IsNext(this->actor.csId)) {
-        if (this->actor.colChkInfo.health == 254) {
+        if (this->actor.colChkInfo.health == 0) {
             CutsceneManager_Start(this->actor.csId, &this->actor);
             Player_SetCsAction(play, &this->actor, PLAYER_CSACTION_WAIT);
         } else {
             CutsceneManager_StartWithPlayerCs(this->actor.csId, &this->actor);
         }
         this->subCamId = CutsceneManager_GetCurrentSubCamId(this->actor.csId);
-        if (this->actor.colChkInfo.health == 254) {
+        if (this->actor.colChkInfo.health == 0) {
             subCamEye.x = (Math_SinS(this->actor.shape.rot.y) * 150.0f) + this->actor.focus.pos.x;
             subCamEye.y = this->actor.focus.pos.y;
             subCamEye.z = (Math_CosS(this->actor.shape.rot.y) * 150.0f) + this->actor.focus.pos.z;
@@ -1409,7 +1409,7 @@ s32 EnDinofos_UpdateDamage(EnDinofos* this, PlayState* play) {
         this->colliderJntSph.base.atFlags &= ~AT_ON;
         if (this->actor.colChkInfo.damageEffect == DINOLFOS_DMGEFF_ICE) {
             EnDinofos_Freeze(this);
-            if (this->actor.colChkInfo.health == 254) {
+            if (this->actor.colChkInfo.health == 0) {
                 this->stunTimer = DINOFOS_DIE_FROM_FREEZE_TIMER;
                 this->colliderJntSph.base.acFlags &= ~AC_ON;
             }
