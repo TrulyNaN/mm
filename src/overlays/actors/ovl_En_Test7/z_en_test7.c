@@ -6,9 +6,9 @@
 
 #include "prevent_bss_reordering.h"
 #include "z_en_test7.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
+#include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_100000 | ACTOR_FLAG_200000 | ACTOR_FLAG_2000000)
+#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_100000 | ACTOR_FLAG_200000 | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
 #define THIS ((EnTest7*)thisx)
 
@@ -36,7 +36,7 @@ void EnTest7_StartArriveCsSkip(EnTest7* this, PlayState* play);
 void EnTest7_ArriveCsPart2(EnTest7* this, PlayState* play);
 void EnTest7_ArriveCsPart3(EnTest7* this, PlayState* play);
 
-ActorInit En_Test7_InitVars = {
+ActorProfile En_Test7_Profile = {
     /**/ ACTOR_EN_TEST7,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -348,7 +348,7 @@ void EnTest7_DrawFeathers(PlayState* play2, OwlWarpFeather* feathers) {
             Matrix_Translate(0.0f, 30.0f, 0.0f, MTXMODE_APPLY);
         }
 
-        mtx = Matrix_NewMtx(play->state.gfxCtx);
+        mtx = Matrix_Finalize(play->state.gfxCtx);
         if (mtx == NULL) {
             continue;
         }

@@ -5,7 +5,7 @@
  */
 
 #include "z_bg_f40_flift.h"
-#include "objects/object_f40_obj/object_f40_obj.h"
+#include "assets/objects/object_f40_obj/object_f40_obj.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -19,7 +19,7 @@ void BgF40Flift_Draw(Actor* thisx, PlayState* play);
 void func_808D75F0(BgF40Flift* this, PlayState* play);
 void func_808D7714(BgF40Flift* this, PlayState* play);
 
-ActorInit Bg_F40_Flift_InitVars = {
+ActorProfile Bg_F40_Flift_Profile = {
     /**/ ACTOR_BG_F40_FLIFT,
     /**/ ACTORCAT_BG,
     /**/ FLAGS,

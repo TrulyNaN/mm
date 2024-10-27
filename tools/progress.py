@@ -108,11 +108,7 @@ def CalculateNonNamedAssets(mapFileList, assetsTracker):
         if not mapFile["name"].startswith("build/n64-us/assets/"):
             continue
 
-        if mapFile["name"].startswith("build/n64-us/assets/c"):
-            assetCat = mapFile["name"].split("/")[4]
-        else:
-            assetCat = mapFile["name"].split("/")[3]
-
+        assetCat = mapFile["name"].split("/")[3]
 
         for symbol in mapFile["symbols"]:
             symbolName = symbol["name"]
@@ -154,12 +150,13 @@ assetsTracker = dict()
 # Assets that we don't have a proper way of tracking right now
 ignoredAssets = {
     "archives",
+    "code",
 }
 
 # Manual fixer for files that would be counted in wrong categories
 # "filename": "correctSection"
 fileSectionFixer = {
-    "osFlash": "code" # Currently in `src/libultra` (would be counted as boot)
+    "sequence_font_table": "code", # Currently in assets (would be counted as an audio asset)
 }
 
 for assetCat in assetsCategories:
@@ -222,10 +219,9 @@ for line in map_file:
                 srcCat = srcCategoriesFixer[srcCat]
 
             if objFileName in fileSectionFixer:
-                correctSection = fileSectionFixer[objFileName]
-                if correctSection in srcTracker:
-                    srcTracker[correctSection]["totalSize"] += file_size
-            elif obj_file.startswith("build/n64-us/src"):
+                srcCat = fileSectionFixer[objFileName]
+
+            if obj_file.startswith("build/n64-us/src"):
                 if srcCat in srcTracker:
                     srcTracker[srcCat]["totalSize"] += file_size
             elif (obj_file.startswith("build/n64-us/asm")):
@@ -234,10 +230,12 @@ for line in map_file:
 
         if section == ".data" or section == ".rodata":
             if obj_file.startswith("build/n64-us/assets/"):
-                if obj_file.startswith("build/n64-us/assets/c"):
-                    assetCat = obj_file.split("/")[4]
-                else:
-                    assetCat = obj_file.split("/")[3]
+
+                assetCat = obj_file.split("/")[3]
+
+                if objFileName in fileSectionFixer:
+                    assetCat = fileSectionFixer[objFileName]
+
                 if assetCat in assetsTracker:
                     assetsTracker[assetCat]["currentSize"] += file_size
                 elif assetCat in ignoredAssets:

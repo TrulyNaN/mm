@@ -5,7 +5,7 @@
  */
 
 #include "z_bg_icefloe.h"
-#include "objects/object_icefloe/object_icefloe.h"
+#include "assets/objects/object_icefloe/object_icefloe.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -23,7 +23,7 @@ void func_80AC4D2C(BgIcefloe* this, PlayState* play);
 void func_80AC4C34(BgIcefloe* this, PlayState* play);
 void func_80AC4CF0(BgIcefloe* this);
 
-ActorInit Bg_Icefloe_InitVars = {
+ActorProfile Bg_Icefloe_Profile = {
     /**/ ACTOR_BG_ICEFLOE,
     /**/ ACTORCAT_BG,
     /**/ FLAGS,

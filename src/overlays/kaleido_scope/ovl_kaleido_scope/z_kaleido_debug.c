@@ -8,7 +8,7 @@
 
 #include "gfxalloc.h"
 
-#include "interface/parameter_static/parameter_static.h"
+#include "assets/interface/parameter_static/parameter_static.h"
 
 s16 sCurSection = 0;
 s16 sCurRow = 0;
@@ -178,12 +178,12 @@ s16 sRowFirstSections[] = {
     INV_EDITOR_SECTION_DOUBLE_DEFENSE,
 };
 
-void KaleidoScope_DrawInventoryEditorText(Gfx** gfxp) {
+void KaleidoScope_DrawInventoryEditorText(Gfx** gfxP) {
     GfxPrint printer;
     s32 pad[2];
 
     GfxPrint_Init(&printer);
-    GfxPrint_Open(&printer, *gfxp);
+    GfxPrint_Open(&printer, *gfxP);
 
     // Rupees
     GfxPrint_SetPos(&printer, 4, 2);
@@ -320,7 +320,7 @@ void KaleidoScope_DrawInventoryEditorText(Gfx** gfxp) {
     GfxPrint_SetPos(&printer, 23, 27);
     GfxPrint_Printf(&printer, "%s", "ﾊﾞｰｽﾞ");
 
-    *gfxp = GfxPrint_Close(&printer);
+    *gfxP = GfxPrint_Close(&printer);
     GfxPrint_Destroy(&printer);
 }
 

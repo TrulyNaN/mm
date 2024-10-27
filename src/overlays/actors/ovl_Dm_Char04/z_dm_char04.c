@@ -5,7 +5,7 @@
  */
 
 #include "z_dm_char04.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
+#include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -18,7 +18,7 @@ void DmChar04_Draw(Actor* thisx, PlayState* play);
 
 void DmChar04_HandleCutscene(DmChar04* this, PlayState* play);
 
-ActorInit Dm_Char04_InitVars = {
+ActorProfile Dm_Char04_Profile = {
     /**/ ACTOR_DM_CHAR04,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -72,7 +72,7 @@ void DmChar04_Init(Actor* thisx, PlayState* play) {
 
     this->primColors = sPrimColors[this->actor.params];
     this->envColors = sEnvColors[this->actor.params];
-    this->actor.targetArrowOffset = 3000.0f;
+    this->actor.lockOnArrowOffset = 3000.0f;
     this->cueId = 99;
     this->timer = this->actor.params << 0xB;
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 24.0f);

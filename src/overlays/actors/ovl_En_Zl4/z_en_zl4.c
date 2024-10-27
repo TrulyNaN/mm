@@ -5,7 +5,7 @@
  */
 
 #include "z_en_zl4.h"
-#include "objects/object_stk/object_stk.h"
+#include "assets/objects/object_stk/object_stk.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -18,7 +18,7 @@ void EnZl4_Draw(Actor* thisx, PlayState* play);
 
 void EnZl4_DoNothing(EnZl4* this, PlayState* play);
 
-ActorInit En_Zl4_InitVars = {
+ActorProfile En_Zl4_Profile = {
     /**/ ACTOR_EN_ZL4,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -60,7 +60,7 @@ void EnZl4_Init(Actor* thisx, PlayState* play) {
 
     this->unk_2E0 = 0;
     this->alpha = 255;
-    this->actor.targetArrowOffset = 3000.0f;
+    this->actor.lockOnArrowOffset = 3000.0f;
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 24.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &gSkullKidSkel, NULL, NULL, NULL, 0);
     EnZl4_ChangeAnim(&this->skelAnime, &sAnimationInfo[ENZL4_ANIM_T_POSE], 0);

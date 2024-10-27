@@ -5,7 +5,7 @@
  */
 
 #include "z_obj_wind.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
+#include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -16,7 +16,7 @@ void ObjWind_Destroy(Actor* thisx, PlayState* play);
 void ObjWind_Update(Actor* thisx, PlayState* play);
 void ObjWind_Draw(Actor* thisx, PlayState* play);
 
-ActorInit Obj_Wind_InitVars = {
+ActorProfile Obj_Wind_Profile = {
     /**/ ACTOR_OBJ_WIND,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -157,7 +157,7 @@ void ObjWind_Draw(Actor* thisx, PlayState* play) {
 
     Gfx_SetupDL25_Xlu(play->state.gfxCtx);
     AnimatedMat_Draw(play, Lib_SegmentedToVirtual(&gameplay_keep_Matanimheader_07F218));
-    gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);
     gSPDisplayList(POLY_XLU_DISP++, gameplay_keep_DL_07E8C0);
 
     CLOSE_DISPS(play->state.gfxCtx);

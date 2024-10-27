@@ -49,9 +49,9 @@ You can create a `.vscode/c_cpp_properties.json` file with `C/C++: Edit Configur
                 "include",
                 "include/libc",
                 "src",
-                "assets",
-                "build/n64-us/",
-                "${workspaceFolder}"
+                "build/n64-us",
+                "${workspaceFolder}",
+                "extracted/n64-us"
             ],
             "defines": [
                 "_LANGUAGE_C" // For gbi.h

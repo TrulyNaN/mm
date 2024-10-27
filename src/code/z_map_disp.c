@@ -295,7 +295,7 @@ void MapDisp_Minimap_DrawActorIcon(PlayState* play, Actor* actor) {
             }
             Matrix_RotateYF(compassRot / 10.0f, MTXMODE_APPLY);
             Matrix_Scale(0.4f, 0.4f, 0.4f, MTXMODE_APPLY);
-            gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            MATRIX_FINALIZE_AND_LOAD(OVERLAY_DISP++, play->state.gfxCtx);
             gDPSetPrimColor(OVERLAY_DISP++, 0, 0, 200, 255, 0, play->interfaceCtx.minimapAlpha);
             gSPDisplayList(OVERLAY_DISP++, gCompassArrowDL);
         } else if ((actor->id == ACTOR_EN_BOX) && !Flags_GetTreasure(play, actor->params & 0x1F) &&
@@ -509,7 +509,7 @@ void MapDisp_Init(PlayState* play) {
     sMapDisp.swapAnimTimer = 0;
 
     if (!Map_IsInBossScene(play)) {
-        sSceneNumRooms = play->numRooms;
+        sSceneNumRooms = play->roomList.count;
     }
     sMapDisp.texBuff0 = THA_AllocTailAlign16(&play->state.tha, 0x4000);
     sMapDisp.texBuff1 = THA_AllocTailAlign16(&play->state.tha, 0x4000);
@@ -691,7 +691,7 @@ void MapDisp_InitMapData(PlayState* play, void* segmentAddress) {
     s32 i;
 
     if (!Map_IsInBossScene(play)) {
-        sSceneNumRooms = play->numRooms;
+        sSceneNumRooms = play->roomList.count;
         mapDataScene = Lib_SegmentedToVirtual(segmentAddress);
         sMapDataScene = *mapDataScene;
         mapDataRooms = Lib_SegmentedToVirtual(mapDataScene->rooms);
@@ -995,7 +995,7 @@ void MapDisp_Minimap_DrawRedCompassIcon(PlayState* play, s32 x, s32 z, s32 rot) 
         }
         Matrix_RotateYF(rot / 10.0f, MTXMODE_APPLY);
         Matrix_Scale(0.4f, 0.4f, 0.4f, MTXMODE_APPLY);
-        gSPMatrix(OVERLAY_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        MATRIX_FINALIZE_AND_LOAD(OVERLAY_DISP++, play->state.gfxCtx);
         gDPSetPrimColor(OVERLAY_DISP++, 0, 255, 200, 0, 0, play->interfaceCtx.minimapAlpha);
         gSPDisplayList(OVERLAY_DISP++, gCompassArrowDL);
 

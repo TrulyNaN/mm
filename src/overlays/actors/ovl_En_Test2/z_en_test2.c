@@ -5,12 +5,12 @@
  */
 
 #include "z_en_test2.h"
-#include "objects/object_dekucity_ana_obj/object_dekucity_ana_obj.h"
-#include "objects/object_sichitai_obj/object_sichitai_obj.h"
-#include "objects/object_yukimura_obj/object_yukimura_obj.h"
-#include "objects/object_hakugin_obj/object_hakugin_obj.h"
-#include "objects/object_meganeana_obj/object_meganeana_obj.h"
-#include "objects/object_haka_obj/object_haka_obj.h"
+#include "assets/objects/object_dekucity_ana_obj/object_dekucity_ana_obj.h"
+#include "assets/objects/object_sichitai_obj/object_sichitai_obj.h"
+#include "assets/objects/object_yukimura_obj/object_yukimura_obj.h"
+#include "assets/objects/object_hakugin_obj/object_hakugin_obj.h"
+#include "assets/objects/object_meganeana_obj/object_meganeana_obj.h"
+#include "assets/objects/object_haka_obj/object_haka_obj.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_REACT_TO_LENS)
 
@@ -27,7 +27,7 @@ typedef struct EnTest2ModelInfo {
     /* 0x8 */ AnimatedMaterial* animMat;
 } EnTest2ModelInfo; // size = 0xC
 
-ActorInit En_Test2_InitVars = {
+ActorProfile En_Test2_Profile = {
     /**/ ACTOR_EN_TEST2,
     /**/ ACTORCAT_BG,
     /**/ FLAGS,
@@ -140,7 +140,7 @@ void EnTest2_Draw(Actor* thisx, PlayState* play) {
         OPEN_DISPS(play->state.gfxCtx);
 
         Gfx_SetupDL25_Xlu(play->state.gfxCtx);
-        gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+        MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);
 
         if (dList != NULL) {
             gSPDisplayList(POLY_XLU_DISP++, dList);

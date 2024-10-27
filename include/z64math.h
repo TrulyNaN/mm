@@ -72,8 +72,8 @@ The plane paramaters are of form `ax + by + cz + d = 0`
 where `(a,b,c)` is the plane's normal vector and d is the originDist
  */
 typedef struct {
-    /* 0x00 */ Vec3f normal;
-    /* 0x0C */ f32   originDist;
+    /* 0x0 */ Vec3f normal;
+    /* 0xC */ f32   originDist;
 } Plane; // size = 0x10
 
 typedef struct {
@@ -244,8 +244,6 @@ f32 Math_Factorial(s32 n);
 f32 Math_PowF(f32 base, s32 exp);
 f32 Math_SinF(f32 rad);
 f32 Math_CosF(f32 rad);
-f32 Rand_ZeroFloat(f32 scale);
-f32 Rand_CenteredFloat(f32 scale);
 
 s16 Math_Atan2S(f32 y, f32 x);
 f32 Math_Atan2F(f32 y, f32 x);

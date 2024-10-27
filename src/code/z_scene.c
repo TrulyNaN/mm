@@ -175,7 +175,7 @@ void Scene_CommandSpawnList(PlayState* play, SceneCmd* cmd) {
     play->objectCtx.numEntries = loadedCount;
     play->objectCtx.numPersistentEntries = loadedCount;
     playerObjectId = gPlayerFormObjectIds[GET_PLAYER_FORM];
-    gActorOverlayTable[0].initInfo->objectId = playerObjectId;
+    gActorOverlayTable[ACTOR_PLAYER].profile->objectId = playerObjectId;
     Object_SpawnPersistent(&play->objectCtx, playerObjectId);
 
     play->objectCtx.slots[play->objectCtx.numEntries].segment = objectPtr;
@@ -220,8 +220,8 @@ void Scene_CommandCollisionHeader(PlayState* play, SceneCmd* cmd) {
 
 // SceneTableEntry Header Command 0x04: Room List
 void Scene_CommandRoomList(PlayState* play, SceneCmd* cmd) {
-    play->numRooms = cmd->roomList.num;
-    play->roomList = Lib_SegmentedToVirtual(cmd->roomList.segment);
+    play->roomList.count = cmd->roomList.num;
+    play->roomList.romFiles = Lib_SegmentedToVirtual(cmd->roomList.segment);
 }
 
 // SceneTableEntry Header Command 0x06: Entrance List

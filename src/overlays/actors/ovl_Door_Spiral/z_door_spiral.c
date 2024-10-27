@@ -5,12 +5,12 @@
  */
 
 #include "z_door_spiral.h"
-#include "objects/gameplay_dangeon_keep/gameplay_dangeon_keep.h"
-#include "objects/object_numa_obj/object_numa_obj.h"
-#include "objects/object_hakugin_obj/object_hakugin_obj.h"
-#include "objects/object_ikana_obj/object_ikana_obj.h"
-#include "objects/object_ikninside_obj/object_ikninside_obj.h"
-#include "objects/object_danpei_object/object_danpei_object.h"
+#include "assets/objects/gameplay_dangeon_keep/gameplay_dangeon_keep.h"
+#include "assets/objects/object_numa_obj/object_numa_obj.h"
+#include "assets/objects/object_hakugin_obj/object_hakugin_obj.h"
+#include "assets/objects/object_ikana_obj/object_ikana_obj.h"
+#include "assets/objects/object_ikninside_obj/object_ikninside_obj.h"
+#include "assets/objects/object_danpei_object/object_danpei_object.h"
 
 #define FLAGS (ACTOR_FLAG_10)
 
@@ -31,7 +31,7 @@ void func_809A2DB0(DoorSpiral* this, PlayState* play);
 void func_809A3098(DoorSpiral* this, PlayState* play);
 s32 func_809A2EA0(DoorSpiral* this, PlayState* play);
 
-ActorInit Door_Spiral_InitVars = {
+ActorProfile Door_Spiral_Profile = {
     /**/ ACTOR_DOOR_SPIRAL,
     /**/ ACTORCAT_DOOR,
     /**/ FLAGS,
@@ -173,7 +173,7 @@ f32 func_809A2E08(PlayState* play, DoorSpiral* this, f32 arg2, f32 arg3, f32 arg
     point.y = player->actor.world.pos.y + arg2;
     point.z = player->actor.world.pos.z;
 
-    Actor_OffsetOfPointInActorCoords(&this->actor, &offset, &point);
+    Actor_WorldToActorCoords(&this->actor, &offset, &point);
 
     if ((arg3 < fabsf(offset.x)) || (arg4 < fabsf(offset.y))) {
         return FLT_MAX;
@@ -233,7 +233,7 @@ void DoorSpiral_Update(Actor* thisx, PlayState* play) {
     DoorSpiral* this = THIS;
     Player* player = GET_PLAYER(play);
 
-    if (!(player->stateFlags1 & (PLAYER_STATE1_40 | PLAYER_STATE1_80 | PLAYER_STATE1_400 | PLAYER_STATE1_10000000)) ||
+    if (!(player->stateFlags1 & (PLAYER_STATE1_40 | PLAYER_STATE1_DEAD | PLAYER_STATE1_400 | PLAYER_STATE1_10000000)) ||
         (this->actionFunc == func_809A2DB0)) {
         this->actionFunc(this, play);
     }
@@ -252,7 +252,7 @@ void DoorSpiral_Draw(Actor* thisx, PlayState* play) {
 
             Gfx_SetupDL25_Opa(play->state.gfxCtx);
 
-            gSPMatrix(POLY_OPA_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            MATRIX_FINALIZE_AND_LOAD(POLY_OPA_DISP++, play->state.gfxCtx);
 
             gSPDisplayList(POLY_OPA_DISP++, spiralInfo->dLists[this->direction]);
 

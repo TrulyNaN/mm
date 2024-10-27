@@ -5,7 +5,7 @@
  */
 
 #include "z_en_light.h"
-#include "objects/gameplay_keep/gameplay_keep.h"
+#include "assets/objects/gameplay_keep/gameplay_keep.h"
 
 #define FLAGS 0x00000000
 
@@ -18,7 +18,7 @@ void EnLight_Draw(Actor* thisx, PlayState* play);
 
 void func_80865F38(Actor* thisx, PlayState* play);
 
-ActorInit En_Light_InitVars = {
+ActorProfile En_Light_Profile = {
     /**/ ACTOR_EN_LIGHT,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -194,7 +194,7 @@ void EnLight_Draw(Actor* thisx, PlayState* play) {
 
     Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
 
-    gSPMatrix(POLY_XLU_DISP++, Matrix_NewMtx(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    MATRIX_FINALIZE_AND_LOAD(POLY_XLU_DISP++, play->state.gfxCtx);
     gSPDisplayList(POLY_XLU_DISP++, sp68);
 
     CLOSE_DISPS(play->state.gfxCtx);

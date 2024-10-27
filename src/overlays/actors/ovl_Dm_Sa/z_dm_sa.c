@@ -5,7 +5,7 @@
  */
 
 #include "z_dm_sa.h"
-#include "objects/object_stk/object_stk.h"
+#include "assets/objects/object_stk/object_stk.h"
 
 #define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20)
 
@@ -18,7 +18,7 @@ void DmSa_Draw(Actor* thisx, PlayState* play);
 
 void DmSa_DoNothing(DmSa* this, PlayState* play);
 
-ActorInit Dm_Sa_InitVars = {
+ActorProfile Dm_Sa_Profile = {
     /**/ ACTOR_DM_SA,
     /**/ ACTORCAT_ITEMACTION,
     /**/ FLAGS,
@@ -60,7 +60,7 @@ void DmSa_Init(Actor* thisx, PlayState* play) {
 
     this->unk_2E0 = 0;
     this->alpha = 255;
-    this->actor.targetArrowOffset = 3000.0f;
+    this->actor.lockOnArrowOffset = 3000.0f;
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 24.0f);
     SkelAnime_InitFlex(play, &this->skelAnime, &gSkullKidSkel, NULL, NULL, NULL, 0);
     DmSa_ChangeAnim(&this->skelAnime, &sAnimationInfo[DMSA_ANIM_T_POSE], 0);
