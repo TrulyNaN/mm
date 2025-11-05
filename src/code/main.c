@@ -1,6 +1,7 @@
-#include "prevent_bss_reordering.h"
 #include "ultra64.h"
 #include "stack.h"
+
+#pragma increment_block_number "n64-us:128"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
 OSMesgQueue sSerialEventQueue;
@@ -35,10 +36,10 @@ struct PadMgr gPadMgr;
 #include "regs.h"
 #include "segment_symbols.h"
 #include "stack.h"
-#include "stackcheck.h"
+#include "libu64/stackcheck.h"
 #include "scheduler.h"
 #include "sys_initial_check.h"
-#include "system_heap.h"
+#include "libu64/system_heap.h"
 #include "z64nmi_buff.h"
 #include "z64thread.h"
 
@@ -60,7 +61,7 @@ void Main(void* arg) {
     Check_RegionIsSupported();
     Check_ExpansionPak();
 
-    sysHeap = (uintptr_t)SEGMENT_START(system_heap);
+    sysHeap = (uintptr_t)SEGMENT_END(buffers);
     fb = FRAMEBUFFERS_START_ADDR;
     gSystemHeapSize = fb - sysHeap;
     SystemHeap_Init((void*)sysHeap, gSystemHeapSize);

@@ -18,7 +18,6 @@
  * There are some additional provisions to ensure that audio DMA is particularly high-speed, the audio data is assumed
  * to be uncompressed and the request queue and address translation is skipped.
  */
-#include "prevent_bss_reordering.h"
 #include "z64dma.h"
 
 #include "carthandle.h"
@@ -26,7 +25,7 @@
 #include "macros.h"
 #include "segment_symbols.h"
 #include "stack.h"
-#include "stackcheck.h"
+#include "libu64/stackcheck.h"
 #include "yaz0.h"
 #include "z64thread.h"
 

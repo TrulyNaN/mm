@@ -9,8 +9,6 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_DURING_OCARINA)
 
-#define THIS ((EnZos*)thisx)
-
 void EnZos_Init(Actor* thisx, PlayState* play);
 void EnZos_Destroy(Actor* thisx, PlayState* play);
 void EnZos_Update(Actor* thisx, PlayState* play);
@@ -34,7 +32,8 @@ void func_80BBC24C(EnZos* this, PlayState* play);
 void func_80BBC298(EnZos* this, PlayState* play);
 void func_80BBC37C(EnZos* this, PlayState* play);
 
-typedef enum {
+typedef enum EnZosAnimation {
+    /* -1 */ EN_ZOS_ANIM_NONE = -1,
     /*  0 */ EN_ZOS_ANIM_LEAN_ON_KEYBOARD,
     /*  1 */ EN_ZOS_ANIM_LEAN_ON_KEYBOARD_AND_SIGH,
     /*  2 */ EN_ZOS_ANIM_HANDS_ON_HIPS,
@@ -84,7 +83,7 @@ static ColliderCylinderInit sCylinderInit = {
 };
 
 void EnZos_Init(Actor* thisx, PlayState* play) {
-    EnZos* this = THIS;
+    EnZos* this = (EnZos*)thisx;
 
     Actor_SetScale(&this->actor, 0.0115f);
     this->actionFunc = func_80BBBDE0;
@@ -124,18 +123,18 @@ void EnZos_Init(Actor* thisx, PlayState* play) {
             if (CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_GREAT_BAY_TEMPLE)) {
                 Actor_Kill(&this->actor);
             }
-            this->actor.flags |= ACTOR_FLAG_10;
+            this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
             break;
     }
 }
 
 void EnZos_Destroy(Actor* thisx, PlayState* play) {
-    EnZos* this = THIS;
+    EnZos* this = (EnZos*)thisx;
 
     CLEAR_WEEKEVENTREG(WEEKEVENTREG_52_10);
 }
 
-static AnimationHeader* sAnimations[] = {
+static AnimationHeader* sAnimations[EN_ZOS_ANIM_MAX] = {
     &gEvanLeanOnKeyboardAnim,        // EN_ZOS_ANIM_LEAN_ON_KEYBOARD
     &gEvanLeanOnKeyboardAndSighAnim, // EN_ZOS_ANIM_LEAN_ON_KEYBOARD_AND_SIGH
     &gEvanHandsOnHipsAnim,           // EN_ZOS_ANIM_HANDS_ON_HIPS
@@ -154,8 +153,7 @@ static AnimationHeader* sAnimations[] = {
 void EnZos_ChangeAnim(EnZos* this, s16 animIndex, u8 animMode) {
     f32 endFrame;
 
-    if ((animIndex != this->animIndex) && (animIndex >= EN_ZOS_ANIM_LEAN_ON_KEYBOARD) &&
-        (animIndex < EN_ZOS_ANIM_MAX)) {
+    if ((animIndex != this->animIndex) && (animIndex > EN_ZOS_ANIM_NONE) && (animIndex < EN_ZOS_ANIM_MAX)) {
         if (animIndex > EN_ZOS_ANIM_SLOW_PLAY) {
             endFrame = 29.0f;
         } else {
@@ -696,7 +694,7 @@ void func_80BBC37C(EnZos* this, PlayState* play) {
 
 void EnZos_Update(Actor* thisx, PlayState* play) {
     s32 pad;
-    EnZos* this = THIS;
+    EnZos* this = (EnZos*)thisx;
 
     Actor_MoveWithGravity(&this->actor);
     Collider_UpdateCylinder(&this->actor, &this->collider);
@@ -733,7 +731,7 @@ void EnZos_Draw(Actor* thisx, PlayState* play) {
         gEvanEyeHalfTex,
         gEvanEyeClosedTex,
     };
-    EnZos* this = THIS;
+    EnZos* this = (EnZos*)thisx;
     Gfx* gfx;
 
     OPEN_DISPS(play->state.gfxCtx);

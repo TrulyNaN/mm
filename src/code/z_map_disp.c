@@ -1,4 +1,3 @@
-#include "prevent_bss_reordering.h"
 #include "global.h"
 #include "gfx.h"
 #include "sys_cmpdma.h"
@@ -276,7 +275,7 @@ void MapDisp_Minimap_DrawActorIcon(PlayState* play, Actor* actor) {
     if ((posX > 0) && (posX < 0x3FF) && (posY > 0) && (posY < 0x3FF)) {
         OPEN_DISPS(play->state.gfxCtx);
 
-        if ((actor->category == ACTORCAT_PLAYER) && (actor->flags & ACTOR_FLAG_80000000)) {
+        if ((actor->category == ACTORCAT_PLAYER) && (actor->flags & ACTOR_FLAG_MINIMAP_ICON_ENABLED)) {
             s16 compassRot;
 
             Gfx_SetupDL42_Overlay(play->state.gfxCtx);
@@ -316,7 +315,7 @@ void MapDisp_Minimap_DrawActorIcon(PlayState* play, Actor* actor) {
         } else {
             Gfx_SetupDL39_Overlay(play->state.gfxCtx);
             gDPSetCombineMode(OVERLAY_DISP++, G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM);
-            if (actor->flags & ACTOR_FLAG_80000000) {
+            if (actor->flags & ACTOR_FLAG_MINIMAP_ICON_ENABLED) {
                 gDPSetPrimColor(OVERLAY_DISP++, 0, 0, sMinimapActorCategoryColors[actor->category].r,
                                 sMinimapActorCategoryColors[actor->category].g,
                                 sMinimapActorCategoryColors[actor->category].b, play->interfaceCtx.minimapAlpha);
@@ -345,7 +344,8 @@ void MapDisp_Minimap_DrawActors(PlayState* play) {
             while (actor != NULL) {
                 if ((actor->update != NULL) && (actor->init == NULL) &&
                     Object_IsLoaded(&play->objectCtx, actor->objectSlot) &&
-                    ((actor->id == ACTOR_EN_BOX) || (i == ACTORCAT_PLAYER) || (actor->flags & ACTOR_FLAG_80000000)) &&
+                    ((actor->id == ACTOR_EN_BOX) || (i == ACTORCAT_PLAYER) ||
+                     (actor->flags & ACTOR_FLAG_MINIMAP_ICON_ENABLED)) &&
                     ((sMapDisp.curRoom == actor->room) || (actor->room == -1))) {
                     MapDisp_Minimap_DrawActorIcon(play, actor);
                 }
@@ -658,17 +658,14 @@ void MapDisp_InitBossRoomStorey(PlayState* play) {
     s32 i;
 
     for (i = 0; i < transitionActors->count; i++) {
-        if (MapDisp_IsBossDoor(sTransitionActors[i].params)) {
-            if (ABS_ALT(sTransitionActors[i].id) != ACTOR_EN_HOLL) {
-                for (storey = 0; storey < sMapDisp.numStoreys; storey++) {
-                    //! FAKE: needed for matching
-                    s32 temp = (sMapDisp.storeyYList[storey] - 5);
+        TransitionActorEntry* entry = &sTransitionActors[i];
 
-                    if (((storey == sMapDisp.numStoreys - 1) &&
-                         (sTransitionActors[i].pos.y >= (sMapDisp.storeyYList[storey] - 5))) ||
-                        ((storey != sMapDisp.numStoreys - 1) &&
-                         (sTransitionActors[i].pos.y >= (sMapDisp.storeyYList[storey] - 5)) &&
-                         (sTransitionActors[i].pos.y < (sMapDisp.storeyYList[storey + 1] - 5)))) {
+        if (MapDisp_IsBossDoor(entry->params)) {
+            if (ABS_ALT(entry->id) != ACTOR_EN_HOLL) {
+                for (storey = 0; storey < sMapDisp.numStoreys; storey++) {
+                    if (((storey == sMapDisp.numStoreys - 1) && (entry->pos.y >= (sMapDisp.storeyYList[storey] - 5))) ||
+                        ((storey != sMapDisp.numStoreys - 1) && (entry->pos.y >= (sMapDisp.storeyYList[storey] - 5)) &&
+                         (entry->pos.y < (sMapDisp.storeyYList[storey + 1] - 5)))) {
                         sMapDisp.bossRoomStorey = storey;
                         return;
                     }
@@ -1176,7 +1173,7 @@ void* MapDisp_AllocDungeonMap(PlayState* play, void* heap) {
             if (!foundTexture) {
                 sPauseDungeonMap.roomSprite[sceneRoomIter] = NULL;
             } else {
-                void* dummy = sPauseDungeonMap.mapI_roomTextures[dungeonMapRoomIter]; //! FAKE:
+                s32 requiredScopeTemp;
 
                 sPauseDungeonMap.roomSprite[sceneRoomIter] = sPauseDungeonMap.mapI_roomTextures[dungeonMapRoomIter];
             }

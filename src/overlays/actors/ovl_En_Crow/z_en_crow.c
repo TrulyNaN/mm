@@ -7,9 +7,8 @@
 #include "z_en_crow.h"
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 
-#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_4000)
-
-#define THIS ((EnCrow*)thisx)
+#define FLAGS \
+    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_CAN_ATTACH_TO_ARROW)
 
 void EnCrow_Init(Actor* thisx, PlayState* play);
 void EnCrow_Destroy(Actor* thisx, PlayState* play);
@@ -118,14 +117,14 @@ static DamageTable sDamageTable = {
 static s32 sDeadCount = 0;
 
 static InitChainEntry sInitChain[] = {
-    ICHAIN_F32(uncullZoneForward, 3000, ICHAIN_CONTINUE),
+    ICHAIN_F32(cullingVolumeDistance, 3000, ICHAIN_CONTINUE),
     ICHAIN_S8(hintId, TATL_HINT_ID_GUAY, ICHAIN_CONTINUE),
     ICHAIN_F32_DIV1000(gravity, -500, ICHAIN_CONTINUE),
     ICHAIN_F32(lockOnArrowOffset, 2000, ICHAIN_STOP),
 };
 
 void EnCrow_Init(Actor* thisx, PlayState* play) {
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     SkelAnime_InitFlex(play, &this->skelAnime, &gGuaySkel, &gGuayFlyAnim, this->jointTable, this->morphTable,
@@ -144,7 +143,7 @@ void EnCrow_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnCrow_Destroy(Actor* thisx, PlayState* play) {
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
 
     Collider_DestroyJntSph(play, &this->collider);
 }
@@ -327,12 +326,12 @@ void EnCrow_SetupDamaged(EnCrow* this, PlayState* play) {
     }
 
     Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_OPA, 40);
-    if (this->actor.flags & ACTOR_FLAG_8000) {
+    if (this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW) {
         this->actor.speed = 0.0f;
     }
 
     this->collider.base.acFlags &= ~AC_ON;
-    this->actor.flags |= ACTOR_FLAG_10;
+    this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
 
     this->actionFunc = EnCrow_Damaged;
 }
@@ -341,7 +340,7 @@ void EnCrow_Damaged(EnCrow* this, PlayState* play) {
     Math_StepToF(&this->actor.speed, 0.0f, 0.5f);
     this->actor.colorFilterTimer = 40;
 
-    if (!(this->actor.flags & ACTOR_FLAG_8000)) {
+    if (!(this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW)) {
         if (this->drawDmgEffType != ACTOR_DRAW_DMGEFF_FROZEN_NO_SFX) {
             Math_ScaledStepToS(&this->actor.shape.rot.x, 0x4000, 0x200);
             this->actor.shape.rot.z += 0x1780;
@@ -459,7 +458,7 @@ void EnCrow_Respawn(EnCrow* this, PlayState* play) {
         }
         if (Math_StepToF(&this->actor.scale.x, scaleTarget, scaleTarget * 0.1f)) {
             this->actor.flags |= ACTOR_FLAG_ATTENTION_ENABLED;
-            this->actor.flags &= ~ACTOR_FLAG_10;
+            this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
             this->actor.colChkInfo.health = 1;
             EnCrow_SetupFlyIdle(this);
         }
@@ -492,7 +491,7 @@ void EnCrow_UpdateDamage(EnCrow* this, PlayState* play) {
 
 void EnCrow_Update(Actor* thisx, PlayState* play) {
     s32 pad;
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
     f32 height;
     f32 scale;
 
@@ -547,7 +546,7 @@ void EnCrow_Update(Actor* thisx, PlayState* play) {
 }
 
 s32 EnCrow_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
 
     if (this->actor.colChkInfo.health != 0) {
         if (limbIndex == OBJECT_CROW_LIMB_UPPER_TAIL) {
@@ -560,7 +559,7 @@ s32 EnCrow_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* 
 }
 
 void EnCrow_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot, Actor* thisx) {
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
 
     if (limbIndex == OBJECT_CROW_LIMB_BODY) {
         Matrix_MultVecX(2500.0f, &this->bodyPartsPos[GUAY_BODYPART_BODY]);
@@ -571,7 +570,7 @@ void EnCrow_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* rot
 }
 
 void EnCrow_Draw(Actor* thisx, PlayState* play) {
-    EnCrow* this = THIS;
+    EnCrow* this = (EnCrow*)thisx;
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
     SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,

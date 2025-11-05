@@ -9,9 +9,7 @@
 #include "assets/objects/object_masterzoora/object_masterzoora.h"
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 
-#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_10)
-
-#define THIS ((EnSob1*)thisx)
+#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY | ACTOR_FLAG_UPDATE_CULLING_DISABLED)
 
 void EnSob1_Init(Actor* thisx, PlayState* play);
 void EnSob1_Destroy(Actor* thisx, PlayState* play);
@@ -52,13 +50,14 @@ s32 EnSob1_TakeItemOffShelf(EnSob1* this);
 s32 EnSob1_ReturnItemToShelf(EnSob1* this);
 s16 EnSob1_GetDistSqAndOrient(Path* path, s32 pointIndex, Vec3f* pos, f32* distSq);
 
-typedef enum {
+typedef enum BombShopkeeperAnimation {
     /* 0 */ BOMB_SHOPKEEPER_ANIM_WALK,
     /* 1 */ BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_START,
-    /* 2 */ BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_LOOP
+    /* 2 */ BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_LOOP,
+    /* 3 */ BOMB_SHOPKEEPER_ANIM_MAX
 } BombShopkeeperAnimation;
 
-static AnimationInfoS sAnimationInfoBombShopkeeper[] = {
+static AnimationInfoS sAnimationInfo[BOMB_SHOPKEEPER_ANIM_MAX] = {
     { &gBombShopkeeperWalkAnim, 2.0f, 0, -1, ANIMMODE_LOOP, 20 },
     { &gBombShopkeeperSitAtCounterStartAnim, 1.0f, 0, -1, ANIMMODE_ONCE, 0 },
     { &gBombShopkeeperSitAtCounterLoopAnim, 1.0f, 0, -1, ANIMMODE_LOOP, 0 },
@@ -404,7 +403,7 @@ s32 EnSob1_GetObjectIndices(EnSob1* this, PlayState* play, s16* objectIds) {
 }
 
 void EnSob1_Init(Actor* thisx, PlayState* play) {
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
     s32 pad;
     s16* objectIds;
 
@@ -445,7 +444,7 @@ void EnSob1_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnSob1_Destroy(Actor* thisx, PlayState* play) {
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
 
     Collider_DestroyCylinder(play, &this->collider);
 }
@@ -753,8 +752,7 @@ void EnSob1_EndWalk(EnSob1* this, PlayState* play) {
     if (distSq < 12.0f) {
         this->actor.speed = 0.0f;
         if (endFrame == curFrame) {
-            EnSob1_ChangeAnim(&this->skelAnime, sAnimationInfoBombShopkeeper,
-                              BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_START);
+            EnSob1_ChangeAnim(&this->skelAnime, sAnimationInfo, BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_START);
             EnSob1_SetupAction(this, EnSob1_SetupIdle);
         }
     }
@@ -766,7 +764,7 @@ void EnSob1_SetupIdle(EnSob1* this, PlayState* play) {
     s16 endFrame = Animation_GetLastFrame(&gBombShopkeeperSitAtCounterStartAnim);
 
     if (endFrame == curFrame) {
-        EnSob1_ChangeAnim(&this->skelAnime, sAnimationInfoBombShopkeeper, BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_LOOP);
+        EnSob1_ChangeAnim(&this->skelAnime, sAnimationInfo, BOMB_SHOPKEEPER_ANIM_SIT_AT_COUNTER_LOOP);
         EnSob1_SetupAction(this, EnSob1_Idle);
     }
     EnSob1_Walking(this, play);
@@ -1399,7 +1397,7 @@ void EnSob1_InitShop(EnSob1* this, PlayState* play) {
     Vec3f* posOffset;
 
     if (EnSob1_AreObjectsLoaded(this, play)) {
-        this->actor.flags &= ~ACTOR_FLAG_10;
+        this->actor.flags &= ~ACTOR_FLAG_UPDATE_CULLING_DISABLED;
         this->actor.objectSlot = this->mainObjectSlot;
         Actor_SetObjectDependency(play, &this->actor);
         posOffset = &sPosOffset[this->shopType];
@@ -1494,7 +1492,7 @@ void EnSob1_InitShop(EnSob1* this, PlayState* play) {
 
 void EnSob1_Update(Actor* thisx, PlayState* play) {
     EnSob1ActionFunc changeObjectFunc;
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
 
     if (this->actionFunc != EnSob1_InitShop) {
         this->blinkFunc(this);
@@ -1628,7 +1626,7 @@ void EnSob1_DrawStickDirectionPrompt(PlayState* play, EnSob1* this) {
 
 s32 EnSob1_ZoraShopkeeper_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
                                            Actor* thisx) {
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
 
     if (limbIndex == ZORA_LIMB_HEAD) {
         rot->x += this->headRot;
@@ -1638,7 +1636,7 @@ s32 EnSob1_ZoraShopkeeper_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx**
 
 s32 EnSob1_BombShopkeeper_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot,
                                            Actor* thisx) {
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
 
     if (limbIndex == BOMB_SHOPKEEPER_LIMB_HEAD) {
         Matrix_RotateXS(this->headRot, MTXMODE_APPLY);
@@ -1667,7 +1665,7 @@ Gfx* EnSob1_EndDList(GraphicsContext* gfxCtx) {
 
 void EnSob1_ZoraShopkeeper_Draw(Actor* thisx, PlayState* play) {
     static TexturePtr sZoraShopkeeperEyeTextures[] = { gZoraEyeOpenTex, gZoraEyeHalfTex, gZoraEyeClosedTex };
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
     s32 pad;
     s32 i;
 
@@ -1692,7 +1690,7 @@ void EnSob1_ZoraShopkeeper_Draw(Actor* thisx, PlayState* play) {
 
 void EnSob1_GoronShopkeeper_Draw(Actor* thisx, PlayState* play) {
     static TexturePtr sGoronShopkeeperEyeTextures[] = { gGoronEyeOpenTex, gGoronEyeHalfTex, gGoronEyeClosedTex };
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
     s32 pad;
     s32 i;
 
@@ -1714,7 +1712,7 @@ void EnSob1_GoronShopkeeper_Draw(Actor* thisx, PlayState* play) {
 }
 
 void EnSob1_BombShopkeeper_Draw(Actor* thisx, PlayState* play) {
-    EnSob1* this = THIS;
+    EnSob1* this = (EnSob1*)thisx;
     s32 pad;
     u32 frames;
     s32 i;

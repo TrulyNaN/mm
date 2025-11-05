@@ -35,7 +35,7 @@ u8 sMotionBlurStatus;
 #include "overlays/gamestates/ovl_daytelop/z_daytelop.h"
 #include "overlays/gamestates/ovl_opening/z_opening.h"
 #include "overlays/gamestates/ovl_file_choose/z_file_select.h"
-#include "debug.h"
+#include "libu64/debug.h"
 
 s32 gDbgCamEnabled = false;
 u8 D_801D0D54 = false;
@@ -403,7 +403,7 @@ void Play_Destroy(GameState* thisx) {
     this->unk_18E64 = NULL;
     this->unk_18E68 = NULL;
     Effect_DestroyAll(this);
-    EffectSS_Clear(this);
+    EffectSs_ClearAll(this);
     CollisionCheck_DestroyContext(this, &this->colChkCtx);
 
     if (gTransitionTileState == TRANS_TILE_READY) {
@@ -1006,7 +1006,7 @@ void Play_UpdateMain(PlayState* this) {
                     Cutscene_UpdateManual(this, &this->csCtx);
                     Cutscene_UpdateScripted(this, &this->csCtx);
                     Effect_UpdateAll(this);
-                    EffectSS_UpdateAllParticles(this);
+                    EffectSs_UpdateAll(this);
                     EffFootmark_Update(this);
                 }
             } else {
@@ -1277,7 +1277,7 @@ void Play_DrawMain(PlayState* this) {
                 goto PostWorldDraw;
             }
 
-            if (!this->unk_18844) {
+            if (!this->soaringCsOrSoTCsPlaying) {
                 if (1) {
                     if (((u32)this->skyboxId != SKYBOX_NONE) && !this->envCtx.skyboxDisabled) {
                         if ((this->skyboxId == SKYBOX_NORMAL_SKY) || (this->skyboxId == SKYBOX_3)) {
@@ -2076,9 +2076,9 @@ void Play_Init(GameState* thisx) {
     s32 zAllocSize;
     Player* player;
     s32 i;
-    s32 spawn;
-    u8 sceneLayer;
     s32 scene;
+    u8 sceneLayer;
+    s32 pad2;
 
     if ((gSaveContext.respawnFlag == -4) || (gSaveContext.respawnFlag == -0x63)) {
         if (CHECK_EVENTINF(EVENTINF_TRIGGER_DAYTELOP)) {
@@ -2105,7 +2105,6 @@ void Play_Init(GameState* thisx) {
 
     if ((gSaveContext.nextCutsceneIndex == 0xFFEF) || (gSaveContext.nextCutsceneIndex == 0xFFF0)) {
         scene = ((void)0, gSaveContext.save.entrance) >> 9;
-        spawn = (((void)0, gSaveContext.save.entrance) >> 4) & 0x1F;
 
         if (CHECK_WEEKEVENTREG(WEEKEVENTREG_CLEARED_SNOWHEAD_TEMPLE)) {
             if (scene == ENTR_SCENE_MOUNTAIN_VILLAGE_WINTER) {
@@ -2145,9 +2144,8 @@ void Play_Init(GameState* thisx) {
                 gSaveContext.nextCutsceneIndex = 0xFFF4;
             }
         }
-        //! FAKE:
-        gSaveContext.save.entrance =
-            Entrance_Create(((void)0, scene), spawn, ((void)0, gSaveContext.save.entrance) & 0xF);
+        gSaveContext.save.entrance = Entrance_Create(scene, (((void)0, gSaveContext.save.entrance) >> 4) & 0x1F,
+                                                     ((void)0, gSaveContext.save.entrance) & 0xF);
     }
 
     GameState_Realloc(&this->state, 0);
@@ -2183,7 +2181,7 @@ void Play_Init(GameState* thisx) {
     SoundSource_InitAll(this);
     EffFootmark_Init(this);
     Effect_Init(this);
-    EffectSS_Init(this, 100);
+    EffectSs_InitInfo(this, 100);
     CollisionCheck_InitContext(this, &this->colChkCtx);
     AnimTaskQueue_Reset(&this->animTaskQueue);
     Cutscene_InitContext(this, &this->csCtx);
@@ -2270,7 +2268,7 @@ void Play_Init(GameState* thisx) {
     this->worldCoverAlpha = 0;
     this->bgCoverAlpha = 0;
     this->haltAllActors = false;
-    this->unk_18844 = false;
+    this->soaringCsOrSoTCsPlaying = false;
 
     if (gSaveContext.gameMode != GAMEMODE_TITLE_SCREEN) {
         if (gSaveContext.nextTransitionType == TRANS_NEXT_TYPE_DEFAULT) {
@@ -2316,8 +2314,8 @@ void Play_Init(GameState* thisx) {
     // Busyloop until the room loads
     while (!Room_ProcessRoomRequest(this, &this->roomCtx)) {}
 
-    if ((CURRENT_DAY != 0) && ((this->roomCtx.curRoom.behaviorType1 == ROOM_BEHAVIOR_TYPE1_1) ||
-                               (this->roomCtx.curRoom.behaviorType1 == ROOM_BEHAVIOR_TYPE1_5))) {
+    if ((CURRENT_DAY != 0) &&
+        ((this->roomCtx.curRoom.type == ROOM_TYPE_DUNGEON) || (this->roomCtx.curRoom.type == ROOM_TYPE_BOSS))) {
         Actor_Spawn(&this->actorCtx, this, ACTOR_EN_TEST4, 0.0f, 0.0f, 0.0f, 0, 0, 0, 0);
     }
 

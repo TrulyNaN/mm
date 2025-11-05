@@ -1,7 +1,6 @@
-#include "prevent_bss_reordering.h"
-#include "prevent_bss_reordering2.h"
-
 #include "PR/ultratypes.h"
+
+#pragma increment_block_number "n64-us:128"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
 struct CutsceneCamera;
@@ -1253,7 +1252,7 @@ void Cutscene_ProcessScript(PlayState* play, CutsceneContext* csCtx, u8* script)
 
                 for (j = 0; j < cmdEntries; j++) {
                     CutsceneCmd_StopSequence(play, csCtx, (CsCmdStopSeq*)script);
-                    script += sizeof(CsCmdStartSeq);
+                    script += sizeof(CsCmdStopSeq);
                 }
                 break;
 

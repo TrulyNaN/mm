@@ -4,7 +4,6 @@
  * Description: Kafei
  */
 
-#include "prevent_bss_reordering.h"
 #include "z_en_test3.h"
 
 #include "zelda_arena.h"
@@ -14,9 +13,9 @@
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
 #include "assets/objects/object_mask_ki_tan/object_mask_ki_tan.h"
 
-#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_20 | ACTOR_FLAG_CAN_PRESS_SWITCHES)
+#pragma increment_block_number "n64-us:128"
 
-#define THIS ((EnTest3*)thisx)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED | ACTOR_FLAG_CAN_PRESS_SWITCHES)
 
 typedef struct {
     /* 0x0 */ s8 unk_0;
@@ -161,9 +160,9 @@ static PlayerAgeProperties sAgeProperties = {
     29.4343f,
     // openChestAnim
     &gPlayerAnim_clink_demo_Tbox_open,
-    // unk_A4
+    // timeTravelStartAnim
     &gPlayerAnim_clink_demo_goto_future,
-    // unk_A8
+    // timeTravelEndAnim
     &gPlayerAnim_clink_demo_return_to_future,
     // unk_AC
     &gPlayerAnim_clink_normal_climb_startA,
@@ -415,7 +414,7 @@ s32 func_80A3ED24(EnTest3* this, PlayState* play) {
 
 void EnTest3_Init(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnTest3* this = THIS;
+    EnTest3* this = (EnTest3*)thisx;
     Camera* subCam;
 
     if (D_80A41D24) {
@@ -471,7 +470,7 @@ void EnTest3_Init(Actor* thisx, PlayState* play2) {
 
 void EnTest3_Destroy(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnTest3* this = THIS;
+    EnTest3* this = (EnTest3*)thisx;
 
     Effect_Destroy(play, this->player.meleeWeaponEffectIndex[0]);
     Effect_Destroy(play, this->player.meleeWeaponEffectIndex[1]);
@@ -694,7 +693,7 @@ s32 func_80A3FA58(EnTest3* this, PlayState* play) {
     struct_80A41828 sp40;
     ScheduleOutput scheduleOutput;
 
-    if (player->stateFlags1 & PLAYER_STATE1_40) {
+    if (player->stateFlags1 & PLAYER_STATE1_TALKING) {
         return false;
     }
     cond = func_80A40230(this, play);
@@ -1021,7 +1020,7 @@ void func_80A40A6C(EnTest3* this, PlayState* play) {
 
 void EnTest3_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnTest3* this = THIS;
+    EnTest3* this = (EnTest3*)thisx;
 
     sKafeiControlInput.rel.button = sKafeiControlInput.cur.button;
     sKafeiControlInput.cur.button = 0;
@@ -1075,16 +1074,17 @@ void EnTest3_Update(Actor* thisx, PlayState* play2) {
 s32 D_80A418C8 = false;
 
 s32 EnTest3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
-    EnTest3* this = THIS;
+    EnTest3* this = (EnTest3*)thisx;
 
     if (limbIndex == KAFEI_LIMB_ROOT) {
         sKafeiCurBodyPartPos = &this->player.bodyPartsPos[0] - 1;
-        if (!(this->player.skelAnime.moveFlags & ANIM_FLAG_4) || (this->player.skelAnime.moveFlags & ANIM_FLAG_1)) {
+        if (!(this->player.skelAnime.movementFlags & ANIM_FLAG_4) ||
+            (this->player.skelAnime.movementFlags & ANIM_FLAG_1)) {
             pos->x *= this->player.ageProperties->unk_08;
             pos->z *= this->player.ageProperties->unk_08;
         }
-        if (!(this->player.skelAnime.moveFlags & ANIM_FLAG_4) ||
-            (this->player.skelAnime.moveFlags & ANIM_FLAG_UPDATE_Y)) {
+        if (!(this->player.skelAnime.movementFlags & ANIM_FLAG_4) ||
+            (this->player.skelAnime.movementFlags & ANIM_FLAG_UPDATE_Y)) {
             pos->y *= this->player.ageProperties->unk_08;
         }
         pos->y -= this->player.unk_AB8;
@@ -1130,7 +1130,7 @@ s32 EnTest3_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f*
 
 void EnTest3_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dList2, Vec3s* rot, Actor* thisx) {
     s32 pad;
-    EnTest3* this = THIS;
+    EnTest3* this = (EnTest3*)thisx;
 
     if (*dList2 != NULL) {
         Matrix_MultZero(sKafeiCurBodyPartPos);
@@ -1216,33 +1216,56 @@ void EnTest3_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList1, Gfx** dL
     }
 }
 
-static TexturePtr sEyeTextures[] = {
-    gKafeiEyesOpenTex,     gKafeiEyesHalfTex,   gKafeiEyesClosedTex,   gKafeiEyesRollRightTex,
-    gKafeiEyesRollLeftTex, gKafeiEyesRollUpTex, gKafeiEyesRollDownTex, object_test3_Tex_006680,
+static TexturePtr sEyeTextures[PLAYER_EYES_MAX] = {
+    gKafeiEyesOpenTex,    // PLAYER_EYES_OPEN
+    gKafeiEyesHalfTex,    // PLAYER_EYES_HALF
+    gKafeiEyesClosedTex,  // PLAYER_EYES_CLOSED
+    gKafeiEyesRightTex,   // PLAYER_EYES_RIGHT
+    gKafeiEyesLeftTex,    // PLAYER_EYES_LEFT
+    gKafeiEyesUpTex,      // PLAYER_EYES_UP
+    gKafeiEyesDownTex,    // PLAYER_EYES_DOWN
+    gKafeiEyesWincingTex, // PLAYER_EYES_WINCING
 };
 
-static TexturePtr sMouthTextures[] = {
-    gKafeiMouthClosedTex,
-    gKafeiMouthTeethTex,
-    gKafeiMouthAngryTex,
-    gKafeiMouthHappyTex,
+static TexturePtr sMouthTextures[PLAYER_MOUTH_MAX] = {
+    gKafeiMouthClosedTex, // PLAYER_MOUTH_CLOSED
+    gKafeiMouthHalfTex,   // PLAYER_MOUTH_HALF
+    gKafeiMouthOpenTex,   // PLAYER_MOUTH_OPEN
+    gKafeiMouthSmileTex,  // PLAYER_MOUTH_SMILE
 };
 
-typedef struct {
-    /* 0x0 */ u8 eyeIndex;
-    /* 0x1 */ u8 mouthIndex;
-} KafeiFace; // size = 0x2
+static PlayerFaceIndices sKafeiFaces[PLAYER_FACE_MAX] = {
+    // The first 6 faces defined must be default blinking faces. See relevant code in `Player_UpdateCommon`.
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_BLINKING_HALF
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_NEUTRAL_BLINKING_CLOSED
 
-static KafeiFace sFaceExpressions[] = {
-    { 0, 0 }, { 1, 0 }, { 2, 0 }, { 0, 0 }, { 1, 0 }, { 2, 0 }, { 4, 0 }, { 5, 1 }, { 7, 2 }, { 0, 2 },
-    { 3, 0 }, { 4, 0 }, { 2, 2 }, { 1, 1 }, { 0, 2 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 },
+    // This duplicate set of blinking faces is defined because Player will choose between the first and second set
+    // based on gameplayFrames. See relevant code in `Player_UpdateCommon`.
+    // This, in theory, allows for psuedo-random variance in the faces used. But in practice, duplicate faces are used.
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_2
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_BLINKING_HALF_2
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_NEUTRAL_BLINKING_CLOSED_2
+
+    // Additional faces. Most faces are encoded within animations.
+    { PLAYER_EYES_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_LOOK_LEFT
+    { PLAYER_EYES_UP, PLAYER_MOUTH_HALF },      // PLAYER_FACE_SURPRISED
+    { PLAYER_EYES_WINCING, PLAYER_MOUTH_OPEN }, // PLAYER_FACE_HURT
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_OPEN },    // PLAYER_FACE_GASP
+    { PLAYER_EYES_RIGHT, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_LOOK_RIGHT
+    { PLAYER_EYES_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_LOOK_LEFT_2
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_OPEN },  // PLAYER_FACE_EYES_CLOSED_MOUTH_OPEN
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_HALF },    // PLAYER_FACE_OPENING
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_OPEN },    // PLAYER_FACE_EYES_AND_MOUTH_OPEN
+    // The mouth in this entry deviates from player. Similar to OoT's `sPlayerFaces`.
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_EYES_AND_MOUTH_OPEN
 };
 
 void EnTest3_Draw(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnTest3* this = THIS;
-    s32 eyeTexIndex = GET_EYE_INDEX_FROM_JOINT_TABLE(this->player.skelAnime.jointTable);
-    s32 mouthTexIndex = GET_MOUTH_INDEX_FROM_JOINT_TABLE(this->player.skelAnime.jointTable);
+    EnTest3* this = (EnTest3*)thisx;
+    s32 eyeIndex = GET_EYE_INDEX_FROM_JOINT_TABLE(this->player.skelAnime.jointTable);
+    s32 mouthIndex = GET_MOUTH_INDEX_FROM_JOINT_TABLE(this->player.skelAnime.jointTable);
     Gfx* gfx;
 
     OPEN_DISPS(play->state.gfxCtx);
@@ -1268,25 +1291,33 @@ void EnTest3_Draw(Actor* thisx, PlayState* play2) {
 
     gfx = POLY_OPA_DISP;
 
-    if (eyeTexIndex < 0) {
-        eyeTexIndex = sFaceExpressions[this->player.actor.shape.face].eyeIndex;
+    // If the eyes index provided by the animation is negative, use the value provided by the `face` argument instead
+    if (eyeIndex < 0) {
+        eyeIndex = sKafeiFaces[this->player.actor.shape.face].eyeIndex;
     }
-    gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sEyeTextures[eyeTexIndex]));
-    if (mouthTexIndex < 0) {
-        mouthTexIndex = sFaceExpressions[this->player.actor.shape.face].mouthIndex;
+
+    gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sEyeTextures[eyeIndex]));
+
+    // If the mouth index provided by the animation is negative, use the value provided by the `face` argument instead
+    if (mouthIndex < 0) {
+        mouthIndex = sKafeiFaces[this->player.actor.shape.face].mouthIndex;
     }
-    gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sMouthTextures[mouthTexIndex]));
+
+    gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sMouthTextures[mouthIndex]));
 
     POLY_OPA_DISP = &gfx[2];
 
     SkelAnime_DrawFlexLod(play, this->player.skelAnime.skeleton, this->player.skelAnime.jointTable,
                           this->player.skelAnime.dListCount, EnTest3_OverrideLimbDraw, EnTest3_PostLimbDraw,
                           &this->player.actor, 0);
+
     if (this->player.invincibilityTimer > 0) {
         POLY_OPA_DISP = Play_SetFog(play, POLY_OPA_DISP);
     }
+
     if ((this->player.getItemDrawIdPlusOne - 1) != GID_NONE) {
         Player_DrawGetItem(play, &this->player);
     }
+
     CLOSE_DISPS(play->state.gfxCtx);
 }

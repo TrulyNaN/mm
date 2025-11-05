@@ -7,9 +7,7 @@
 #include "z_en_niw.h"
 #include "overlays/actors/ovl_En_Attack_Niw/z_en_attack_niw.h"
 
-#define FLAGS (ACTOR_FLAG_10 | ACTOR_FLAG_THROW_ONLY)
-
-#define THIS ((EnNiw*)thisx)
+#define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_THROW_ONLY)
 
 void EnNiw_Init(Actor* thisx, PlayState* play);
 void EnNiw_Destroy(Actor* thisx, PlayState* play);
@@ -88,7 +86,7 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
         ICHAIN_F32_DIV1000(gravity, -2000, ICHAIN_CONTINUE),
         ICHAIN_F32(lockOnArrowOffset, 0, ICHAIN_STOP),
     };
-    EnNiw* this = THIS;
+    EnNiw* this = (EnNiw*)thisx;
     Vec3f D_808934C4 = { 90000.0f, 90000.0f, 90000.0f };
 
     if (this->actor.params < 0) { // all scene spawned cucco are (-1)
@@ -142,7 +140,7 @@ void EnNiw_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnNiw_Destroy(Actor* thisx, PlayState* play) {
-    EnNiw* this = THIS;
+    EnNiw* this = (EnNiw*)thisx;
 
     if (this->niwType == NIW_TYPE_REGULAR) {
         Collider_DestroyCylinder(play, &this->collider);
@@ -154,12 +152,12 @@ void EnNiw_Destroy(Actor* thisx, PlayState* play) {
  *
  * AttackNiw has a copy of this function that it barely uses
  */
-void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animationState) {
+void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animIndex) {
     f32 tempOne = 1.0f; // hopefully fake match, but no luck
 
     if (this->unkTimer24C == 0) {
         // targetLimbRots[0] is bodyRotY
-        if (animationState == NIW_ANIM_STILL) {
+        if (animIndex == NIW_ANIM_STILL) {
             this->targetLimbRots[0] = 0.0f;
         } else {
             this->targetLimbRots[0] = -10000.0f * tempOne;
@@ -169,7 +167,7 @@ void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animationState) {
         this->unkTimer24C = 3;
         if ((this->unk292 % 2) == 0) {
             this->targetLimbRots[0] = 0.0f;
-            if (animationState == NIW_ANIM_STILL) {
+            if (animIndex == NIW_ANIM_STILL) {
                 this->unkTimer24C = Rand_ZeroFloat(30.0f);
             }
         }
@@ -179,7 +177,7 @@ void EnNiw_AnimateWingHead(EnNiw* this, PlayState* play, s16 animationState) {
         this->unkToggle296++;
         this->unkToggle296 &= 1;
 
-        switch (animationState) {
+        switch (animIndex) {
             case NIW_ANIM_STILL:
                 this->targetLimbRots[2] = 0.0f; // both wingRotZ
                 this->targetLimbRots[1] = 0.0f;
@@ -732,7 +730,7 @@ void EnNiw_CheckRage(EnNiw* this, PlayState* play) {
 
 void EnNiw_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnNiw* this = THIS;
+    EnNiw* this = (EnNiw*)thisx;
     Player* player = GET_PLAYER(play);
     s16 i;
     s16 featherCount;
@@ -905,7 +903,7 @@ void EnNiw_Update(Actor* thisx, PlayState* play2) {
 }
 
 s32 EnNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx) {
-    EnNiw* this = THIS;
+    EnNiw* this = (EnNiw*)thisx;
 
     if (limbIndex == NIW_LIMB_UPPER_BODY) {
         rot->y += TRUNCF_BINANG(this->upperBodyRotY);
@@ -927,7 +925,7 @@ s32 EnNiw_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* p
 }
 
 void EnNiw_Draw(Actor* thisx, PlayState* play) {
-    EnNiw* this = THIS;
+    EnNiw* this = (EnNiw*)thisx;
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
     SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount,

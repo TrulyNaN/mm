@@ -8,9 +8,8 @@
 #include "overlays/actors/ovl_En_Clear_Tag/z_en_clear_tag.h"
 #include "overlays/actors/ovl_Obj_Syokudai/z_obj_syokudai.h"
 
-#define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_4000)
-
-#define THIS ((EnFirefly*)thisx)
+#define FLAGS \
+    (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_HOSTILE | ACTOR_FLAG_IGNORE_QUAKE | ACTOR_FLAG_CAN_ATTACH_TO_ARROW)
 
 void EnFirefly_Init(Actor* thisx, PlayState* play);
 void EnFirefly_Destroy(Actor* thisx, PlayState* play);
@@ -130,7 +129,7 @@ static InitChainEntry sInitChain[] = {
 };
 
 void EnFirefly_Init(Actor* thisx, PlayState* play) {
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     ActorShape_Init(&this->actor.shape, 0.0f, ActorShadow_DrawCircle, 25.0f);
@@ -171,7 +170,7 @@ void EnFirefly_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnFirefly_Destroy(Actor* thisx, PlayState* play) {
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
 
     Collider_DestroySphere(play, &this->collider);
 }
@@ -342,7 +341,7 @@ void EnFirefly_SetupFall(EnFirefly* this, PlayState* play) {
     this->actor.velocity.y = 0.0f;
     Animation_Change(&this->skelAnime, &gFireKeeseFlyAnim, 0.0f, 6.0f, 6.0f, ANIMMODE_ONCE, 0.0f);
     Actor_PlaySfx(&this->actor, NA_SE_EN_FFLY_DEAD);
-    this->actor.flags |= ACTOR_FLAG_10;
+    this->actor.flags |= ACTOR_FLAG_UPDATE_CULLING_DISABLED;
 
     if (this->isInvisible) {
         Actor_SetColorFilter(&this->actor, COLORFILTER_COLORFLAG_RED, 255, COLORFILTER_BUFFLAG_XLU, 40);
@@ -372,7 +371,7 @@ void EnFirefly_SetupFall(EnFirefly* this, PlayState* play) {
         this->auraType = KEESE_AURA_NONE;
     }
 
-    if (this->actor.flags & ACTOR_FLAG_8000) {
+    if (this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW) {
         this->actor.speed = 0.0f;
     }
 
@@ -384,7 +383,7 @@ void EnFirefly_Fall(EnFirefly* this, PlayState* play) {
     this->actor.colorFilterTimer = 40;
     Math_StepToF(&this->actor.speed, 0.0f, 0.5f);
 
-    if (!(this->actor.flags & ACTOR_FLAG_8000)) {
+    if (!(this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW)) {
         if (this->drawDmgEffType != ACTOR_DRAW_DMGEFF_FROZEN_NO_SFX) {
             Math_ScaledStepToS(&this->actor.shape.rot.x, 0x6800, 0x200);
             this->actor.shape.rot.y -= 0x300;
@@ -673,7 +672,7 @@ void EnFirefly_UpdateDamage(EnFirefly* this, PlayState* play) {
 
 void EnFirefly_Update(Actor* thisx, PlayState* play2) {
     PlayState* play = play2;
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
 
     if (this->collider.base.atFlags & AT_HIT) {
         this->collider.base.atFlags &= ~AT_HIT;
@@ -691,7 +690,7 @@ void EnFirefly_Update(Actor* thisx, PlayState* play2) {
     EnFirefly_UpdateDamage(this, play);
     this->actionFunc(this, play);
 
-    if (!(this->actor.flags & ACTOR_FLAG_8000)) {
+    if (!(this->actor.flags & ACTOR_FLAG_ATTACHED_TO_ARROW)) {
         if ((this->actor.colChkInfo.health == 0) || (this->actionFunc == EnFirefly_Stunned)) {
             Actor_MoveWithGravity(&this->actor);
         } else {
@@ -743,7 +742,7 @@ void EnFirefly_Update(Actor* thisx, PlayState* play2) {
 
 s32 EnFirefly_OverrideLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, Actor* thisx,
                                Gfx** gfx) {
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
 
     if (this->isInvisible && (play->actorCtx.lensMaskSize != LENS_MASK_ACTIVE_SIZE)) {
         *dList = NULL;
@@ -766,7 +765,7 @@ void EnFirefly_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* 
     s16 auraScaleStep;
     s16 auraLife;
     s32 pad;
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
 
     if ((this->currentType != KEESE_FIRE) && (limbIndex == FIRE_KEESE_LIMB_HEAD)) {
         gSPDisplayList((*gfx)++, gKeeseRedEyesDL);
@@ -817,7 +816,7 @@ void EnFirefly_PostLimbDraw(PlayState* play, s32 limbIndex, Gfx** dList, Vec3s* 
 
 void EnFirefly_Draw(Actor* thisx, PlayState* play) {
     s32 pad;
-    EnFirefly* this = THIS;
+    EnFirefly* this = (EnFirefly*)thisx;
     Gfx* gfx;
 
     OPEN_DISPS(play->state.gfxCtx);
