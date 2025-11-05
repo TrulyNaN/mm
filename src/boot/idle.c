@@ -1,15 +1,15 @@
-#include "prevent_bss_reordering.h"
-
 #include "stdbool.h"
 
 #include "buffers.h"
 #include "main.h"
 #include "segment_symbols.h"
 #include "stack.h"
-#include "stackcheck.h"
+#include "libu64/stackcheck.h"
 #include "viconfig.h"
 #include "z64dma.h"
 #include "z64thread.h"
+
+#pragma increment_block_number "n64-us:128"
 
 // Variables are put before most headers as a hacky way to bypass bss reordering
 struct IrqMgr gIrqMgr;

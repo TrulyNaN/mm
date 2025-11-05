@@ -10,7 +10,7 @@ simpleReplace = {
 }
 
 # all occurrences of keys will be replaced by associated value,
-# if the occurence is the whole word
+# if the occurrence is the whole word
 # for example, if there is a space before and an open parenthesis after,
 # like for a function call: ` func_8002E4B4(`
 #
@@ -299,7 +299,7 @@ wordReplace = {
     "SkelAnime_AnimationType2Loaded": "AnimTask_Interp",
     "SkelAnime_AnimationType3Loaded": "AnimTask_CopyUsingMap",
     "SkelAnime_AnimationType4Loaded": "AnimTask_CopyUsingMapInverted",
-    "SkelAnime_AnimationType5Loaded": "AnimTask_ActorMove",
+    "SkelAnime_AnimationType5Loaded": "AnimTask_ActorMovement",
     "func_80135EE8": "AnimTaskQueue_Update",
     "SkelAnime_InitLink": "SkelAnime_InitPlayer",
     "LinkAnimation_SetUpdateFunction": "PlayerAnimation_SetUpdateFunction",
@@ -1306,6 +1306,7 @@ wordReplace = {
     "play->actorCtx.attention.unk4C": "play->actorCtx.attention.lockOnIndex",
     "play->actorCtx.attention.unk50": "play->actorCtx.attention.lockOnTriangleSets",
     "play->actorCtx.attention.unk8C": "play->actorCtx.attention.nextTarget",
+    "play->actorCtx.titleCtxt": "play->actorCtx.titleCtx",
     "play->doorCtx.transitionActorList": "play->transitionActors.list",
     "play->nextEntranceIndex": "play->nextEntrance",
     "play->sceneNum": "play->sceneId",
@@ -1338,6 +1339,7 @@ wordReplace = {
     "actorCtx.unk_1F4.timer": "actorCtx.playerImpact.timer",
     "actorCtx.unk_1F4.unk_04": "actorCtx.playerImpact.dist",
     "actorCtx.unk_1F4.unk_08": "actorCtx.playerImpact.pos",
+    "actorCtx->titleCtxt": "actorCtx->titleCtx",
 
     "gSaveContext.unk_3DC8": "gSaveContext.timerOsTime",
     "gSaveContext.unk_3DD0": "gSaveContext.timerStates",
@@ -1507,7 +1509,7 @@ def replace_single(file):
                 custom_behavior_ignore_offset, custom_behavior_ignore_match = custom_behavior_ignore_data
         else:
             custom_behavior = False
-        # replace `old` with `new` if the occurence of `old` is the whole word
+        # replace `old` with `new` if the occurrence of `old` is the whole word
         oldStartIdx = srcdata.find(old)
         if oldStartIdx >= 0:
             old_start_as_word = is_word_char(old[0])

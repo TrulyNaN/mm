@@ -8,8 +8,6 @@
 
 #define FLAGS (ACTOR_FLAG_ATTENTION_ENABLED | ACTOR_FLAG_FRIENDLY)
 
-#define THIS ((EnToto*)thisx)
-
 #define ENTOTO_WEEK_EVENT_FLAGS (CHECK_WEEKEVENTREG(WEEKEVENTREG_50_01) || CHECK_WEEKEVENTREG(WEEKEVENTREG_51_80))
 
 void EnToto_Init(Actor* thisx, PlayState* play);
@@ -166,7 +164,7 @@ void func_80BA36C0(EnToto* this, PlayState* play, s32 index) {
 }
 
 void EnToto_Init(Actor* thisx, PlayState* play) {
-    EnToto* this = THIS;
+    EnToto* this = (EnToto*)thisx;
 
     Actor_ProcessInitChain(&this->actor, sInitChain);
     Collider_InitAndSetCylinder(play, &this->collider, &this->actor, &sCylinderInit);
@@ -185,7 +183,7 @@ void EnToto_Init(Actor* thisx, PlayState* play) {
 }
 
 void EnToto_Destroy(Actor* thisx, PlayState* play) {
-    EnToto* this = THIS;
+    EnToto* this = (EnToto*)thisx;
 
     Collider_DestroyCylinder(play, &this->collider);
 }
@@ -200,7 +198,7 @@ void func_80BA383C(EnToto* this, PlayState* play) {
         }
         Animation_PlayOnce(&this->skelAnime, sAnimations[this->animIndex]);
     }
-    func_800BBB74(&this->blinkInfo, 20, 80, 3);
+    FaceChange_UpdateBlinkingNonHuman(&this->faceChange, 20, 80, 3);
 }
 
 void func_80BA3930(EnToto* this, PlayState* play) {
@@ -301,7 +299,7 @@ void func_80BA3D38(EnToto* this, PlayState* play) {
     this->text = ENTOTO_WEEK_EVENT_FLAGS ? &D_80BA5088[13] : &D_80BA5088[0];
     func_80BA4C0C(this, play);
     play->actorCtx.flags |= ACTORCTX_FLAG_5;
-    this->blinkInfo.eyeTexIndex = 0;
+    this->faceChange.face = 0;
 }
 
 void func_80BA3DBC(EnToto* this, PlayState* play) {
@@ -571,7 +569,7 @@ s32 func_80BA47E0(EnToto* this, PlayState* play) {
             Math_Vec3s_ToVec3f(&spawnPos, &D_80BA50DC[i].unk6);
 
             Actor_Spawn(&play->actorCtx, play, ACTOR_PLAYER, spawnPos.x, spawnPos.y, spawnPos.z, i + 2, 0, 0,
-                        PLAYER_PARAMS(0xFF, PLAYER_INITMODE_F) | 0xFFFFF000);
+                        PLAYER_PARAMS(0xFF, PLAYER_START_MODE_F) | 0xFFFFF000);
         }
     }
     func_80BA402C(this, play);
@@ -687,7 +685,7 @@ void func_80BA4CB4(EnToto* this, PlayState* play) {
 }
 
 void EnToto_Update(Actor* thisx, PlayState* play) {
-    EnToto* this = THIS;
+    EnToto* this = (EnToto*)thisx;
     s32 pad;
 
     if (Cutscene_IsCueInChannel(play, CS_CMD_ACTOR_CUE_525)) {
@@ -704,14 +702,14 @@ void EnToto_Update(Actor* thisx, PlayState* play) {
 }
 
 void EnToto_Draw(Actor* thisx, PlayState* play) {
-    TexturePtr sp4C[] = { object_zm_Tex_008AE8, object_zm_Tex_00A068, object_zm_Tex_00A468 };
-    EnToto* this = THIS;
+    TexturePtr eyeTextures[] = { gTotoEyesOpenTex, gTotoEyesHalfTex, gTotoEyesClosedTex };
+    EnToto* this = (EnToto*)thisx;
     s32 pad;
 
     OPEN_DISPS(play->state.gfxCtx);
 
     Gfx_SetupDL25_Opa(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(sp4C[this->blinkInfo.eyeTexIndex]));
+    gSPSegment(POLY_OPA_DISP++, 0x08, Lib_SegmentedToVirtual(eyeTextures[this->faceChange.face]));
     Scene_SetRenderModeXlu(play, 0, 1);
     SkelAnime_DrawFlexOpa(play, this->skelAnime.skeleton, this->skelAnime.jointTable, this->skelAnime.dListCount, NULL,
                           NULL, &this->actor);

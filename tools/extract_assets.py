@@ -26,7 +26,7 @@ def ExtractFile(xmlPath, outputPath, outputSourcePath):
             generateSourceFile = "0"
             break
 
-    execStr = f"tools/ZAPD/ZAPD.out e -eh -i {xmlPath} -b {globalBaseromSegmentsDir} -o {outputPath} -osf {outputSourcePath} -gsf {generateSourceFile} -rconf tools/ZAPDConfigs/MM/Config.xml {ZAPDArgs}"
+    execStr = f"tools/ZAPD/ZAPD.out e -eh -i {xmlPath} -b {globalBaseromSegmentsDir} -o {outputPath} -osf {outputSourcePath} -gsf {generateSourceFile} -rconf tools/ZAPDConfigs/MM/Config.xml --cs-float both {ZAPDArgs}"
 
     if globalUnaccounted:
         execStr += " -Wunaccounted"
@@ -62,7 +62,7 @@ def ExtractFunc(fullPath):
     ExtractFile(fullPath, outPath, outSourcePath)
 
     if not globalAbort.is_set():
-        # Only update timestamp on succesful extractions
+        # Only update timestamp on successful extractions
         if fullPath not in globalExtractedAssetsTracker:
             globalExtractedAssetsTracker[fullPath] = globalManager.dict()
         globalExtractedAssetsTracker[fullPath]["timestamp"] = currentTimeStamp
@@ -129,7 +129,7 @@ def main():
     manager = multiprocessing.Manager()
     signal.signal(signal.SIGINT, SignalHandler)
 
-    extractedAssetsFile = Path("extracted") / args.version / ".extracted-assets.json"
+    extractedAssetsFile = outputDir / ".extracted-assets.json"
     extractedAssetsTracker = manager.dict()
     if not args.force and extractedAssetsFile.exists():
         with extractedAssetsFile.open(encoding='utf-8') as f:
@@ -152,7 +152,8 @@ def main():
         for currentPath, _, files in os.walk(os.path.join("assets", "xml")):
             for file in files:
                 fullPath = os.path.join(currentPath, file)
-                if file.endswith(".xml"):
+                # ZAPD can't handle audio, skip those XMLs.
+                if file.endswith(".xml") and (fullPath.find("audio") == -1):
                     xmlFiles.append(fullPath)
 
         try:
@@ -163,7 +164,7 @@ def main():
             with multiprocessing.get_context("fork").Pool(numCores,  initializer=initializeWorker, initargs=(mainAbort, args.unaccounted, extractedAssetsTracker, manager, baseromSegmentsDir, outputDir)) as p:
                 p.map(ExtractFunc, xmlFiles)
         except (multiprocessing.ProcessError, TypeError):
-            print("Warning: Multiprocessing exception ocurred.", file=os.sys.stderr)
+            print("Warning: Multiprocessing exception occurred.", file=os.sys.stderr)
             print("Disabling mutliprocessing.", file=os.sys.stderr)
 
             initializeWorker(mainAbort, args.unaccounted, extractedAssetsTracker, manager, baseromSegmentsDir, outputDir)

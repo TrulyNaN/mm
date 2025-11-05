@@ -3,7 +3,6 @@
  * Description: Set of library functions to interact with the Player system
  */
 
-#include "prevent_bss_reordering.h"
 #include "global.h"
 
 #include "assets/objects/gameplay_keep/gameplay_keep.h"
@@ -81,7 +80,7 @@ void func_80127B64(struct_801F58B0 arg0[], s32 count, Vec3f* arg2);
 
 s32 func_801226E0(PlayState* play, s32 arg1) {
     if (arg1 == 0) {
-        Play_SetupRespawnPoint(play, RESPAWN_MODE_DOWN, PLAYER_PARAMS(0xFF, PLAYER_INITMODE_B));
+        Play_SetupRespawnPoint(play, RESPAWN_MODE_DOWN, PLAYER_PARAMS(0xFF, PLAYER_START_MODE_B));
         if (play->sceneId == SCENE_KAKUSIANA) {
             return 1;
         }
@@ -156,7 +155,7 @@ void func_801229A0(PlayState* play, Player* player) {
 }
 
 // Update function
-void func_801229EC(Actor* thisx, PlayState* play) {
+void Player_DoNothing(Actor* thisx, PlayState* play) {
 }
 
 s16 sMaskObjectIds[PLAYER_MASK_MAX - 1] = {
@@ -631,7 +630,7 @@ void func_80123140(PlayState* play, Player* player) {
     IREG(69) = bootRegs[16];
     MREG(95) = bootRegs[17];
 
-    if (play->roomCtx.curRoom.behaviorType1 == ROOM_BEHAVIOR_TYPE1_2) {
+    if (play->roomCtx.curRoom.type == ROOM_TYPE_INDOORS) {
         R_RUN_SPEED_LIMIT = 500;
     }
 
@@ -648,7 +647,7 @@ bool Player_InBlockingCsMode(PlayState* play, Player* player) {
     return (player->stateFlags1 & (PLAYER_STATE1_DEAD | PLAYER_STATE1_200 | PLAYER_STATE1_20000000)) ||
            (player->csAction != PLAYER_CSACTION_NONE) || (play->transitionTrigger == TRANS_TRIGGER_START) ||
            (play->transitionMode != TRANS_MODE_OFF) || (player->stateFlags1 & PLAYER_STATE1_1) ||
-           (player->stateFlags3 & PLAYER_STATE3_80) || play->actorCtx.isOverrideInputOn;
+           (player->stateFlags3 & PLAYER_STATE3_FLYING_WITH_HOOKSHOT) || play->actorCtx.isOverrideInputOn;
 }
 
 bool Player_InCsMode(PlayState* play) {
@@ -668,8 +667,25 @@ bool Player_CheckHostileLockOn(Player* player) {
     return player->stateFlags3 & PLAYER_STATE3_HOSTILE_LOCK_ON;
 }
 
-bool func_80123434(Player* player) {
-    return player->stateFlags1 & (PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS | PLAYER_STATE1_20000 | PLAYER_STATE1_40000000);
+/**
+ * This function checks for friendly (non-hostile) Z-Target related states.
+ * For hostile related lock-on states, see `Player_UpdateHostileLockOn` and `Player_CheckHostileLockOn`.
+ *
+ * Note that `PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS` will include all `focusActor` use cases that relate to
+ * friendly actors. This function can return true when talking to an actor, for example.
+ * Despite that, this function is only relevant in the context of actor lock-on, which is a subset of actor focus.
+ * This is why the function name states `FriendlyLockOn` instead of `FriendlyActorFocus`.
+ *
+ * There is a special case that allows hostile actors to be treated as "friendly" if Player is carrying another actor
+ * See relevant code in `Player_UpdateZTargeting` for more details.
+ *
+ * Additionally, `PLAYER_STATE1_LOCK_ON_FORCED_TO_RELEASE` will be set very briefly in some conditions when
+ * a lock-on is forced to release. In these niche cases, this function will apply to both friendly and hostile actors.
+ * Overall, it is safe to assume that this specific state flag is not very relevant for this function's use cases.
+ */
+bool Player_FriendlyLockOnOrParallel(Player* player) {
+    return player->stateFlags1 &
+           (PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS | PLAYER_STATE1_PARALLEL | PLAYER_STATE1_LOCK_ON_FORCED_TO_RELEASE);
 }
 
 // Unused
@@ -677,7 +693,8 @@ bool func_80123448(PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     return (player->stateFlags1 & PLAYER_STATE1_400000) &&
-           ((player->transformation != PLAYER_FORM_HUMAN) || (!func_80123434(player) && player->focusActor == NULL));
+           ((player->transformation != PLAYER_FORM_HUMAN) ||
+            (!Player_FriendlyLockOnOrParallel(player) && (player->focusActor == NULL)));
 }
 
 // TODO: Player_IsGoronOrDeku is a temporary name until we have more info on this function.
@@ -828,7 +845,7 @@ u8 sActionModelGroups[PLAYER_IA_MAX] = {
     PLAYER_MODELGROUP_ONE_HAND_SWORD, // PLAYER_IA_SWORD_GILDED
     PLAYER_MODELGROUP_TWO_HAND_SWORD, // PLAYER_IA_SWORD_TWO_HANDED
     PLAYER_MODELGROUP_DEKU_STICK,     // PLAYER_IA_DEKU_STICK
-    PLAYER_MODELGROUP_ZORA_FINS,      // PLAYER_IA_ZORA_FINS
+    PLAYER_MODELGROUP_ZORA_BOOMERANG, // PLAYER_IA_ZORA_BOOMERANG
     PLAYER_MODELGROUP_BOW,            // PLAYER_IA_BOW
     PLAYER_MODELGROUP_BOW,            // PLAYER_IA_BOW_FIRE
     PLAYER_MODELGROUP_BOW,            // PLAYER_IA_BOW_ICE
@@ -987,7 +1004,7 @@ PlayerModelIndices gPlayerModelTypes[PLAYER_MODELGROUP_MAX] = {
     /* PLAYER_MODELGROUP_13 */
     { PLAYER_ANIMTYPE_DEFAULT, PLAYER_MODELTYPE_LH_ONE_HAND_SWORD, PLAYER_MODELTYPE_RH_OPEN, PLAYER_MODELTYPE_SHEATH_15,
       PLAYER_MODELTYPE_WAIST },
-    /* PLAYER_MODELGROUP_ZORA_FINS */
+    /* PLAYER_MODELGROUP_ZORA_BOOMERANG */
     { PLAYER_ANIMTYPE_DEFAULT, PLAYER_MODELTYPE_LH_CLOSED, PLAYER_MODELTYPE_RH_CLOSED, PLAYER_MODELTYPE_SHEATH_14,
       PLAYER_MODELTYPE_WAIST },
 };
@@ -1290,6 +1307,17 @@ struct_80124618 D_801C0560[] = {
     { 2, { 95, 95, 100 } },
     { 3, { 105, 105, 100 } },
     { 5, { 102, 102, 102 } },
+#ifdef AVOID_UB
+    //! @bug gPlayerAnim_pz_gakkiplay uses this array with a frame count
+    //! of up to (and including) 6, which is larger than the last
+    //! keyframe frame number (5). This causes it to continue to read into
+    //! the next array in search of a keyframe that bounds frame 6.
+    // Avoid UB: Provide extra data elements that would be read in an
+    // out-of-bounds read from the next array. Both are read-only so are
+    // not expected to change.
+    { 0, { 100, 100, 100 } },
+    { 9, { 100, 100, 100 } },
+#endif
 };
 struct_80124618 D_801C0580[] = {
     { 0, { 100, 100, 100 } }, { 9, { 100, 100, 100 } }, { 10, { 150, 150, 150 } },
@@ -1497,13 +1525,14 @@ void Player_ClearZTargeting(Player* player) {
         (player->stateFlags1 & (PLAYER_STATE1_200000 | PLAYER_STATE1_800000 | PLAYER_STATE1_8000000)) ||
         (!(player->stateFlags1 & (PLAYER_STATE1_40000 | PLAYER_STATE1_80000)) &&
          ((player->actor.world.pos.y - player->actor.floorHeight) < 100.0f))) {
-        player->stateFlags1 &= ~(PLAYER_STATE1_8000 | PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS | PLAYER_STATE1_20000 |
-                                 PLAYER_STATE1_40000 | PLAYER_STATE1_80000 | PLAYER_STATE1_40000000);
+        player->stateFlags1 &=
+            ~(PLAYER_STATE1_Z_TARGETING | PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS | PLAYER_STATE1_PARALLEL |
+              PLAYER_STATE1_40000 | PLAYER_STATE1_80000 | PLAYER_STATE1_LOCK_ON_FORCED_TO_RELEASE);
     } else if (!(player->stateFlags1 & (PLAYER_STATE1_40000 | PLAYER_STATE1_80000 | PLAYER_STATE1_200000))) {
         player->stateFlags1 |= PLAYER_STATE1_80000;
     } else if ((player->stateFlags1 & PLAYER_STATE1_40000) && (player->transformation == PLAYER_FORM_DEKU)) {
-        player->stateFlags1 &=
-            ~(PLAYER_STATE1_8000 | PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS | PLAYER_STATE1_20000 | PLAYER_STATE1_40000000);
+        player->stateFlags1 &= ~(PLAYER_STATE1_Z_TARGETING | PLAYER_STATE1_FRIENDLY_ACTOR_FOCUS |
+                                 PLAYER_STATE1_PARALLEL | PLAYER_STATE1_LOCK_ON_FORCED_TO_RELEASE);
     }
 
     Player_ReleaseLockOn(player);
@@ -1563,7 +1592,7 @@ u8 Player_GetStrength(void) {
     return sPlayerStrengths[GET_PLAYER_FORM];
 }
 
-PlayerMask Player_GetMask(PlayState* play) {
+s32 Player_GetMask(PlayState* play) {
     Player* player = GET_PLAYER(play);
 
     return player->currentMask;
@@ -1669,9 +1698,8 @@ PlayerExplosive Player_GetExplosiveHeld(Player* player) {
 PlayerSword Player_SwordFromIA(Player* player, PlayerItemAction itemAction) {
     PlayerSword sword = PLAYER_SWORD_KOKIRI;
 
-    //! FAKE:
     if ((itemAction == PLAYER_IA_LAST_USED) ||
-        ((sword = GET_SWORD_FROM_IA(itemAction), (sword > PLAYER_SWORD_NONE)) && (sword < PLAYER_SWORD_MAX))) {
+        (sword = GET_SWORD_FROM_IA(itemAction), ((sword > PLAYER_SWORD_NONE) && (sword < PLAYER_SWORD_MAX)))) {
         return sword;
     }
 
@@ -1687,7 +1715,7 @@ s32 Player_GetEnvironmentalHazard(PlayState* play) {
     EnvHazardTextTriggerEntry* triggerEntry;
     s32 envHazard;
 
-    if (play->roomCtx.curRoom.behaviorType2 == ROOM_BEHAVIOR_TYPE2_HOT) {
+    if (play->roomCtx.curRoom.environmentType == ROOM_ENV_HOT) {
         envHazard = PLAYER_ENV_HAZARD_HOTROOM - 1;
     } else if ((player->transformation != PLAYER_FORM_ZORA) && (player->underwaterTimer > 80)) {
         envHazard = PLAYER_ENV_HAZARD_UNDERWATER_FREE - 1;
@@ -1753,6 +1781,7 @@ void Player_UpdateBunnyEars(Player* player) {
 }
 
 void func_80124618(struct_80124618 arg0[], f32 curFrame, Vec3f* arg2) {
+    struct_80124618* prev;
     s32 currentFrame = curFrame;
     f32 temp_f0;
     f32 temp_f14;
@@ -1764,16 +1793,18 @@ void func_80124618(struct_80124618 arg0[], f32 curFrame, Vec3f* arg2) {
         arg0++;
     } while (temp_v1 < currentFrame);
 
-    temp_f0 = arg0[-1].unk_0;
+    prev = arg0 - 1;
+
+    temp_f0 = prev->unk_0;
     progress = (curFrame - temp_f0) / (temp_v1 - temp_f0);
 
-    temp_f14 = arg0[-1].unk_2.x;
+    temp_f14 = prev->unk_2.x;
     arg2->x = LERPIMP(temp_f14, arg0->unk_2.x, progress) * 0.01f;
 
-    temp_f14 = arg0[-1].unk_2.y;
+    temp_f14 = prev->unk_2.y;
     arg2->y = LERPIMP(temp_f14, arg0->unk_2.y, progress) * 0.01f;
 
-    temp_f14 = arg0[-1].unk_2.z;
+    temp_f14 = prev->unk_2.z;
     arg2->z = LERPIMP(temp_f14, arg0->unk_2.z, progress) * 0.01f;
 }
 
@@ -1806,46 +1837,156 @@ Gfx gCullFrontDList[] = {
     gsSPEndDisplayList(),
 };
 
-TexturePtr sPlayerEyesTextures[PLAYER_EYES_MAX] = {
-    gLinkHumanEyesOpenTex,        // PLAYER_EYES_OPEN
-    gLinkHumanEyesHalfTex,        // PLAYER_EYES_HALF
-    gLinkHumanEyesClosedTex,      // PLAYER_EYES_CLOSED
-    gLinkHumanEyesRollRightTex,   // PLAYER_EYES_ROLL_RIGHT
-    gLinkHumanEyesRollLeftTex,    // PLAYER_EYES_ROLL_LEFT
-    gLinkHumanEyesRollUpTex,      // PLAYER_EYES_ROLL_UP
-    gLinkHumanEyesRollDownTex,    // PLAYER_EYES_ROLL_DOWN
-    object_link_child_Tex_003800, // PLAYER_EYES_7
+/**
+ * Link's eyes and mouth textures are placed at the exact same place in all player form's respective object files.
+ * This allows the array to only contain the symbols for one file and have it apply to all of them. This is a problem
+ * for shiftability, and changes will need to be made in the code to account for this in a modding scenario. The symbols
+ * from human Link's object are used here.
+ *
+ * Note that some player forms do not use the eyes and mouth textures loaded into segments 0x08 and 0x09 respectively.
+ * Therefore, the segment will point at garbage data, but this does not cause issues as the data is not read from.
+ */
+#ifndef AVOID_UB
+static TexturePtr sEyeTextures[PLAYER_EYES_MAX] = {
+    gLinkHumanEyesOpenTex,    // PLAYER_EYES_OPEN
+    gLinkHumanEyesHalfTex,    // PLAYER_EYES_HALF
+    gLinkHumanEyesClosedTex,  // PLAYER_EYES_CLOSED
+    gLinkHumanEyesRightTex,   // PLAYER_EYES_RIGHT
+    gLinkHumanEyesLeftTex,    // PLAYER_EYES_LEFT
+    gLinkHumanEyesUpTex,      // PLAYER_EYES_UP
+    gLinkHumanEyesDownTex,    // PLAYER_EYES_DOWN
+    gLinkHumanEyesWincingTex, // PLAYER_EYES_WINCING
 };
 
-TexturePtr sPlayerMouthTextures[PLAYER_MOUTH_MAX] = {
+static TexturePtr sMouthTextures[PLAYER_MOUTH_MAX] = {
     gLinkHumanMouthClosedTex, // PLAYER_MOUTH_CLOSED
-    gLinkHumanMouthTeethTex,  // PLAYER_MOUTH_TEETH
-    gLinkHumanMouthAngryTex,  // PLAYER_MOUTH_ANGRY
-    gLinkHumanMouthHappyTex,  // PLAYER_MOUTH_HAPPY
+    gLinkHumanMouthHalfTex,   // PLAYER_MOUTH_HALF
+    gLinkHumanMouthOpenTex,   // PLAYER_MOUTH_OPEN
+    gLinkHumanMouthSmileTex,  // PLAYER_MOUTH_SMILE
+};
+#else
+static TexturePtr sEyeTextures[PLAYER_FORM_MAX][PLAYER_EYES_MAX] = {
+    // PLAYER_FORM_FIERCE_DEITY
+    {
+        NULL, // PLAYER_EYES_OPEN
+        NULL, // PLAYER_EYES_HALF
+        NULL, // PLAYER_EYES_CLOSED
+        NULL, // PLAYER_EYES_RIGHT
+        NULL, // PLAYER_EYES_LEFT
+        NULL, // PLAYER_EYES_UP
+        NULL, // PLAYER_EYES_DOWN
+        NULL, // PLAYER_EYES_WINCING
+    },
+    // PLAYER_FORM_GORON
+    // Note: use PLAYER_EYES_WINCING to access `gLinkGoronEyesSurprisedTex`. See `Player_DrawImpl`.
+    {
+        gLinkGoronEyesOpenTex,      // PLAYER_EYES_OPEN
+        gLinkGoronEyesHalfTex,      // PLAYER_EYES_HALF
+        gLinkGoronEyesClosedTex,    // PLAYER_EYES_CLOSED
+        gLinkGoronEyesSurprisedTex, // PLAYER_EYES_RIGHT
+        NULL,                       // PLAYER_EYES_LEFT
+        NULL,                       // PLAYER_EYES_UP
+        NULL,                       // PLAYER_EYES_DOWN
+        NULL,                       // PLAYER_EYES_WINCING
+    },
+    // PLAYER_FORM_ZORA
+    {
+        gLinkZoraEyesOpenTex,    // PLAYER_EYES_OPEN
+        gLinkZoraEyesHalfTex,    // PLAYER_EYES_HALF
+        gLinkZoraEyesClosedTex,  // PLAYER_EYES_CLOSED
+        gLinkZoraEyesRightTex,   // PLAYER_EYES_RIGHT
+        gLinkZoraEyesLeftTex,    // PLAYER_EYES_LEFT
+        gLinkZoraEyesUpTex,      // PLAYER_EYES_UP
+        gLinkZoraEyesDownTex,    // PLAYER_EYES_DOWN
+        gLinkZoraEyesWincingTex, // PLAYER_EYES_WINCING
+    },
+    // PLAYER_FORM_DEKU
+    {
+        NULL, // PLAYER_EYES_OPEN
+        NULL, // PLAYER_EYES_HALF
+        NULL, // PLAYER_EYES_CLOSED
+        NULL, // PLAYER_EYES_RIGHT
+        NULL, // PLAYER_EYES_LEFT
+        NULL, // PLAYER_EYES_UP
+        NULL, // PLAYER_EYES_DOWN
+        NULL, // PLAYER_EYES_WINCING
+    },
+    // PLAYER_FORM_HUMAN
+    {
+        gLinkHumanEyesOpenTex,    // PLAYER_EYES_OPEN
+        gLinkHumanEyesHalfTex,    // PLAYER_EYES_HALF
+        gLinkHumanEyesClosedTex,  // PLAYER_EYES_CLOSED
+        gLinkHumanEyesRightTex,   // PLAYER_EYES_RIGHT
+        gLinkHumanEyesLeftTex,    // PLAYER_EYES_LEFT
+        gLinkHumanEyesUpTex,      // PLAYER_EYES_UP
+        gLinkHumanEyesDownTex,    // PLAYER_EYES_DOWN
+        gLinkHumanEyesWincingTex, // PLAYER_EYES_WINCING
+    },
 };
 
-typedef struct PlayerFaceIndices {
-    /* 0x0 */ u8 eyeIndex;
-    /* 0x1 */ u8 mouthIndex;
-} PlayerFaceIndices; // size = 0x2
+static TexturePtr sMouthTextures[PLAYER_FORM_MAX][PLAYER_MOUTH_MAX] = {
+    // PLAYER_FORM_FIERCE_DEITY
+    {
+        NULL, // PLAYER_MOUTH_CLOSED
+        NULL, // PLAYER_MOUTH_HALF
+        NULL, // PLAYER_MOUTH_OPEN
+        NULL, // PLAYER_MOUTH_SMILE
+    },
+    // PLAYER_FORM_GORON
+    {
+        NULL, // PLAYER_MOUTH_CLOSED
+        NULL, // PLAYER_MOUTH_HALF
+        NULL, // PLAYER_MOUTH_OPEN
+        NULL, // PLAYER_MOUTH_SMILE
+    },
+    // PLAYER_FORM_ZORA
+    {
+        gLinkZoraMouthClosedTex, // PLAYER_MOUTH_CLOSED
+        gLinkZoraMouthHalfTex,   // PLAYER_MOUTH_HALF
+        gLinkZoraMouthOpenTex,   // PLAYER_MOUTH_OPEN
+        gLinkZoraMouthSmileTex,  // PLAYER_MOUTH_SMILE
+    },
+    // PLAYER_FORM_DEKU
+    {
+        NULL, // PLAYER_MOUTH_CLOSED
+        NULL, // PLAYER_MOUTH_HALF
+        NULL, // PLAYER_MOUTH_OPEN
+        NULL, // PLAYER_MOUTH_SMILE
+    },
+    // PLAYER_FORM_HUMAN
+    {
+        gLinkHumanMouthClosedTex, // PLAYER_MOUTH_CLOSED
+        gLinkHumanMouthHalfTex,   // PLAYER_MOUTH_HALF
+        gLinkHumanMouthOpenTex,   // PLAYER_MOUTH_OPEN
+        gLinkHumanMouthSmileTex,  // PLAYER_MOUTH_SMILE
+    },
+};
+#endif
 
-PlayerFaceIndices sPlayerFaces[] = {
-    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },       // PLAYER_FACE_0
-    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },       // PLAYER_FACE_1
-    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED },     // PLAYER_FACE_2
-    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },       // PLAYER_FACE_3
-    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },       // PLAYER_FACE_4
-    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED },     // PLAYER_FACE_5
-    { PLAYER_EYES_ROLL_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_6
-    { PLAYER_EYES_ROLL_UP, PLAYER_MOUTH_TEETH },     // PLAYER_FACE_7
-    { PLAYER_EYES_7, PLAYER_MOUTH_ANGRY },           // PLAYER_FACE_8
-    { PLAYER_EYES_OPEN, PLAYER_MOUTH_ANGRY },        // PLAYER_FACE_9
-    { PLAYER_EYES_ROLL_RIGHT, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_10
-    { PLAYER_EYES_ROLL_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_11
-    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_ANGRY },      // PLAYER_FACE_12
-    { PLAYER_EYES_HALF, PLAYER_MOUTH_TEETH },        // PLAYER_FACE_13
-    { PLAYER_EYES_OPEN, PLAYER_MOUTH_ANGRY },        // PLAYER_FACE_14
-    { PLAYER_EYES_OPEN, PLAYER_MOUTH_HAPPY },        // PLAYER_FACE_15
+PlayerFaceIndices sPlayerFaces[PLAYER_FACE_MAX] = {
+    // The first 6 faces defined must be default blinking faces. See relevant code in `Player_UpdateCommon`.
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_BLINKING_HALF
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_NEUTRAL_BLINKING_CLOSED
+
+    // This duplicate set of blinking faces is defined because Player will choose between the first and second set
+    // based on gameplayFrames. See relevant code in `Player_UpdateCommon`.
+    // This, in theory, allows for psuedo-random variance in the faces used. But in practice, duplicate faces are used.
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_2
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_CLOSED },   // PLAYER_FACE_NEUTRAL_BLINKING_HALF_2
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_NEUTRAL_BLINKING_CLOSED_2
+
+    // Additional faces. Most faces are encoded within animations.
+    { PLAYER_EYES_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_LOOK_LEFT
+    { PLAYER_EYES_UP, PLAYER_MOUTH_HALF },      // PLAYER_FACE_SURPRISED
+    { PLAYER_EYES_WINCING, PLAYER_MOUTH_OPEN }, // PLAYER_FACE_HURT
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_OPEN },    // PLAYER_FACE_GASP
+    { PLAYER_EYES_RIGHT, PLAYER_MOUTH_CLOSED }, // PLAYER_FACE_LOOK_RIGHT
+    { PLAYER_EYES_LEFT, PLAYER_MOUTH_CLOSED },  // PLAYER_FACE_LOOK_LEFT_2
+    { PLAYER_EYES_CLOSED, PLAYER_MOUTH_OPEN },  // PLAYER_FACE_EYES_CLOSED_MOUTH_OPEN
+    { PLAYER_EYES_HALF, PLAYER_MOUTH_HALF },    // PLAYER_FACE_OPENING
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_OPEN },    // PLAYER_FACE_EYES_AND_MOUTH_OPEN
+    { PLAYER_EYES_OPEN, PLAYER_MOUTH_SMILE },   // PLAYER_FACE_SMILE
 };
 
 // Note the correct pointer to pass as the jointTable is the jointTable pointer from the SkelAnime struct, not the
@@ -1861,25 +2002,41 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
 
     gfx = POLY_OPA_DISP;
 
+    // If the eyes index provided by the animation is negative, use the value provided by the `face` argument instead
     if (eyeIndex < 0) {
         eyeIndex = sPlayerFaces[face].eyeIndex;
     }
 
     if (playerForm == PLAYER_FORM_GORON) {
-        if ((eyeIndex >= PLAYER_EYES_ROLL_RIGHT) && (eyeIndex <= PLAYER_EYES_ROLL_DOWN)) {
+        // Goron does not have the eye textures to look in different directions
+        if ((eyeIndex >= PLAYER_EYES_RIGHT) && (eyeIndex <= PLAYER_EYES_DOWN)) {
             eyeIndex = PLAYER_EYES_OPEN;
-        } else if (eyeIndex == PLAYER_EYES_7) {
-            eyeIndex = PLAYER_EYES_ROLL_RIGHT;
+        } else if (eyeIndex == PLAYER_EYES_WINCING) {
+            // Goron form puts a surpised expression where the eyes-right normally goes
+            eyeIndex = PLAYER_EYES_RIGHT;
         }
     }
 
-    gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sPlayerEyesTextures[eyeIndex]));
+    // Only Human, Zora, and Goron will read the eye textures in the head limb display list.
+    // Fierce Deity and Deku will point this segment to garbage data, but it will be unread from.
+#ifndef AVOID_UB
+    gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sEyeTextures[eyeIndex]));
+#else
+    gSPSegment(&gfx[0], 0x08, Lib_SegmentedToVirtual(sEyeTextures[playerForm][eyeIndex]));
+#endif
 
+    // If the mouth index provided by the animation is negative, use the value provided by the `face` argument instead
     if (mouthIndex < 0) {
         mouthIndex = sPlayerFaces[face].mouthIndex;
     }
 
-    gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sPlayerMouthTextures[mouthIndex]));
+    // Only Human and Zora will read the mouth textures in the head limb display list.
+    // Goron, Fierce Deity, and Deku will point this segment to garbage data, but it will be unread from.
+#ifndef AVOID_UB
+    gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sMouthTextures[mouthIndex]));
+#else
+    gSPSegment(&gfx[1], 0x09, Lib_SegmentedToVirtual(sMouthTextures[playerForm][mouthIndex]));
+#endif
 
     POLY_OPA_DISP = &gfx[2];
 
@@ -1943,7 +2100,7 @@ void Player_AdjustSingleLeg(PlayState* play, Player* player, SkelAnime* skelAnim
     f32 sp7C;
 
     if ((player->stateFlags3 & PLAYER_STATE3_1) || !(player->actor.scale.y >= 0.0f) ||
-        (player->stateFlags1 & PLAYER_STATE1_DEAD) || play->unk_18844) {
+        (player->stateFlags1 & PLAYER_STATE1_DEAD) || play->soaringCsOrSoTCsPlaying) {
         return;
     }
 
@@ -2217,11 +2374,12 @@ s32 Player_OverrideLimbDrawGameplayCommon(PlayState* play, s32 limbIndex, Gfx** 
         sPlayerCurBodyPartPos = &player->bodyPartsPos[0] - 1;
 
         if (player->transformation != PLAYER_FORM_FIERCE_DEITY) {
-            if (!(player->skelAnime.moveFlags & ANIM_FLAG_4) || (player->skelAnime.moveFlags & ANIM_FLAG_1)) {
+            if (!(player->skelAnime.movementFlags & ANIM_FLAG_4) || (player->skelAnime.movementFlags & ANIM_FLAG_1)) {
                 pos->x *= player->ageProperties->unk_08;
                 pos->z *= player->ageProperties->unk_08;
             }
-            if (!(player->skelAnime.moveFlags & ANIM_FLAG_4) || (player->skelAnime.moveFlags & ANIM_FLAG_UPDATE_Y)) {
+            if (!(player->skelAnime.movementFlags & ANIM_FLAG_4) ||
+                (player->skelAnime.movementFlags & ANIM_FLAG_UPDATE_Y)) {
                 pos->y *= player->ageProperties->unk_08;
             }
         }
@@ -2383,7 +2541,7 @@ s32 Player_OverrideLimbDrawGameplayDefault(PlayState* play, s32 limbIndex, Gfx**
             if (player->stateFlags3 & PLAYER_STATE3_2000) {
                 rot->z -= player->unk_B8C;
             } else if ((sPlayerLeftHandType == PLAYER_MODELTYPE_LH_4) &&
-                       (player->stateFlags1 & PLAYER_STATE1_2000000)) {
+                       (player->stateFlags1 & PLAYER_STATE1_ZORA_BOOMERANG_THROWN)) {
                 leftHandDLists = &gPlayerLeftHandOpenDLs[D_801F59E0];
                 sPlayerLeftHandType = PLAYER_MODELTYPE_LH_OPEN;
             } else if ((player->leftHandType == PLAYER_MODELTYPE_LH_OPEN) && (player->actor.speed > 2.0f) &&
@@ -2853,16 +3011,16 @@ void func_80126BD0(PlayState* play, Player* player, s32 arg2) {
 
         CLOSE_DISPS(play->state.gfxCtx);
     } else {
-        Actor* boomerangActor = player->boomerangActor;
+        Actor* zoraBoomerangActor = player->zoraBoomerangActor;
         Vec3f sp58;
         Vec3f sp4C;
 
-        if (player->stateFlags1 & PLAYER_STATE1_2000000) {
-            if (player->boomerangActor == NULL) {
+        if (player->stateFlags1 & PLAYER_STATE1_ZORA_BOOMERANG_THROWN) {
+            if (player->zoraBoomerangActor == NULL) {
                 return;
             }
-            if ((player->boomerangActor->params == arg2) ||
-                (((boomerangActor->child != NULL)) && (boomerangActor->child->params == arg2))) {
+            if ((player->zoraBoomerangActor->params == arg2) ||
+                (((zoraBoomerangActor->child != NULL)) && (zoraBoomerangActor->child->params == arg2))) {
                 return;
             }
         }
@@ -2883,7 +3041,7 @@ void func_80126BD0(PlayState* play, Player* player, s32 arg2) {
                 func_80124618(D_801C0820, player->skelAnime.curFrame, player->unk_AF0);
             } else if (player->skelAnime.animation == &gPlayerAnim_pz_jumpATend) {
                 func_80124618(D_801C0838, player->skelAnime.curFrame, player->unk_AF0);
-            } else if (player->heldItemAction == PLAYER_IA_ZORA_FINS) {
+            } else if (player->heldItemAction == PLAYER_IA_ZORA_BOOMERANG) {
                 player->unk_AF0[0].x = 1.0f;
                 player->unk_AF0[0].y = 1.0f;
                 player->unk_AF0[0].z = 1.0f;
@@ -3600,7 +3758,7 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList1, G
                     4000.0f, // PLAYER_MELEEWEAPON_SWORD_GILDED
                     5500.0f, // PLAYER_MELEEWEAPON_SWORD_TWO_HANDED
                     -1.0f,   // PLAYER_MELEEWEAPON_DEKU_STICK
-                    2500.0f, // PLAYER_MELEEWEAPON_ZORA_FINS
+                    2500.0f, // PLAYER_MELEEWEAPON_ZORA_BOOMERANG
                 };
 
                 if ((player->transformation == PLAYER_FORM_FIERCE_DEITY) ||
@@ -3784,29 +3942,28 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList1, G
             }
         }
     } else if (limbIndex == PLAYER_LIMB_HEAD) {
-        //! FAKE:
-        if (((*dList1 != NULL) && ((((void)0, player->currentMask)) != (((void)0, PLAYER_MASK_NONE)))) &&
+        if (((*dList1 != NULL) && ((u32)player->currentMask != PLAYER_MASK_NONE)) &&
             (((player->transformation == PLAYER_FORM_HUMAN) &&
               ((player->skelAnime.animation != &gPlayerAnim_cl_setmask) || (player->skelAnime.curFrame >= 12.0f))) ||
              ((((player->transformation != PLAYER_FORM_HUMAN) && (player->currentMask >= PLAYER_MASK_FIERCE_DEITY)) &&
                ((player->transformation + PLAYER_MASK_FIERCE_DEITY) != player->currentMask)) &&
               (player->skelAnime.curFrame >= 10.0f)))) {
             if (func_80127438(play, player, player->currentMask)) {
-                s32 maskMinusOne = ((void)0, player->currentMask) - 1;
+                s32 maskMinusOne = player->currentMask - 1;
 
                 OPEN_DISPS(play->state.gfxCtx);
 
-                if (((void)0, player->currentMask) == PLAYER_MASK_COUPLE) {
+                if (player->currentMask == PLAYER_MASK_COUPLE) {
                     Player_DrawCouplesMask(play, player);
-                } else if (((void)0, player->currentMask) == PLAYER_MASK_CIRCUS_LEADER) {
+                } else if (player->currentMask == PLAYER_MASK_CIRCUS_LEADER) {
                     Player_DrawCircusLeadersMask(play, player);
-                } else if (((void)0, player->currentMask) == PLAYER_MASK_BLAST) {
+                } else if (player->currentMask == PLAYER_MASK_BLAST) {
                     Player_DrawBlastMask(play, player);
-                } else if (((void)0, player->currentMask) == PLAYER_MASK_BUNNY) {
+                } else if (player->currentMask == PLAYER_MASK_BUNNY) {
                     Player_DrawBunnyHood(play);
-                } else if (((void)0, player->currentMask) == PLAYER_MASK_GREAT_FAIRY) {
+                } else if (player->currentMask == PLAYER_MASK_GREAT_FAIRY) {
                     Player_DrawGreatFairysMask(play, player);
-                } else if (((void)0, player->currentMask) >= PLAYER_MASK_FIERCE_DEITY) {
+                } else if (player->currentMask >= PLAYER_MASK_FIERCE_DEITY) {
                     static Vec2f D_801C0E04[PLAYER_FORM_MAX] = {
                         { 140.0f, -130.0f }, // PLAYER_FORM_FIERCE_DEITY
                         { 0.0f, -200.0f },   // PLAYER_FORM_GORON
@@ -3980,6 +4137,7 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList1, G
     } else if ((limbIndex == PLAYER_LIMB_HAT) && (player->stateFlags3 & PLAYER_STATE3_100000)) {
         Vec3f sp5C;
         Vec3f sp50;
+        s32 pad;
 
         Matrix_MultVecX(3000.0f, &sp5C);
         Matrix_MultVecX(2300.0f, &sp50);
