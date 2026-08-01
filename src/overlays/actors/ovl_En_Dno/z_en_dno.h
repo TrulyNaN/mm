@@ -24,7 +24,7 @@ typedef struct EnDno {
     /* 0x18C */ ColliderCylinder collider;
     /* 0x1D8 */ Vec3s jointTable[DEKU_BUTLER_LIMB_MAX];
     /* 0x280 */ Vec3s morphTable[DEKU_BUTLER_LIMB_MAX];
-    /* 0x328 */ s32 unk_328;
+    /* 0x328 */ s32 unk_328; //starts at 0 (race not started?), set to 2 when race starts, set to 3 when race ends
     /* 0x32C */ s32 animIndex;
     /* 0x330 */ UNK_TYPE1 unk_330[0x4];
     /* 0x334 */ Vec3f unk_334;
@@ -40,13 +40,13 @@ typedef struct EnDno {
     /* 0x440 */ LightInfo lightInfo;
     /* 0x44E */ u8 unk_44E;
     /* 0x44F */ UNK_TYPE1 unk_44F[0x3];
-    /* 0x452 */ s16 unk_452;
+    /* 0x452 */ s16 unk_452;//set between integers 0 through 4 and used as cases in switch statement in LimbDraw
     /* 0x454 */ f32 unk_454;
     /* 0x458 */ s32 getItemId;
     /* 0x45C */ s16 unk_45C;
     /* 0x460 */ Actor* unk_460;
     /* 0x464 */ u16 textId;
-    /* 0x466 */ s16 unk_466;
+    /* 0x466 */ s16 unk_466;//linked to rotations and eye limb
     /* 0x468 */ u8 cueId;
 } EnDno; // size = 0x46C
 
